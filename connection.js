@@ -28,30 +28,15 @@ function createStudent(options) {
 
         var fd = JSON.stringify(JSON.parse(body), null, 4);
         console.log(fd);
-
-        // append data to a file
-        /*fs.appendFile('newStudent.json', fd, (err) => {
-            if (err)
-                console.error(err);
-            console.log("data successfully appended");
-        });*/
     });
 }
 
 function getStudents(options) {
     request(options, function (error, response, body) {
         if (error) throw new Error(error);
-        // run some code
+
         var fd = JSON.stringify(JSON.parse(body), null, 4);
         console.log(fd);
-
-        // append data to a file
-        /* fs.appendFile('allStudents.json', fd, (err) => {
-             if (err)
-                 console.error(err);
-             console.log("data successfully appended");
-         });*/
-
     });
 }
 
