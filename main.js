@@ -3,9 +3,10 @@
 
 'use strict';
 const StudentSnatcher = require('./import.js'),
-    options = require('./options.js'),
+    optionSnatcher = require('./getOptions.js'),
     bs = require('binarysearch'),
-    ss = new StudentSnatcher();
+    ss = new StudentSnatcher(),
+    os = new optionSnatcher();
 
 function sortList(a, b) {
     if (a.externalDataReference < b.externalDataReference) return -1;
@@ -45,17 +46,16 @@ function formatStudents(students) {
 }
 
 function init() {
+
     // get students from the tsv file
     ss.getStudents(function (students) {
         // format tsv student object for qualtrics
         students = formatStudents(students);
         students.sort(sortList);
 
-        //        console.log("FROM LIST\n");
-        //        console.log(students);
-
+        // get mailing list???
         // get students from qualtrics
-        ss.pullStudents(options[1], function (qStudents) {
+        ss.pullStudents(os.get(), function (qStudents) {
 
             //            console.log("FROM QUALTRICS\n");
             //            console.log(qStudents);
@@ -69,33 +69,41 @@ function deleteStudents(toTerminate) {
     // get unique qualtrics ID and send to ss.deleteStudent
 }
 
-function addStudent(toAdd) {
+function addStudents(toAdd) {
     // loop through array & call ss.addStudent
 }
 
-function updateStudent() {
-    // get unique qualtrics ID & send to ss.updateStudent
+function updateStudents(toUpdate) {
+    // set options & send to ss.updateStudent
+    toUpdate.forEach(function (student) {
+        if (!student) {
+            return;
+        }
+
+        console.log(student);
+
+        var option
+            //        ss.updateStudent(option, student);
+    })
 }
 
 function processTheData(students, qStudents) {
     var toAdd = [],
+        indexes = [],
         toUpdate = [];
 
-
-    // array containing unique id of all qualtrics students
-    /*var qSIndex = qStudents.map(function (currVal) {
-    return currVal.externalDataReference;
-});*/
     students.forEach(function (student, studentI) {
-        var qStudentI = bs(qSIndex, student, function (value, find) {
-            if (value.externalDataReference < find.externalDataReference) return 1;
-            if (value.externalDataReference > find.externalDataReference) return -1;
-            else return 0;
-        });
-        console.log(qStudentI);
+        var qStudentI;
+        for (var i = 0; i < qStudents.length; i++) {
+            if (qStudents[i].externalDataReference == student.externalDataReference) {
+                qStudentI = i;
+                break;
+            }
+        }
 
         //if exists in qualtrics AND students are not the same
         if (qStudentI > -1 && !Object.is(student, qStudents[qStudentI])) {
+            student.id = qStudents[qStudentI].id;
             toUpdate.push(student);
             qStudents[qStudentI].checked = true;
             //if exists AND is the same
@@ -107,22 +115,19 @@ function processTheData(students, qStudents) {
         }
     });
 
-    console.log("toAdd");
-    console.log(toAdd.length);
-    console.log("\ntoUpdate");
-    console.log(toUpdate.length);
-
-    console.log("\nqstudents");
-    console.log(qStudents);
+    //    console.log("toAdd", toAdd.length);
+    //    console.log("\ntoUpdate\n", toUpdate);
+    //    console.log("\nqstudents", qStudents);
 
     // exists in qualtrics but not in file to be synked
     var toTerminate = qStudents.filter(function (qStudents) {
         return !qStudents.checked;
     });
+    //    console.log("\nTo Terminate\n", toTerminate);
 
-    //    deleteStudents(toTerminate);
-    console.log("To Terminate");
-    console.log(toTerminate.length);
+    updateStudents(toUpdate);
+    deleteStudents(toTerminate);
+    addStudents(toAdd);
 
 }
 

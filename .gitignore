@@ -1,5 +1,6 @@
 *.xlsx
 node_modules/
 options.js
+getOptions.js
 *.json
 *tsv
