@@ -10,22 +10,22 @@ var proto = ss.prototype;
 var request = require('request');
 var fs = require('fs');
 var d3 = require('d3-dsv');
-var file = "practice.tsv";
+var file = "practice2.tsv";
 
 // adding function to the structure of the object
 //reading student list from file
 proto.readStudents = function (callback) {
-        fs.readFile(file, function (err, contents) {
-            if (err) {
-                throw (err);
-            }
-            var lines = contents.toString();
-            var students = d3.tsvParse(lines);
-            callback(students);
-        });
+    fs.readFile(file, function (err, contents) {
+        if (err) {
+            throw (err);
+        }
+        var lines = contents.toString();
+        var students = d3.tsvParse(lines);
+        callback(students);
+    });
+}
 
-    }
-    //pull existing student list from qualtrics
+//pull existing student list from qualtrics
 proto.pullStudents = function (options, callback) {
     request(options, function (error, response, body) {
         if (error) throw new Error(error);

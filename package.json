@@ -1,0 +1,26 @@
+{
+  "name": "qualrics-student-sync",
+  "version": "1.0.0",
+  "description": "Syncs a tsv list of students with the student list in qualtrics",
+  "main": "index.js",
+  "dependencies": {
+    "binarysearch": "^1.0.0",
+    "d3-dsv": "^1.0.3",
+    "deep-equal": "^1.0.1",
+    "request": "^2.79.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/byuicampuscd/qualtrics-contact-sync.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/byuicampuscd/qualtrics-contact-sync/issues"
+  },
+  "homepage": "https://github.com/byuicampuscd/qualtrics-contact-sync#readme"
+}

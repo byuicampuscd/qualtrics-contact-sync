@@ -2,9 +2,9 @@
 /* eslint no-console:0 */
 
 'use strict';
-const StudentSnatcher = require('./studentSnatcher.js'),
+const deepEqual = require('deep-equal'),
+    StudentSnatcher = require('./studentSnatcher.js'),
     optionSnatcher = require('./optionSnatcher.js'),
-    bs = require('binarysearch'),
     ss = new StudentSnatcher(),
     os = new optionSnatcher();
 
@@ -18,25 +18,26 @@ function formatStudents(students) {
     var fStudents = students.map(function (currVal, fStudents) {
         var tStudent = {};
         tStudent = {
+            id: "",
             firstName: currVal.PreferredName,
             email: currVal.Email,
-            externalDataRef: currVal.UniqueID,
+            externalDataReference: currVal.UniqueID,
             embeddedData: {
-                sessionOrder: currVal.SessionOrder,
-                username: currVal.Username,
-                semester: currVal.Semester,
-                course: currVal.Course,
+                major: currVal.Major,
                 section: currVal.Section,
-                subprogram: currVal.Subprogram,
-                department: currVal.Department,
                 pathway: currVal.Pathway,
-                block: currVal.Block,
+                department: currVal.Department,
+                course: currVal.Course,
                 gender: currVal.Gender,
-                countryOnline: currVal.CountryOnline,
-                state: currVal.State,
                 classification: currVal.Classification,
                 historicalAge: currVal.HistoricalAge,
-                major: currVal.Major
+                sessionOrder: currVal.SessionOrder,
+                username: currVal.Username,
+                state: currVal.State,
+                subprogram: currVal.Subprogram,
+                countryOnline: currVal.CountryOnline,
+                semester: currVal.Semester,
+                block: currVal.Block
             }
         };
         return tStudent;
@@ -48,15 +49,25 @@ function init() {
 
     // get students from the tsv file
     ss.readStudents(function (students) {
+
+        // remove any empty rows
+        students = students.filter(function (student) {
+            return !(student.UniqueID == '')
+        });
+
         // format tsv student object for qualtrics
         students = formatStudents(students);
         students.sort(sortList);
 
         // get students from qualtrics
         ss.pullStudents(os.get(), function (qStudents) {
-
-            //            console.log("FROM QUALTRICS\n");
-            //            console.log(qStudents);
+            for (var i = 0; i < qStudents.length; i++) {
+                delete qStudents[i].language;
+                delete qStudents[i].unsubscribed;
+                delete qStudents[i].emailHistory;
+                delete qStudents[i].responseHistory;
+                delete qStudents[i].lastName;
+            }
             qStudents.sort(sortList);
             processTheData(students, qStudents);
         });
@@ -76,6 +87,10 @@ function deleteStudents(toTerminate) {
 function addStudents(toAdd) {
     if (toAdd.length == 0) return;
     toAdd.forEach(function (student) {
+        //make externalDataReference externalDataRef
+        student.externalDataRef = student.externalDataReference;
+        delete student.externalDataReference;
+
         // format for api
         var option = os.add(student);
         // send api call
@@ -98,50 +113,49 @@ function updateStudents(toUpdate) {
 
 function processTheData(students, qStudents) {
     var toAdd = [],
-        indexes = [],
         toUpdate = [];
 
     students.forEach(function (student, studentI) {
-        var qStudentI;
+        var qIndex,
+            id;
+        // find index of matching Qualtrics Student
         for (var i = 0; i < qStudents.length; i++) {
-            if (qStudents[i].externalDataRef == student.externalDataRef) {
-                qStudentI = i;
+            if (qStudents[i].externalDataReference == student.externalDataReference) {
+                qIndex = i;
                 break;
             }
         }
-
-        console.log(qStudentI);
-        //        console.log('student:\n', student, '\nqStudent:\n', qStudents[qStudentI]);
-
-
-        //if exists in qualtrics AND students are not the same
-        if (qStudentI > -1 && !Object.is(student, qStudents[qStudentI])) {
-            student.id = qStudents[qStudentI].id;
-            toUpdate.push(student);
-            qStudents[qStudentI].checked = true;
-            //if exists AND is the same
-        } else if (qStudentI > -1 && Object.is(student, qStudents[qStudentI])) {
-            qStudents[qStudentI].checked = true;
-            //if doesn't exist in qualtrics
+        //perform magic decision making logic
+        if (qIndex > -1) {
+            //  index will throw off equality if not removed temporarily
+            id = qStudents[qIndex].id;
+            qStudents[qIndex].id = "";
+            if (!deepEqual(student, qStudents[qIndex])) {
+                student.id = id;
+                toUpdate.push(student);
+                qStudents[qIndex].checked = true;
+            } else {
+                qStudents[qIndex].checked = true;
+            }
         } else {
+            delete student.id;
             toAdd.push(student);
         }
+
     });
 
-    console.log("toAdd", toAdd.length);
-    console.log("\ntoUpdate\n", toUpdate.length);
-    //    console.log("\nqstudents", qStudents);
-
-    // exists in qualtrics but not in file to be synked
+    // exists in qualtrics but not in master file
     var toTerminate = qStudents.filter(function (qStudents) {
         return !qStudents.checked;
     });
-    console.log("\nTo Terminate\n", toTerminate.length);
 
-    //    updateStudents(toUpdate);
-    //    deleteStudents(toTerminate);
-    //    addStudents(toAdd);
+    /*console.log("toAdd:\n", toAdd.length);
+    console.log("toUpdate:\n", toUpdate.length);
+    console.log("To Terminate:\n", toTerminate.length);*/
 
+    updateStudents(toUpdate);
+    deleteStudents(toTerminate);
+    addStudents(toAdd);
 }
 
 init();
