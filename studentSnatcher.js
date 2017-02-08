@@ -13,8 +13,8 @@ var d3 = require('d3-dsv');
 var file = "practice.tsv";
 
 // adding function to the structure of the object
-//getting student list from file
-proto.getStudents = function (callback) {
+//reading student list from file
+proto.readStudents = function (callback) {
         fs.readFile(file, function (err, contents) {
             if (err) {
                 throw (err);
@@ -29,25 +29,34 @@ proto.getStudents = function (callback) {
 proto.pullStudents = function (options, callback) {
     request(options, function (error, response, body) {
         if (error) throw new Error(error);
+        if (response.statusCode !== 200) console.log("Couldn't retrieve students from Qualtrics\n")
         var students = JSON.parse(body);
         callback(students.result.elements);
     });
 }
 
 // adds new students to Qualtrics
-proto.addStudent = function (option, student) {
-    option.body = student;
+proto.addStudent = function (option) {
     request(option, function (error, response, body) {
         if (error) throw new Error(error);
-        console.log(body);
+        if (response.statusCode === 200) console.log("Student Successfully Added\n");
+        else console.log('Add Error: ', body);
     });
 }
 
-proto.updateStudent = function () {
-
+proto.updateStudent = function (option) {
+    request(option, function (error, response, body) {
+        if (error) throw new Error(error);
+        if (response.statusCode === 200) console.log("Student Successfully Updated\n");
+        else console.log('Update Error: ', body);
+    });
 }
 
-proto.deleteStudent = function () {
-
+proto.deleteStudent = function (option) {
+    request(option, function (error, response, body) {
+        if (error) throw new Error(error);
+        if (response.statusCode === 200) console.log("Student Successfully Deleted\n");
+        else console.log('Delete Error: ', body);
+    });
 }
 module.exports = ss;

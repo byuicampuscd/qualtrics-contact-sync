@@ -2,8 +2,8 @@
 /* eslint no-console:0 */
 
 'use strict';
-const StudentSnatcher = require('./import.js'),
-    optionSnatcher = require('./getOptions.js'),
+const StudentSnatcher = require('./studentSnatcher.js'),
+    optionSnatcher = require('./optionSnatcher.js'),
     bs = require('binarysearch'),
     ss = new StudentSnatcher(),
     os = new optionSnatcher();
@@ -18,10 +18,9 @@ function formatStudents(students) {
     var fStudents = students.map(function (currVal, fStudents) {
         var tStudent = {};
         tStudent = {
-            id: "",
             firstName: currVal.PreferredName,
             email: currVal.Email,
-            externalDataReference: currVal.UniqueID,
+            externalDataRef: currVal.UniqueID,
             embeddedData: {
                 sessionOrder: currVal.SessionOrder,
                 username: currVal.Username,
@@ -48,12 +47,11 @@ function formatStudents(students) {
 function init() {
 
     // get students from the tsv file
-    ss.getStudents(function (students) {
+    ss.readStudents(function (students) {
         // format tsv student object for qualtrics
         students = formatStudents(students);
         students.sort(sortList);
 
-        // get mailing list???
         // get students from qualtrics
         ss.pullStudents(os.get(), function (qStudents) {
 
@@ -65,26 +63,37 @@ function init() {
     });
 }
 
+// get unique qualtrics ID and send to ss.deleteStudent
 function deleteStudents(toTerminate) {
-    // get unique qualtrics ID and send to ss.deleteStudent
+    if (toTerminate.length == 0) return;
+    toTerminate.forEach(function (student) {
+        var option = os.delete(student.id);
+        ss.deleteStudent(option);
+    });
 }
 
+// loop through array & call ss.addStudent
 function addStudents(toAdd) {
-    // loop through array & call ss.addStudent
+    if (toAdd.length == 0) return;
+    toAdd.forEach(function (student) {
+        // format for api
+        var option = os.add(student);
+        // send api call
+        ss.addStudent(option);
+    });
 }
 
 function updateStudents(toUpdate) {
-    // set options & send to ss.updateStudent
+    if (toUpdate.length == 0) return;
+
     toUpdate.forEach(function (student) {
-        if (!student) {
-            return;
-        }
-
-        console.log(student);
-
-        var option
-            //        ss.updateStudent(option, student);
-    })
+        var id = student.id;
+        delete student.id;
+        // format for api
+        var option = os.update(id, student);
+        // send api call
+        ss.updateStudent(option);
+    });
 }
 
 function processTheData(students, qStudents) {
@@ -95,11 +104,15 @@ function processTheData(students, qStudents) {
     students.forEach(function (student, studentI) {
         var qStudentI;
         for (var i = 0; i < qStudents.length; i++) {
-            if (qStudents[i].externalDataReference == student.externalDataReference) {
+            if (qStudents[i].externalDataRef == student.externalDataRef) {
                 qStudentI = i;
                 break;
             }
         }
+
+        console.log(qStudentI);
+        //        console.log('student:\n', student, '\nqStudent:\n', qStudents[qStudentI]);
+
 
         //if exists in qualtrics AND students are not the same
         if (qStudentI > -1 && !Object.is(student, qStudents[qStudentI])) {
@@ -115,19 +128,19 @@ function processTheData(students, qStudents) {
         }
     });
 
-    //    console.log("toAdd", toAdd.length);
-    //    console.log("\ntoUpdate\n", toUpdate);
+    console.log("toAdd", toAdd.length);
+    console.log("\ntoUpdate\n", toUpdate.length);
     //    console.log("\nqstudents", qStudents);
 
     // exists in qualtrics but not in file to be synked
     var toTerminate = qStudents.filter(function (qStudents) {
         return !qStudents.checked;
     });
-    //    console.log("\nTo Terminate\n", toTerminate);
+    console.log("\nTo Terminate\n", toTerminate.length);
 
-    updateStudents(toUpdate);
-    deleteStudents(toTerminate);
-    addStudents(toAdd);
+    //    updateStudents(toUpdate);
+    //    deleteStudents(toTerminate);
+    //    addStudents(toAdd);
 
 }
 
