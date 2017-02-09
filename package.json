@@ -4,6 +4,7 @@
   "description": "Syncs a tsv list of students with the student list in qualtrics",
   "main": "index.js",
   "dependencies": {
+    "async": "^2.1.4",
     "binarysearch": "^1.0.0",
     "d3-dsv": "^1.0.3",
     "deep-equal": "^1.0.1",

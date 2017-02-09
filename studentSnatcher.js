@@ -36,38 +36,15 @@ proto.pullStudents = function (options, callback) {
     });
 }
 
-// adds new students to Qualtrics
-proto.addStudent = function (option) {
-    var pass = request(option, function (error, response, body) {
+proto.send = function (option, cb) {
+    request(option, function (error, response, body) {
         if (error) throw new Error(error);
-        if (response.statusCode === 200) return true;
+        if (response.statusCode === 200) console.log('http request success!');
         else {
             body = JSON.parse(body);
             console.log(body.meta.error.errorMessage);
-            return false;
         }
+        //        cb(pass);
     });
-    return pass;
-}
-
-proto.updateStudent = function (option) {
-    var pass = request(option, function (error, response, body) {
-        if (error) throw new Error(error);
-        if (response.statusCode === 200) return true;
-        else {
-            console.log('Update Error: \n', "httpStatus:\n", response.statusCode, body['meta'].error.errorMessage);
-            return false;
-        }
-    });
-    return pass;
-}
-
-proto.deleteStudent = function (option) {
-    var pass = request(option, function (error, response, body) {
-        if (error) throw new Error(error);
-        if (response.statusCode === 200) return true;
-        else console.log('Delete Error: ', body);
-    });
-    return pass
 }
 module.exports = ss;
