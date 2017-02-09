@@ -10,7 +10,8 @@ var proto = ss.prototype;
 var request = require('request');
 var fs = require('fs');
 var d3 = require('d3-dsv');
-var file = "qualtricsStudentInfo.tsv";
+var file = process.argv[2];
+
 
 // adding function to the structure of the object
 //reading student list from file
@@ -37,27 +38,36 @@ proto.pullStudents = function (options, callback) {
 
 // adds new students to Qualtrics
 proto.addStudent = function (option) {
-    request(option, function (error, response, body) {
+    var pass = request(option, function (error, response, body) {
         if (error) throw new Error(error);
-        if (response.statusCode === 200) console.log("Student Successfully Added\n");
-        else console.log('Add Error: ', body);
-        //        else console.log('Add Error: ', body, '\nStudent:\n', option.body);
+        if (response.statusCode === 200) return true;
+        else {
+            body = JSON.parse(body);
+            console.log(body.meta.error.errorMessage);
+            return false;
+        }
     });
+    return pass;
 }
 
 proto.updateStudent = function (option) {
-    request(option, function (error, response, body) {
+    var pass = request(option, function (error, response, body) {
         if (error) throw new Error(error);
-        if (response.statusCode === 200) console.log("Student Successfully Updated\n");
-        else console.log('Update Error: ', body);
+        if (response.statusCode === 200) return true;
+        else {
+            console.log('Update Error: \n', "httpStatus:\n", response.statusCode, body['meta'].error.errorMessage);
+            return false;
+        }
     });
+    return pass;
 }
 
 proto.deleteStudent = function (option) {
-    request(option, function (error, response, body) {
+    var pass = request(option, function (error, response, body) {
         if (error) throw new Error(error);
-        if (response.statusCode === 200) console.log("Student Successfully Deleted\n");
+        if (response.statusCode === 200) return true;
         else console.log('Delete Error: ', body);
     });
+    return pass
 }
 module.exports = ss;

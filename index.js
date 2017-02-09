@@ -4,6 +4,7 @@
 'use strict';
 const deepEqual = require('deep-equal'),
     objFilter = require('object-filter'),
+    bs = require('binarysearch'),
     StudentSnatcher = require('./studentSnatcher.js'),
     optionSnatcher = require('./optionSnatcher.js'),
     ss = new StudentSnatcher(),
@@ -62,15 +63,19 @@ function formatStudents(students) {
 
 // get unique qualtrics ID and send to ss.deleteStudent
 function deleteStudents(toTerminate) {
+    var count = 0;
     if (toTerminate.length == 0) return;
-    toTerminate.forEach(function (student) {
+    toTerminate.forEach(function (student, i) {
         var option = os.delete(student.id);
-        ss.deleteStudent(option);
+        if (ss.deleteStudent(option))
+            count++;
     });
+    console.log("Students Successfully Deleted: " + count);
 }
 
 // loop through array & call ss.addStudent
 function addStudents(toAdd) {
+    var count = 0;
     if (toAdd.length == 0) return;
     toAdd.forEach(function (student) {
         //make externalDataReference externalDataRef
@@ -80,12 +85,15 @@ function addStudents(toAdd) {
         // format for api
         var option = os.add(student);
         // send api call
-        ss.addStudent(option);
+        if (ss.addStudent(option))
+            count++;
     });
+    console.log("Students Successfully Added: " + count);
 }
 
 function updateStudents(toUpdate) {
     if (toUpdate.length == 0) return;
+    var count = 0;
 
     toUpdate.forEach(function (student) {
         var id = student.id;
@@ -93,24 +101,23 @@ function updateStudents(toUpdate) {
         // format for api
         var option = os.update(id, student);
         // send api call
-        ss.updateStudent(option);
+        if (ss.updateStudent(option))
+            count++;
     });
+    console.log("Students Successfully Updated: " + count);
 }
 
 function processTheData(students, qStudents) {
     var toAdd = [],
         toUpdate = [];
 
-    students.forEach(function (student, studentI) {
+    students.forEach(function (student) {
         var qIndex,
             id;
-        // find index of matching Qualtrics Student
-        for (var i = 0; i < qStudents.length; i++) {
-            if (qStudents[i].externalDataReference == student.externalDataReference) {
-                qIndex = i;
-                break;
-            }
-        }
+
+        // get the index of matching students
+        qIndex = bs(qStudents, student, sortList);
+
         //perform magic decision making logic
         if (qIndex > -1) {
             //  index will throw off equality if not removed temporarily
@@ -135,17 +142,25 @@ function processTheData(students, qStudents) {
         return !qStudents.checked;
     });
 
-    /*console.log("toAdd:\n", toAdd.length);
+    console.log("qStudents Length:\n", qStudents.length);
+    console.log("toAdd:\n", toAdd.length);
     console.log("toUpdate:\n", toUpdate.length);
-    console.log("To Terminate:\n", toTerminate.length);*/
+    console.log("To Delete:\n", toTerminate.length);
 
     updateStudents(toUpdate);
     deleteStudents(toTerminate);
     addStudents(toAdd);
 }
 
-function init() {
+function validateFile(file) {
+    if (process.argv[2] == undefined) {
+        console.log('Error: Must include file to sync as 2nd param');
+        return false;
+    } else return true;
+}
 
+function init() {
+    if (!validateFile()) return;
     // get students from the tsv file
     ss.readStudents(function (students) {
 
