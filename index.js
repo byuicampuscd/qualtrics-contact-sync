@@ -3,6 +3,7 @@
 
 'use strict';
 const deepEqual = require('deep-equal'),
+    objFilter = require('object-filter'),
     StudentSnatcher = require('./studentSnatcher.js'),
     optionSnatcher = require('./optionSnatcher.js'),
     ss = new StudentSnatcher(),
@@ -15,7 +16,7 @@ function sortList(a, b) {
 }
 
 function formatStudents(students) {
-    var fStudents = students.map(function (currVal, fStudents) {
+    var formattedStudents = students.map(function (currVal, formattedStudents) {
         var tStudent = {};
         tStudent = {
             id: "",
@@ -42,36 +43,21 @@ function formatStudents(students) {
         };
         return tStudent;
     });
-    return fStudents;
-}
 
-function init() {
-
-    // get students from the tsv file
-    ss.readStudents(function (students) {
-
-        // remove any empty rows
-        students = students.filter(function (student) {
-            return !(student.UniqueID == '')
+    // filters out empty embedded data values
+    var filteredData = {};
+    for (var i = 0; i < formattedStudents.length; i++) {
+        filteredData = objFilter(formattedStudents[i].embeddedData, function (a) {
+            return a != '';
         });
+        // check if embeddedData is empty
+        if (!Object.keys(filteredData).length) {
+            delete formattedStudents[i].embeddedData;
+        } else
+            formattedStudents[i].embeddedData = filteredData;
+    }
 
-        // format tsv student object for qualtrics
-        students = formatStudents(students);
-        students.sort(sortList);
-
-        // get students from qualtrics
-        ss.pullStudents(os.get(), function (qStudents) {
-            for (var i = 0; i < qStudents.length; i++) {
-                delete qStudents[i].language;
-                delete qStudents[i].unsubscribed;
-                delete qStudents[i].emailHistory;
-                delete qStudents[i].responseHistory;
-                delete qStudents[i].lastName;
-            }
-            qStudents.sort(sortList);
-            processTheData(students, qStudents);
-        });
-    });
+    return formattedStudents;
 }
 
 // get unique qualtrics ID and send to ss.deleteStudent
@@ -156,6 +142,36 @@ function processTheData(students, qStudents) {
     updateStudents(toUpdate);
     deleteStudents(toTerminate);
     addStudents(toAdd);
+}
+
+function init() {
+
+    // get students from the tsv file
+    ss.readStudents(function (students) {
+
+        // remove any empty rows
+        students = students.filter(function (student) {
+            return !(student.UniqueID == '')
+        });
+
+        // format tsv student object for qualtrics
+        students = formatStudents(students);
+        students.sort(sortList);
+
+        // get students from qualtrics
+        ss.pullStudents(os.get(), function (qStudents) {
+            //remove attributes not existant in tsv for equality check
+            for (var i = 0; i < qStudents.length; i++) {
+                delete qStudents[i].language;
+                delete qStudents[i].unsubscribed;
+                delete qStudents[i].emailHistory;
+                delete qStudents[i].responseHistory;
+                delete qStudents[i].lastName;
+            }
+            qStudents.sort(sortList);
+            processTheData(students, qStudents);
+        });
+    });
 }
 
 init();

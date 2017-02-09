@@ -10,7 +10,7 @@ var proto = ss.prototype;
 var request = require('request');
 var fs = require('fs');
 var d3 = require('d3-dsv');
-var file = "practice2.tsv";
+var file = "qualtricsStudentInfo.tsv";
 
 // adding function to the structure of the object
 //reading student list from file
@@ -41,6 +41,7 @@ proto.addStudent = function (option) {
         if (error) throw new Error(error);
         if (response.statusCode === 200) console.log("Student Successfully Added\n");
         else console.log('Add Error: ', body);
+        //        else console.log('Add Error: ', body, '\nStudent:\n', option.body);
     });
 }
 
