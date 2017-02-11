@@ -29,22 +29,25 @@ proto.readStudents = function (callback) {
 //pull existing student list from qualtrics
 proto.pullStudents = function (options, callback) {
     request(options, function (error, response, body) {
-        if (error) throw new Error(error);
-        if (response.statusCode !== 200) console.log("Couldn't retrieve students from Qualtrics\n")
+        if (response.statusCode !== 200)
+            console.log("Couldn't retrieve students from Qualtrics\n");
         var students = JSON.parse(body);
-        callback(students.result.elements);
+        callback(error, students.result.elements);
     });
 }
 
-proto.send = function (option, cb) {
+proto.send = function (student, option, cb) {
     request(option, function (error, response, body) {
-        if (error) throw new Error(error);
-        if (response.statusCode === 200) console.log('http request success!');
-        else {
+        if (response.statusCode === 200) {
+            student.pass = true;
+            cb(null, student);
+        } else {
+            student.pass = false;
             body = JSON.parse(body);
-            console.log(body.meta.error.errorMessage);
+            student.errorMessage = body.meta.error.errorMessage;
+            //            console.log(student.action, body.meta.error.errorMessage);
+            cb(error, student);
         }
-        //        cb(pass);
     });
 }
 module.exports = ss;

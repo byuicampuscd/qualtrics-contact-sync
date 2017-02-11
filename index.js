@@ -10,8 +10,6 @@ const deepEqual = require('deep-equal'),
     optionSnatcher = require('./optionSnatcher.js'),
     ss = new StudentSnatcher(),
     os = new optionSnatcher();
-//import mapLimit from 'async/mapLimit';
-
 
 
 function sortList(a, b) {
@@ -66,40 +64,19 @@ function formatStudents(students) {
 }
 
 function setOptions(student, cb) {
-    //    console.log(list);
-    var option = "",
-        id = '';
+    var option = "";
     switch (student.action) {
         case 'Add':
-            student.externalDataRef = student.externalDataReference;
-            delete student.externalDataReference;
-            delete student.action;
-
-            var option = os.add(student);
+            var option = os.add(student); //map or filter the student object (inside of object snatcher)
             break;
         case 'Update':
-            var id = student.id;
-            delete student.id;
-            delete student.action;
-
-            var option = os.update(id, student);
+            var option = os.update(student);
             break;
         case 'Delete':
-            delete student.action;
             var option = os.delete(student.id);
             break;
     }
-    ss.send(option);
-    cb();
-    /*,function (pass) {
-        if (pass)
-            count++;
-        console.log(count);
-    });
-    });
-    console.log(count);
-    if (count)
-        console.log('Sussessful ' + type + "'s: " + count);*/
+    ss.send(student, option, cb);
 }
 
 function processTheData(students, qStudents) {
@@ -141,11 +118,39 @@ function processTheData(students, qStudents) {
         }
     });
 
+    //    console.log("qStudents Length:\n", qStudents.length);
+    console.log('Changes to be made:\n', toAlter.length);
 
-    console.log("qStudents Length:\n", qStudents.length);
-    console.log('toAlter:\n', toAlter.length);
-    async.mapLimit(toAlter, 20, setOptions, function (error, transformed) {
+    //make api calls 20 at a time
+    async.mapLimit(toAlter, 30, setOptions, function (error, students) {
         if (error) throw new Error(error);
+        // sort through students and create report based on worked/error attributes
+        var failed = [],
+            aCount = 0,
+            uCount = 0,
+            dCount = 0;
+        students.forEach(function (student) {
+            if (student.pass) {
+                if (student.action == "Add")
+                    aCount++;
+                else if (student.action == "Update")
+                    uCount++;
+                else
+                    dCount++;
+            } else
+                failed.push(student);
+        });
+        if (aCount)
+            console.log("Students successfully added: " + aCount);
+        if (uCount)
+            console.log("Students successfully updated: " + uCount);
+        if (dCount)
+            console.log("Students successfully deleted: " + dCount);
+
+        failed.forEach(function (student) {
+            console.log("Failed to " +
+                student.action + " student:" + student.uniqueID, "Error: " + student.errorMessage);
+        });
     });
 }
 
@@ -171,7 +176,9 @@ function init() {
         students.sort(sortList);
 
         // get students from qualtrics
-        ss.pullStudents(os.get(), function (qStudents) {
+        ss.pullStudents(os.get(), function (error, qStudents) {
+            if (error)
+                throw new Error(error);
             //remove attributes not existant in tsv for equality check
             for (var i = 0; i < qStudents.length; i++) {
                 delete qStudents[i].language;
