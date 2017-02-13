@@ -5,3 +5,4 @@ options.js
 getOptions.js
 *.json
 *tsv
+.jar
