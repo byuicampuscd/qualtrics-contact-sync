@@ -161,6 +161,22 @@ function validateFile(file) {
     } else return true;
 }
 
+function pullStudents(students, qStudents, nextPage) {
+    if (!qStudents) qStudents = [];
+    ss.pullStudents(os.get(null, nextPage), function (error, newStudents, nextPage) {
+        if (error) throw new Error(error);
+        console.log(nextPage);
+        qStudents = qStudents.concat(newStudents);
+        if (nextPage) {
+            pullStudents(students, qStudents, nextPage);
+        } else {
+            qStudents.sort(sortList);
+            console.log('qStudent Length: ', qStudents.length);
+            processTheData(students, qStudents);
+        }
+    });
+}
+
 function init() {
     if (!validateFile()) return;
     // get students from the tsv file
@@ -176,20 +192,7 @@ function init() {
         students.sort(sortList);
 
         // get students from qualtrics
-        ss.pullStudents(os.get(), function (error, qStudents) {
-            if (error)
-                throw new Error(error);
-            //remove attributes not existant in tsv for equality check
-            for (var i = 0; i < qStudents.length; i++) {
-                delete qStudents[i].language;
-                delete qStudents[i].unsubscribed;
-                delete qStudents[i].emailHistory;
-                delete qStudents[i].responseHistory;
-                delete qStudents[i].lastName;
-            }
-            qStudents.sort(sortList);
-            processTheData(students, qStudents);
-        });
+        pullStudents(students);
     });
 }
 

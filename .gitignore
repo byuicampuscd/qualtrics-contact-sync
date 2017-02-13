@@ -5,4 +5,4 @@ options.js
 getOptions.js
 *.json
 *tsv
-.jar
+Qualtrics.bfg-report/

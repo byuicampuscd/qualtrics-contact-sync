@@ -32,7 +32,8 @@ proto.pullStudents = function (options, callback) {
         if (response.statusCode !== 200)
             console.log("Couldn't retrieve students from Qualtrics\n");
         var students = JSON.parse(body);
-        callback(error, students.result.elements);
+        //        console.log(students.result.nextPage);
+        callback(error, students.result.elements, students.result.nextPage);
     });
 }
 
