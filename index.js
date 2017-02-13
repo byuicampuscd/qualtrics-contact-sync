@@ -149,7 +149,7 @@ function processTheData(students, qStudents) {
 
         failed.forEach(function (student) {
             console.log("Failed to " +
-                student.action + " student:" + student.uniqueID, "Error: " + student.errorMessage);
+                student.action + " student: " + student.uniqueID, "Error: " + student.errorMessage);
         });
     });
 }
