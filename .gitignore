@@ -1,5 +1,6 @@
 *.xlsx
 node_modules/
+optionSnatcher.js
 options.js
 getOptions.js
 *.json
