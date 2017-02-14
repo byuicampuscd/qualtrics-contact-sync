@@ -20,6 +20,10 @@ proto.readStudents = function (callback) {
         if (err) {
             throw (err);
         }
+
+        //remove zero width no break space from csv (especially the beginning)
+        var regEx = new RegExp(String.fromCharCode(65279), 'g');
+        contents = contents.replace(regEx, '');
         var lines = contents.toString();
         var students = d3.csvParse(lines);
         callback(students);
@@ -38,7 +42,7 @@ proto.pullStudents = function (options, callback) {
 
 proto.send = function (student, option, cb) {
     request(option, function (error, response, body) {
-    if (response.statusCode === 200) {
+        if (response.statusCode === 200) {
             student.pass = true;
             cb(null, student);
         } else {

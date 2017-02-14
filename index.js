@@ -180,7 +180,6 @@ function init(fileName, ml) {
 
         // remove any empty rows
         students = students.filter(function (student) {
-            //            return !(student.UniqueID == '');
             return student.Username && student.Username !== '';
         });
 
