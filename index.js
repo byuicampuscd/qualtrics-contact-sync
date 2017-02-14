@@ -6,6 +6,7 @@ const deepEqual = require('deep-equal'),
     objFilter = require('object-filter'),
     async = require('async'),
     bs = require('binarysearch'),
+    chalk = require('chalk'),
     StudentSnatcher = require('./studentSnatcher.js'),
     optionSnatcher = require('./optionSnatcher.js'),
     ss = new StudentSnatcher(),
@@ -19,35 +20,24 @@ function sortList(a, b) {
 }
 
 function formatStudents(students) {
+    var keys = Object.keys(students[0]).filter(function (key) {
+        return key != 'Email' && key != 'Username' && key != 'PreferredName';
+    });
     var formattedStudents = students.map(function (currVal, formattedStudents) {
         var tStudent = {};
         tStudent = {
-            id: "",
             firstName: currVal.PreferredName,
             email: currVal.Email,
-            externalDataReference: currVal.UniqueID,
-            embeddedData: {
-                major: currVal.Major,
-                section: currVal.Section,
-                pathway: currVal.Pathway,
-                department: currVal.Department,
-                course: currVal.Course,
-                gender: currVal.Gender,
-                classification: currVal.Classification,
-                historicalAge: currVal.HistoricalAge,
-                sessionOrder: currVal.SessionOrder,
-                username: currVal.Username,
-                state: currVal.State,
-                subprogram: currVal.Subprogram,
-                countryOnline: currVal.CountryOnline,
-                semester: currVal.Semester,
-                block: currVal.Block
-            }
+            externalDataReference: currVal.Username,
+            embeddedData: {}
         };
+        for (var i = 0; i < keys.length; i++) {
+            tStudent.embeddedData[keys[i]] = currVal[keys[i]];
+        }
         return tStudent;
     });
 
-    // filters out empty embedded data values
+    // filters out empty embeddedData values
     var filteredData = {};
     for (var i = 0; i < formattedStudents.length; i++) {
         filteredData = objFilter(formattedStudents[i].embeddedData, function (a) {
@@ -59,15 +49,15 @@ function formatStudents(students) {
         } else
             formattedStudents[i].embeddedData = filteredData;
     }
-
     return formattedStudents;
 }
 
 function setOptions(student, cb) {
     var option = "";
+    // create approptriate API call
     switch (student.action) {
         case 'Add':
-            var option = os.add(student); //map or filter the student object (inside of object snatcher)
+            var option = os.add(student);
             break;
         case 'Update':
             var option = os.update(student);
@@ -91,13 +81,20 @@ function processTheData(students, qStudents) {
         // get the index of matching students
         qIndex = bs(qStudents, student, sortList);
 
+        // create copy of qualtrics students without qualtrics-generated data for equality check
+        var mappedStudents = qStudents.map(function (x) {
+            var temp = {};
+            temp.firstName = x.firstName;
+            temp.email = x.email;
+            temp.externalDataReference = x.externalDataReference;
+            temp.embeddedData = x.embeddedData;
+            return temp;
+        });
+
         //perform magic decision making logic
         if (qIndex > -1) {
-            //  index will throw off equality if not removed temporarily
-            id = qStudents[qIndex].id;
-            qStudents[qIndex].id = "";
-            if (!deepEqual(student, qStudents[qIndex])) {
-                student.id = id;
+            if (!deepEqual(student, mappedStudents[qIndex])) {
+                student.id = qStudents[qIndex].id;
                 student.action = 'Update';
                 toAlter.push(student);
                 qStudents[qIndex].checked = true;
@@ -105,7 +102,6 @@ function processTheData(students, qStudents) {
                 qStudents[qIndex].checked = true;
             }
         } else {
-            delete student.id;
             student.action = 'Add';
             toAlter.push(student);
         }
@@ -118,10 +114,9 @@ function processTheData(students, qStudents) {
         }
     });
 
-    //    console.log("qStudents Length:\n", qStudents.length);
-    console.log('Changes to be made:\n', toAlter.length);
+    console.log('Changes to be made: ', toAlter.length);
 
-    //make api calls 20 at a time
+    //make api calls 30 at a time
     async.mapLimit(toAlter, 30, setOptions, function (error, students) {
         if (error) throw new Error(error);
         // sort through students and create report based on worked/error attributes
@@ -141,22 +136,22 @@ function processTheData(students, qStudents) {
                 failed.push(student);
         });
         if (aCount)
-            console.log("Students successfully added: " + aCount);
+            console.log(chalk.green("Students successfully added: " + aCount));
         if (uCount)
-            console.log("Students successfully updated: " + uCount);
+            console.log(chalk.green("Students successfully updated: " + uCount));
         if (dCount)
-            console.log("Students successfully deleted: " + dCount);
+            console.log(chalk.green("Students successfully deleted: " + dCount));
 
         failed.forEach(function (student) {
-            console.log("Failed to " +
-                student.action + " student: " + student.uniqueID, "Error: " + student.errorMessage);
+            console.log(chalk.red("Failed to " +
+                student.action + " student: ") + student.username, chalk.red("Error: " + student.errorMessage));
         });
     });
 }
 
 function validateFile(file) {
     if (process.argv[2] == undefined) {
-        console.log('Error: Must include file to sync as 2nd param');
+        console.log(chalk.red('Error: Must include file to sync as 2nd param'));
         return false;
     } else return true;
 }
@@ -165,26 +160,28 @@ function pullStudents(students, qStudents, nextPage) {
     if (!qStudents) qStudents = [];
     ss.pullStudents(os.get(null, nextPage), function (error, newStudents, nextPage) {
         if (error) throw new Error(error);
-        console.log(nextPage);
+        // add page to student list
         qStudents = qStudents.concat(newStudents);
         if (nextPage) {
+            // call again if there was another page of students in qualtrics
             pullStudents(students, qStudents, nextPage);
         } else {
             qStudents.sort(sortList);
-            console.log('qStudent Length: ', qStudents.length);
             processTheData(students, qStudents);
         }
     });
 }
 
-function init() {
+//module.exports = function init(fileName, ml) {
+function init(fileName, ml) {
     if (!validateFile()) return;
     // get students from the tsv file
     ss.readStudents(function (students) {
 
         // remove any empty rows
         students = students.filter(function (student) {
-            return !(student.UniqueID == '')
+            //            return !(student.UniqueID == '');
+            return student.Username && student.Username !== '';
         });
 
         // format tsv student object for qualtrics
@@ -195,5 +192,4 @@ function init() {
         pullStudents(students);
     });
 }
-
 init();

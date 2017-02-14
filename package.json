@@ -6,6 +6,7 @@
   "dependencies": {
     "async": "^2.1.4",
     "binarysearch": "^1.0.0",
+    "chalk": "^1.1.3",
     "d3-dsv": "^1.0.3",
     "deep-equal": "^1.0.1",
     "object-filter": "^1.0.2",

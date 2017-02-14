@@ -16,12 +16,12 @@ var file = process.argv[2];
 // adding function to the structure of the object
 //reading student list from file
 proto.readStudents = function (callback) {
-    fs.readFile(file, function (err, contents) {
+    fs.readFile(file, 'utf8', function (err, contents) {
         if (err) {
             throw (err);
         }
         var lines = contents.toString();
-        var students = d3.tsvParse(lines);
+        var students = d3.csvParse(lines);
         callback(students);
     });
 }
@@ -32,21 +32,19 @@ proto.pullStudents = function (options, callback) {
         if (response.statusCode !== 200)
             console.log("Couldn't retrieve students from Qualtrics\n");
         var students = JSON.parse(body);
-        //        console.log(students.result.nextPage);
         callback(error, students.result.elements, students.result.nextPage);
     });
 }
 
 proto.send = function (student, option, cb) {
     request(option, function (error, response, body) {
-        if (response.statusCode === 200) {
+    if (response.statusCode === 200) {
             student.pass = true;
             cb(null, student);
         } else {
             student.pass = false;
             body = JSON.parse(body);
             student.errorMessage = body.meta.error.errorMessage;
-            //            console.log(student.action, body.meta.error.errorMessage);
             cb(error, student);
         }
     });
