@@ -2,25 +2,30 @@
 /* eslint no-console:0 */
 'use strict';
 
-// new object from value of Function.prototype
-var ss = function () {}; //consturctor   
-var proto = ss.prototype;
+var ss = function () {},
+    proto = ss.prototype;
 
-// defining private vars
-var request = require('request');
-var fs = require('fs');
-var d3 = require('d3-dsv');
-var file = process.argv[2];
+const request = require('request'),
+    fs = require('fs'),
+    d3 = require('d3-dsv');
 
 
-// adding function to the structure of the object
+//get all mailing lists from qualtrics
+proto.getMailingLists = function (option, callback) {
+    request(option, function (err, response, body) {
+        if (response.statusCode !== 200)
+            console.log("Couldn't retrieve mailing lists from Qualtrics\n");
+        var mls = JSON.parse(body).result.elements;
+        callback(err, mls);
+    });
+}
+
 //reading student list from file
-proto.readStudents = function (callback) {
-    fs.readFile(file, 'utf8', function (err, contents) {
+proto.readStudents = function (filePath, callback) {
+    fs.readFile(filePath, 'utf8', function (err, contents) {
         if (err) {
             throw (err);
         }
-
         //remove zero width no break space from csv (especially the beginning)
         var regEx = new RegExp(String.fromCharCode(65279), 'g');
         contents = contents.replace(regEx, '');

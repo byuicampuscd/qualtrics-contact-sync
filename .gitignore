@@ -2,8 +2,8 @@
 *.tsv
 *.csv
 node_modules/
-optionSnatcher.js
 Qualtrics.bfg-report/
+token.js
 options.js
 getOptions.js
 connection.js

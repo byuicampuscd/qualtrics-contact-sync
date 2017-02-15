@@ -2,6 +2,11 @@
 /* eslint no-console:0 */
 
 'use strict';
+
+var pml = function () {},
+    proto = pml.prototype;
+
+
 const deepEqual = require('deep-equal'),
     objFilter = require('object-filter'),
     async = require('async'),
@@ -21,14 +26,16 @@ function sortList(a, b) {
 
 function formatStudents(students) {
     var keys = Object.keys(students[0]).filter(function (key) {
-        return key != 'Email' && key != 'Username' && key != 'PreferredName';
+        return key != 'Email' && key != 'UniqueID' && key != 'FirstName';
     });
+    //make students look like qualtrics students
+    // TO CHANGE!! will throw an error if firstName or email are empty in file
     var formattedStudents = students.map(function (currVal, formattedStudents) {
         var tStudent = {};
         tStudent = {
-            firstName: currVal.PreferredName,
+            firstName: currVal.FirstName,
             email: currVal.Email,
-            externalDataReference: currVal.Username,
+            externalDataReference: currVal.UniqueID,
             embeddedData: {}
         };
         for (var i = 0; i < keys.length; i++) {
@@ -60,19 +67,18 @@ function setOptions(student, cb) {
             var option = os.add(student);
             break;
         case 'Update':
-            var option = os.update(student);
+            var option = os.update(link.id, student);
             break;
         case 'Delete':
-            var option = os.delete(student.id);
+            var option = os.delete(link.id, student.id);
             break;
     }
     ss.send(student, option, cb);
 }
 
-function processTheData(students, qStudents) {
-    var toAdd = [],
-        toUpdate = [],
-        toAlter = [];
+function processTheData(link, students, qStudents) {
+    /*console.log('DA LINK!!', link);*/
+    var toAlter = [];
 
     students.forEach(function (student) {
         var qIndex,
@@ -114,7 +120,7 @@ function processTheData(students, qStudents) {
         }
     });
 
-    console.log('Changes to be made: ', toAlter.length);
+    console.log('\n\nChanges to be made: ', toAlter.length);
 
     //make api calls 30 at a time
     async.mapLimit(toAlter, 30, setOptions, function (error, students) {
@@ -149,14 +155,7 @@ function processTheData(students, qStudents) {
     });
 }
 
-function validateFile(file) {
-    if (process.argv[2] == undefined) {
-        console.log(chalk.red('Error: Must include file to sync as 2nd param'));
-        return false;
-    } else return true;
-}
-
-function pullStudents(students, qStudents, nextPage) {
+function pullStudents(link, students, qStudents, nextPage) {
     if (!qStudents) qStudents = [];
     ss.pullStudents(os.get(null, nextPage), function (error, newStudents, nextPage) {
         if (error) throw new Error(error);
@@ -164,23 +163,23 @@ function pullStudents(students, qStudents, nextPage) {
         qStudents = qStudents.concat(newStudents);
         if (nextPage) {
             // call again if there was another page of students in qualtrics
-            pullStudents(students, qStudents, nextPage);
+            pullStudents(link, students, qStudents, nextPage);
         } else {
             qStudents.sort(sortList);
-            processTheData(students, qStudents);
+            processTheData(link, students, qStudents);
         }
     });
 }
 
-//module.exports = function init(fileName, ml) {
-function init(fileName, ml) {
-    if (!validateFile()) return;
+proto.init = function (link) {
+    /*console.log('WORKING!!!');*/
+
     // get students from the tsv file
-    ss.readStudents(function (students) {
+    ss.readStudents(link.filePath, function (students) {
 
         // remove any empty rows
         students = students.filter(function (student) {
-            return student.Username && student.Username !== '';
+            return student.UniqueID && student.UniqueID !== '';
         });
 
         // format tsv student object for qualtrics
@@ -188,7 +187,8 @@ function init(fileName, ml) {
         students.sort(sortList);
 
         // get students from qualtrics
-        pullStudents(students);
+        pullStudents(link, students);
     });
 }
-init();
+
+module.exports = pml;
