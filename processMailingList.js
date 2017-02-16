@@ -8,7 +8,7 @@ var pml = function () {},
     ml;
 
 const deepEqual = require('deep-equal'),
-    objFilter = require('object-filter'),
+    //    objFilter = require('object-filter'),
     async = require('async'),
     bs = require('binarysearch'),
     chalk = require('chalk'),
@@ -25,36 +25,41 @@ function sortList(a, b) {
 }
 
 function formatStudents(students) {
-    var keys = Object.keys(students[0]).filter(function (key) {
+
+    var emdKeys = Object.keys(students[0]).filter(function (key) {
         return key != 'Email' && key != 'UniqueID' && key != 'FirstName';
     });
+    var keys = Object.keys(students[0]).filter(function (key) {
+        return key == 'Email' || key == 'UniqueID' || key == 'FirstName';
+    });
+
     //make students look like qualtrics students
-    // TO CHANGE!! will throw an error if firstName or email are empty in file
     var formattedStudents = students.map(function (currVal, formattedStudents) {
-        var tStudent = {};
-        tStudent = {
-            firstName: currVal.FirstName,
-            email: currVal.Email,
-            externalDataReference: currVal.UniqueID,
-            embeddedData: {}
-        };
-        for (var i = 0; i < keys.length; i++) {
-            tStudent.embeddedData[keys[i]] = currVal[keys[i]];
+        var tStudent = {},
+            tEmbeddedData = {};
+        //format keys and create tempStudent object
+        for (var j = 0; j < keys.length; j++) {
+            //first letter of each key ot lower case
+            if (keys[j] === 'UniqueID') {
+                tStudent.externalDataReference = currVal[keys[j]];
+            } else {
+                tStudent[keys[j][0].toLowerCase() + keys[j].slice(1)] = currVal[keys[j]];
+            }
         }
+        //create embeddedData object
+        for (var i = 0; i < emdKeys.length; i++) {
+            tEmbeddedData[emdKeys[i]] = currVal[emdKeys[i]];
+        }
+        //append embeddedData to tempStudent
+        tStudent.embeddedData = tEmbeddedData;
+
         return tStudent;
     });
 
-    // filters out empty embeddedData values
-    var filteredData = {};
+    // check if embeddedData is empty
     for (var i = 0; i < formattedStudents.length; i++) {
-        filteredData = objFilter(formattedStudents[i].embeddedData, function (a) {
-            return a != '';
-        });
-        // check if embeddedData is empty
-        if (!Object.keys(filteredData).length) {
+        if (!Object.keys(formattedStudents[i]).length)
             delete formattedStudents[i].embeddedData;
-        } else
-            formattedStudents[i].embeddedData = filteredData;
     }
     return formattedStudents;
 }
@@ -87,18 +92,23 @@ function processTheData(students, cb, qStudents) {
         qIndex = bs(qStudents, student, sortList);
 
         // create copy of qualtrics students without qualtrics-generated data for equality check
-        var mappedStudents = qStudents.map(function (x) {
+        var mappedStudents = qStudents.map(function (obj) {
             var temp = {};
-            temp.firstName = x.firstName;
-            temp.email = x.email;
-            temp.externalDataReference = x.externalDataReference;
-            temp.embeddedData = x.embeddedData;
+            temp.firstName = obj.firstName;
+            temp.email = obj.email;
+            temp.externalDataReference = obj.externalDataReference;
+            temp.embeddedData = obj.embeddedData;
             return temp;
         });
+
 
         //perform magic decision making logic
         if (qIndex > -1) {
             if (!deepEqual(student, mappedStudents[qIndex])) {
+                console.log('Mapped Student:\n', mappedStudents[qIndex]);
+                console.log('Student Student:\n', student);
+
+
                 student.id = qStudents[qIndex].id;
                 student.action = 'Update';
                 toAlter.push(student);
@@ -150,7 +160,7 @@ function processTheData(students, cb, qStudents) {
 
         failed.forEach(function (student) {
             console.log(chalk.red("Failed to " +
-                student.action + " student: ") + student.username, chalk.red("Error: " + student.errorMessage));
+                student.action + " student: ") + student.externalDataReference, chalk.red("Error: " + student.errorMessage));
         });
         //return to cli.js
         cb(err);
