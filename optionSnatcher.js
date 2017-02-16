@@ -20,7 +20,7 @@ proto.getMLs = function () {
     return option;
 }
 
-proto.add = function (student) {
+proto.add = function (ml, student) {
     var toSend = JSON.parse(JSON.stringify(student));
     toSend.externalDataRef = toSend.externalDataReference;
     delete toSend.externalDataReference;

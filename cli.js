@@ -1,24 +1,17 @@
 // call linkSnatcher & get all mailing list objects
-const linkSnatcher = require('./linkSnatcher.js'),
+const studentSnatcher = require('./studentSnatcher.js'),
     processMailingList = require('./processMailingList.js'),
-    pml = new processMailingList(),
-    ls = new linkSnatcher();
-//
+    chalk = require('chalk'),
+    async = require('async'),
+    ss = new studentSnatcher();
 
-/*var sandbox = {};
-sandbox.filePath = 'lists/QualtricsSync-Sandbox.csv';
-sandbox.id = "ML_bEm4yvjG2kQMsT3";
-sandbox.name = 'sandbox';*/
+function init(err, links) {
+    //    console.log(links);
 
-function init(links) {
-    console.log(links);
-    links.forEach(function (link) {
-        console.log(link);
-        pml.init(link);
+    async.mapLimit(links, 1, processMailingList, function (err, data) {
+        if (err) throw new Error(err);
+        else console.log(chalk.green('SUCCESS!'));
     });
-
-
-//    pml.init(sandbox);
 }
 
-ls.snatchLinks(init);
+ss.readConfig(init);

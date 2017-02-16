@@ -6,6 +6,7 @@ var ls = function () {},
     proto = ls.prototype;
 
 const fs = require('fs'),
+    d3 = require('d3-dsv'),
     path = require('path'),
     chalk = require('chalk'),
     studentSnatcher = require('./studentSnatcher'),
@@ -81,7 +82,6 @@ proto.snatchLinks = function (cb) {
             file = file.replace('.csv', '');
             return file;
         });
-
         getMailingLists(filteredFiles, cb);
     });
 }

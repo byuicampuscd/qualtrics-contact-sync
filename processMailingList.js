@@ -4,8 +4,8 @@
 'use strict';
 
 var pml = function () {},
-    proto = pml.prototype;
-
+    proto = pml.prototype,
+    ml;
 
 const deepEqual = require('deep-equal'),
     objFilter = require('object-filter'),
@@ -59,25 +59,24 @@ function formatStudents(students) {
     return formattedStudents;
 }
 
-function setOptions(student, cb) {
+function setOptions(student, callback) {
     var option = "";
     // create approptriate API call
     switch (student.action) {
         case 'Add':
-            var option = os.add(student);
+            var option = os.add(ml, student);
             break;
         case 'Update':
-            var option = os.update(link.id, student);
+            var option = os.update(ml, student);
             break;
         case 'Delete':
-            var option = os.delete(link.id, student.id);
+            var option = os.delete(ml, student.id);
             break;
     }
-    ss.send(student, option, cb);
+    ss.send(student, option, callback);
 }
 
-function processTheData(link, students, qStudents) {
-    /*console.log('DA LINK!!', link);*/
+function processTheData(students, cb, qStudents) {
     var toAlter = [];
 
     students.forEach(function (student) {
@@ -120,11 +119,12 @@ function processTheData(link, students, qStudents) {
         }
     });
 
-    console.log('\n\nChanges to be made: ', toAlter.length);
+    console.log('Changes to be made: ', toAlter.length);
 
-    //make api calls 30 at a time
-    async.mapLimit(toAlter, 30, setOptions, function (error, students) {
-        if (error) throw new Error(error);
+    //make api calls 30 at a time - callback returns here
+    async.mapLimit(toAlter, 30, setOptions, function (err, students) {
+        if (err) cb(err, students);
+        //        if (error) throw new Error(error); THROW ERROR IN CLI.js or just send it a message
         // sort through students and create report based on worked/error attributes
         var failed = [],
             aCount = 0,
@@ -152,30 +152,33 @@ function processTheData(link, students, qStudents) {
             console.log(chalk.red("Failed to " +
                 student.action + " student: ") + student.username, chalk.red("Error: " + student.errorMessage));
         });
+        //return to cli.js
+        cb(err);
     });
 }
 
-function pullStudents(link, students, qStudents, nextPage) {
+function pullStudents(students, cb, qStudents, nextPage) {
     if (!qStudents) qStudents = [];
-    ss.pullStudents(os.get(null, nextPage), function (error, newStudents, nextPage) {
-        if (error) throw new Error(error);
+    ss.pullStudents(os.get(ml, nextPage), function (err, newStudents, nextPage) {
+        if (err) cb(err, newStudents);
         // add page to student list
         qStudents = qStudents.concat(newStudents);
         if (nextPage) {
             // call again if there was another page of students in qualtrics
-            pullStudents(link, students, qStudents, nextPage);
+            pullStudents(students, cb, qStudents, nextPage);
         } else {
             qStudents.sort(sortList);
-            processTheData(link, students, qStudents);
+            processTheData(students, cb, qStudents);
         }
     });
 }
-
-proto.init = function (link) {
-    /*console.log('WORKING!!!');*/
-
+//cb returns to cli
+function init(link, cb) {
+    ml = link.MailingListID;
+    console.log('\n', link.csv);
     // get students from the tsv file
-    ss.readStudents(link.filePath, function (students) {
+    ss.readStudents(link.csv, function (err, students) {
+        if (err) cb(err, students);
 
         // remove any empty rows
         students = students.filter(function (student) {
@@ -187,8 +190,8 @@ proto.init = function (link) {
         students.sort(sortList);
 
         // get students from qualtrics
-        pullStudents(link, students);
+        pullStudents(students, cb);
     });
 }
 
-module.exports = pml;
+module.exports = init;
