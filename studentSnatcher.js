@@ -41,7 +41,6 @@ proto.readStudents = function (filePath, callback) {
         //remove zero width no break space from csv (especially the beginning)
         var regEx = new RegExp(String.fromCharCode(65279), 'g');
         contents = contents.replace(regEx, '');
-        //        var lines = contents.toString(); NOT NEEDED???
         var students = d3.csvParse(contents);
         callback(null, students);
     });
@@ -50,9 +49,13 @@ proto.readStudents = function (filePath, callback) {
 //pull existing student list from qualtrics
 proto.pullStudents = function (options, callback) {
     request(options, function (err, response, body) {
-        if (err) callback(err, body);
-        if (response.statusCode !== 200)
-            console.log("Couldn't retrieve students from Qualtrics\n");
+        if (err) {
+            callback(err, body);
+            return;
+        } else if (response.statusCode !== 200) {
+            callback("Couldn't retrieve students from Qualtrics\n", body);
+            return;
+        }
         var students = JSON.parse(body);
         callback(null, students.result.elements, students.result.nextPage);
     });

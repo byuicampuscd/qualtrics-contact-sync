@@ -5,11 +5,11 @@
 
 var pml = function () {},
     proto = pml.prototype,
-    ml;
+    link;
 
 const deepEqual = require('deep-equal'),
-    //    objFilter = require('object-filter'),
     async = require('async'),
+    objFilter = require('object-filter'),
     bs = require('binarysearch'),
     chalk = require('chalk'),
     StudentSnatcher = require('./studentSnatcher.js'),
@@ -24,25 +24,35 @@ function sortList(a, b) {
     return 0;
 }
 
-function formatStudents(students) {
+function filterEmbeddedData(student) {
+    if (student.embeddedData.length <= 0) return;
+    var filteredData = objFilter(student.embeddedData, function (value) {
+        return value !== '';
+    });
+    student.embeddedData = filteredData;
+    return student;
+}
 
+function formatStudents(students) {
+    // create keys for student object
     var emdKeys = Object.keys(students[0]).filter(function (key) {
         return key != 'Email' && key != 'UniqueID' && key != 'FirstName';
     });
+    // create keys for embeddedData object
     var keys = Object.keys(students[0]).filter(function (key) {
         return key == 'Email' || key == 'UniqueID' || key == 'FirstName';
     });
 
-    //make students look like qualtrics students
     var formattedStudents = students.map(function (currVal, formattedStudents) {
         var tStudent = {},
             tEmbeddedData = {};
         //format keys and create tempStudent object
         for (var j = 0; j < keys.length; j++) {
-            //first letter of each key ot lower case
+            //UniqueID must be converted to externalDataReference
             if (keys[j] === 'UniqueID') {
                 tStudent.externalDataReference = currVal[keys[j]];
             } else {
+                //first letter of each key ot lower case
                 tStudent[keys[j][0].toLowerCase() + keys[j].slice(1)] = currVal[keys[j]];
             }
         }
@@ -50,17 +60,12 @@ function formatStudents(students) {
         for (var i = 0; i < emdKeys.length; i++) {
             tEmbeddedData[emdKeys[i]] = currVal[emdKeys[i]];
         }
-        //append embeddedData to tempStudent
-        tStudent.embeddedData = tEmbeddedData;
+
+        if (emdKeys.length > 0)
+            tStudent.embeddedData = tEmbeddedData;
 
         return tStudent;
     });
-
-    // check if embeddedData is empty
-    for (var i = 0; i < formattedStudents.length; i++) {
-        if (!Object.keys(formattedStudents[i]).length)
-            delete formattedStudents[i].embeddedData;
-    }
     return formattedStudents;
 }
 
@@ -69,15 +74,16 @@ function setOptions(student, callback) {
     // create approptriate API call
     switch (student.action) {
         case 'Add':
-            var option = os.add(ml, student);
+            var option = os.add(link.MailingListID, student);
             break;
         case 'Update':
-            var option = os.update(ml, student);
+            var option = os.update(link.MailingListID, student);
             break;
         case 'Delete':
-            var option = os.delete(ml, student.id);
+            var option = os.delete(link.MailingListID, student.id);
             break;
     }
+    // Send request
     ss.send(student, option, callback);
 }
 
@@ -101,14 +107,9 @@ function processTheData(students, cb, qStudents) {
             return temp;
         });
 
-
         //perform magic decision making logic
         if (qIndex > -1) {
             if (!deepEqual(student, mappedStudents[qIndex])) {
-                console.log('Mapped Student:\n', mappedStudents[qIndex]);
-                console.log('Student Student:\n', student);
-
-
                 student.id = qStudents[qIndex].id;
                 student.action = 'Update';
                 toAlter.push(student);
@@ -118,6 +119,8 @@ function processTheData(students, cb, qStudents) {
             }
         } else {
             student.action = 'Add';
+            // Filter out empty values that can't be added!
+            filterEmbeddedData(student);
             toAlter.push(student);
         }
     });
@@ -133,44 +136,57 @@ function processTheData(students, cb, qStudents) {
 
     //make api calls 30 at a time - callback returns here
     async.mapLimit(toAlter, 30, setOptions, function (err, students) {
-        if (err) cb(err, students);
-        //        if (error) throw new Error(error); THROW ERROR IN CLI.js or just send it a message
+        //        if (err) cb(err, students);
+
+        var file = {
+            fileName: link.csv.replace('lists/', ''),
+            toAlterAmount: students.length, // I think that'll work...
+            aCount: 0,
+            uCount: 0,
+            dCount: 0,
+            passed: true,
+            failed: []
+        };
         // sort through students and create report based on worked/error attributes
-        var failed = [],
-            aCount = 0,
-            uCount = 0,
-            dCount = 0;
         students.forEach(function (student) {
             if (student.pass) {
                 if (student.action == "Add")
-                    aCount++;
+                    file.aCount++;
                 else if (student.action == "Update")
-                    uCount++;
+                    file.uCount++;
                 else
-                    dCount++;
+                    file.dCount++;
             } else
-                failed.push(student);
+                file.failed.push(student);
         });
-        if (aCount)
-            console.log(chalk.green("Students successfully added: " + aCount));
-        if (uCount)
-            console.log(chalk.green("Students successfully updated: " + uCount));
-        if (dCount)
-            console.log(chalk.green("Students successfully deleted: " + dCount));
 
-        failed.forEach(function (student) {
+        // generate report of completed additions/updates/deletions
+        if (file.aCount > 0)
+            console.log(chalk.green("Students successfully added: " + file.aCount));
+        if (file.uCount > 0)
+            console.log(chalk.green("Students successfully updated: " + file.uCount));
+        if (file.dCount > 0)
+            console.log(chalk.green("Students successfully deleted: " + file.dCount));
+
+
+        file.failed.forEach(function (student) {
             console.log(chalk.red("Failed to " +
                 student.action + " student: ") + student.externalDataReference, chalk.red("Error: " + student.errorMessage));
         });
+
+        if (file.failed.length)
+            file.passed = false;
+
         //return to cli.js
-        cb(err);
+        cb(err, file);
     });
 }
 
 function pullStudents(students, cb, qStudents, nextPage) {
     if (!qStudents) qStudents = [];
-    ss.pullStudents(os.get(ml, nextPage), function (err, newStudents, nextPage) {
-        if (err) cb(err, newStudents);
+    ss.pullStudents(os.get(link.MailingListID, nextPage), function (err, newStudents, nextPage) {
+        if (err)
+            cb(err);
         // add page to student list
         qStudents = qStudents.concat(newStudents);
         if (nextPage) {
@@ -183,9 +199,9 @@ function pullStudents(students, cb, qStudents, nextPage) {
     });
 }
 //cb returns to cli
-function init(link, cb) {
-    ml = link.MailingListID;
-    console.log('\n', link.csv);
+function init(list, cb) {
+    link = list;
+    console.log('\n', chalk.blue(link.csv));
     // get students from the tsv file
     ss.readStudents(link.csv, function (err, students) {
         if (err) cb(err, students);
@@ -196,8 +212,10 @@ function init(link, cb) {
         });
 
         // format tsv student object for qualtrics
-        students = formatStudents(students);
-        students.sort(sortList);
+        if (students.length) {
+            students = formatStudents(students);
+            students.sort(sortList);
+        }
 
         // get students from qualtrics
         pullStudents(students, cb);
