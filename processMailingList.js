@@ -25,12 +25,25 @@ function sortList(a, b) {
 }
 
 function filterEmbeddedData(student) {
-    if (student.embeddedData.length <= 0) return;
+    console.log('\nPre-Filtered Student\n', student);
+    var filteredStudent = objFilter(student, function (value) {
+        return value !== '';
+    });
+    console.log('\nFiltered Student\n', filteredStudent);
+
     var filteredData = objFilter(student.embeddedData, function (value) {
         return value !== '';
     });
-    student.embeddedData = filteredData;
-    return student;
+
+    if (Object.keys(filteredData).length <= 0) {
+        delete filteredStudent.embeddedData;
+        console.log('Without Embedded Data', filteredStudent);
+        return filteredStudent;
+    } else {
+        filteredStudent.embeddedData = filteredData;
+        console.log('With Embedded Data', filteredStudent);
+        return filteredStudent;
+    }
 }
 
 function formatStudents(students) {
@@ -120,8 +133,7 @@ function processTheData(students, cb, qStudents) {
         } else {
             student.action = 'Add';
             // Filter out empty values that can't be added!
-            filterEmbeddedData(student);
-            toAlter.push(student);
+            toAlter.push(filterEmbeddedData(student));
         }
     });
     // exists in qualtrics but not in master file
