@@ -24,26 +24,29 @@ function sortList(a, b) {
     return 0;
 }
 
-function filterEmbeddedData(student) {
-    console.log('\nPre-Filtered Student\n', student);
+function filterStudent(student) {
+    //filter student outside of embeddedData
     var filteredStudent = objFilter(student, function (value) {
-        return value !== '';
-    });
-    console.log('\nFiltered Student\n', filteredStudent);
-
-    var filteredData = objFilter(student.embeddedData, function (value) {
-        return value !== '';
+        return value !== '' && value !== null;
     });
 
-    if (Object.keys(filteredData).length <= 0) {
+    //if null delete it and return
+    if (student.embeddedData === null) {
         delete filteredStudent.embeddedData;
-        console.log('Without Embedded Data', filteredStudent);
-        return filteredStudent;
     } else {
-        filteredStudent.embeddedData = filteredData;
-        console.log('With Embedded Data', filteredStudent);
-        return filteredStudent;
+        //filter embeddedData
+        var filteredData = objFilter(student.embeddedData, function (value) {
+            return value !== '' && value !== null;
+        });
+
+        //append filteredData if not empty
+        if (Object.keys(filteredData).length <= 0) {
+            delete filteredStudent.embeddedData;
+        } else {
+            filteredStudent.embeddedData = filteredData;
+        }
     }
+    return filteredStudent;
 }
 
 function formatStudents(students) {
@@ -110,19 +113,16 @@ function processTheData(students, cb, qStudents) {
         // get the index of matching students
         qIndex = bs(qStudents, student, sortList);
 
-        // create copy of qualtrics students without qualtrics-generated data for equality check
-        var mappedStudents = qStudents.map(function (obj) {
-            var temp = {};
-            temp.firstName = obj.firstName;
-            temp.email = obj.email;
-            temp.externalDataReference = obj.externalDataReference;
-            temp.embeddedData = obj.embeddedData;
-            return temp;
-        });
-
         //perform magic decision making logic
         if (qIndex > -1) {
-            if (!deepEqual(student, mappedStudents[qIndex])) {
+            //create version to use for equality check
+            var filteredQStudent = filterStudent(qStudents[qIndex]);
+            delete filteredQStudent.id;
+            delete filteredQStudent.unsubscribed;
+            delete filteredQStudent.responseHistory;
+            delete filteredQStudent.emailHistory;
+
+            if (!deepEqual(filterStudent(student), filteredQStudent)) {
                 student.id = qStudents[qIndex].id;
                 student.action = 'Update';
                 toAlter.push(student);
@@ -133,7 +133,7 @@ function processTheData(students, cb, qStudents) {
         } else {
             student.action = 'Add';
             // Filter out empty values that can't be added!
-            toAlter.push(filterEmbeddedData(student));
+            toAlter.push(filterStudent(student));
         }
     });
     // exists in qualtrics but not in master file
