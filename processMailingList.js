@@ -24,11 +24,23 @@ function sortList(a, b) {
     return 0;
 }
 
+//format errors and send to callback
+function sendFileError(err, cb) {
+    console.log(chalk.red('Error:', err));
+    cb(null, {
+        fileName: link.csv.replace('lists/', ''),
+        fileError: err.toString()
+    });
+}
+
 function filterStudent(student) {
     //filter student outside of embeddedData
     var filteredStudent = objFilter(student, function (value) {
         return value !== '' && value !== null;
     });
+
+    if (student.action === 'Update')
+        return filteredStudent;
 
     //if null delete it and return
     if (student.embeddedData === null) {
@@ -125,6 +137,7 @@ function processTheData(students, cb, qStudents) {
             if (!deepEqual(filterStudent(student), filteredQStudent)) {
                 student.id = qStudents[qIndex].id;
                 student.action = 'Update';
+                student = filterStudent(student); // don't filter to throw error when updating student with empty values
                 toAlter.push(student);
                 qStudents[qIndex].checked = true;
             } else {
@@ -146,18 +159,22 @@ function processTheData(students, cb, qStudents) {
 
     console.log('Changes to be made: ', toAlter.length);
 
-    //make api calls 30 at a time - callback returns here
-    async.mapLimit(toAlter, 30, setOptions, function (err, students) {
-        //        if (err) cb(err, students);
+    //make api calls X at a time - callback returns here
+    async.mapLimit(toAlter, 75, setOptions, function (err, students) {
+        if (err) {
+            sendFileError(err, cb);
+            return;
+        }
 
         var file = {
             fileName: link.csv.replace('lists/', ''),
-            toAlterAmount: students.length, // I think that'll work...
+            toAlterAmount: students.length,
             aCount: 0,
             uCount: 0,
             dCount: 0,
             passed: true,
-            failed: []
+            failed: [],
+            fileError: null
         };
         // sort through students and create report based on worked/error attributes
         students.forEach(function (student) {
@@ -197,8 +214,10 @@ function processTheData(students, cb, qStudents) {
 function pullStudents(students, cb, qStudents, nextPage) {
     if (!qStudents) qStudents = [];
     ss.pullStudents(os.get(link.MailingListID, nextPage), function (err, newStudents, nextPage) {
-        if (err)
-            cb(err);
+        if (err) {
+            sendFileError(err, cb);
+            return;
+        }
         // add page to student list
         qStudents = qStudents.concat(newStudents);
         if (nextPage) {
@@ -216,7 +235,10 @@ function init(list, cb) {
     console.log('\n', chalk.blue(link.csv));
     // get students from the tsv file
     ss.readStudents(link.csv, function (err, students) {
-        if (err) cb(err, students);
+        if (err) {
+            sendFileError(err, cb);
+            return;
+        }
 
         // remove any empty rows
         students = students.filter(function (student) {

@@ -11,7 +11,7 @@ const request = require('request'),
 
 
 //get all mailing lists from qualtrics
-proto.getMailingLists = function (option, callback) {
+/*proto.getMailingLists = function (option, callback) {
     request(option, function (err, response, body) {
         if (err) callback(err, body);
         if (response.statusCode !== 200)
@@ -19,18 +19,20 @@ proto.getMailingLists = function (option, callback) {
         var mls = JSON.parse(body).result.elements;
         callback(null, mls);
     });
-}
+}*/
 
 //
 proto.readConfig = function (cb) {
     fs.readFile('lists/config.csv', function (err, contents) {
         if (err) cb(err, contents);
-        contents = contents.toString();
-        var links = d3.csvParse(contents);
-        links.forEach(function (link) {
-            link.csv = 'lists/' + link.csv;
-        });
-        cb(null, links);
+        else {
+            contents = contents.toString();
+            var links = d3.csvParse(contents);
+            links.forEach(function (link) {
+                link.csv = 'lists/' + link.csv;
+            });
+            cb(null, links);
+        }
     });
 }
 
@@ -38,11 +40,13 @@ proto.readConfig = function (cb) {
 proto.readStudents = function (filePath, callback) {
     fs.readFile(filePath, 'utf8', function (err, contents) {
         if (err) callback(err, contents);
-        //remove zero width no break space from csv (especially the beginning)
-        var regEx = new RegExp(String.fromCharCode(65279), 'g');
-        contents = contents.replace(regEx, '');
-        var students = d3.csvParse(contents);
-        callback(null, students);
+        else {
+            //remove zero width no break space from csv (especially the beginning)
+            var regEx = new RegExp(String.fromCharCode(65279), 'g');
+            contents = contents.replace(regEx, '');
+            var students = d3.csvParse(contents);
+            callback(null, students);
+        }
     });
 }
 
@@ -64,7 +68,7 @@ proto.pullStudents = function (options, callback) {
 proto.send = function (student, option, callback) {
     request(option, function (err, response, body) {
         if (err) callback(err, body);
-        if (response.statusCode === 200) {
+        else if (response.statusCode === 200) {
             student.pass = true;
             callback(null, student);
         } else {
