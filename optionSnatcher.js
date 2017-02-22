@@ -5,7 +5,7 @@ const token = require('./token.js');
 var optionSnatcher = function () {};
 var proto = optionSnatcher.prototype;
 
-var baseURL = "https://az1.qualtrics.com/API/v3/mailinglists",
+var baseURL = "https://byui.az1.qualtrics.com/API/v3/mailinglists",
     option = {
         method: "",
         url: "",

@@ -18,6 +18,9 @@ function writeLog(report) {
 
 function getChangesMade(files) {
     var totalChanges = 0;
+    if (!files)
+        return totalChanges;
+
     files.forEach(function (file) {
         totalChanges += file.aCount;
         totalChanges += file.dCount;
@@ -26,22 +29,33 @@ function getChangesMade(files) {
     return totalChanges;
 }
 
+function getFilesSynced(files) {
+    var totalFiles = 0;
+    files.forEach(function (file) {
+        if (file.passed) {
+            totalFiles++;
+        }
+    });
+    return totalFiles;
+}
+
 // create string to send to the log file
 function generateReport(err, files, time) {
     var failCount = 0,
+        filesSynced = getFilesSynced(files),
         totalChanges = getChangesMade(files),
-        timeStamp = new Date(),
-        report = "\n\n--------------------------------------------------------------------------\n" + timeStamp + "\n--------------------------------------------------------------------------";
-    report += "\nElapsed Time: " + time + "\nTotal Changes Made: " + totalChanges;
+        report = "\n\n--------------------------------------------------------------------------\n" + new Date() + "\n--------------------------------------------------------------------------";
+    //add overall stats
+    report += "\nElapsed Time: " + time + "\nFiles Synchronized: " + filesSynced + "\nTotal Changes Made: " + totalChanges;
     if (files === null) {
         report += "\nUnable to read configuration file\n" + err;
     } else {
         files.forEach(function (file) {
             report += "\n\n------------------------------------------\n" + file.fileName + "\n------------------------------------------";
-            //file errors are errors that caused the program to skip the file.
+            //output file Errors (caused file to be skipped)
             if (file.fileError !== null) {
                 report += "\nFile failed to sync" + "\nError: " + file.fileError;
-            } else {
+            } else { //output file stats
                 report += "\nChanges to be made: " + file.toAlterAmount;
                 if (file.toAlterAmount > 0) {
                     report += "\n\tStudents successfully Added: " + file.aCount;
@@ -50,7 +64,7 @@ function generateReport(err, files, time) {
                 }
                 if (file.passed)
                     report += "\n\nFile successfully synced";
-                else {
+                else { //if there were individual errors
                     report += "\n\nErrors encountered: " + file.failed.length;
                     for (var i = 0; i < file.failed.length; i++) {
                         report += "\n\tFailed to " + file.failed[i].action + " student: " + file.failed[i].externalDataReference + " Error: " + file.failed[i].errorMessage;
@@ -72,7 +86,7 @@ function getElapsedTime(start, end) {
     //calculate minutes
     if (seconds >= 60) {
         minutes = Math.floor(seconds / 60);
-        seconds = Math.floor(seconds % 60);
+        seconds = Math.floor(seconds % 60);;
     }
     //calculate hours
     if (minutes >= 60) {
@@ -104,4 +118,5 @@ function init(err, links) {
     });
 }
 
+console.log("Started at:", new Date());
 ss.readConfig(init);
