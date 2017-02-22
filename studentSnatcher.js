@@ -9,21 +9,9 @@ const request = require('request'),
     fs = require('fs'),
     d3 = require('d3-dsv');
 
-
-//get all mailing lists from qualtrics
-/*proto.getMailingLists = function (option, callback) {
-    request(option, function (err, response, body) {
-        if (err) callback(err, body);
-        if (response.statusCode !== 200)
-            console.log("Couldn't retrieve mailing lists from Qualtrics\n");
-        var mls = JSON.parse(body).result.elements;
-        callback(null, mls);
-    });
-}*/
-
-//
+// read the configuration file
 proto.readConfig = function (cb) {
-    fs.readFile('lists/config.csv', function (err, contents) {
+    fs.readFile('lists/config2.csv', function (err, contents) {
         if (err) cb(err, contents);
         else {
             contents = contents.toString();

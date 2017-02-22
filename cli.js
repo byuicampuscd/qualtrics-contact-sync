@@ -18,7 +18,8 @@ function writeLog(report) {
 
 // create string to send to the log file
 function generateReport(err, files) {
-    var timeStamp = new Date(),
+    var failCount = 0,
+        timeStamp = new Date(),
         report = "\n\n--------------------------------------------------------------------------\n" + timeStamp + "\n--------------------------------------------------------------------------";
 
     if (files === null) {
@@ -26,7 +27,7 @@ function generateReport(err, files) {
     } else {
         files.forEach(function (file) {
             report += "\n\n-----------------------------------\n" + file.fileName + "\n-----------------------------------";
-
+            //file errors are errors that caused the program to skip the file.
             if (file.fileError !== null) {
                 report += "\nFile failed to sync" + "\nError: " + file.fileError;
             } else {
@@ -38,7 +39,7 @@ function generateReport(err, files) {
                 if (file.passed)
                     report += "\n\nFile successfully synced";
                 else {
-                    report += "\n\nThe following errors were encountered:";
+                    report += "\n\nErrors encountered: " + file.failed.length;
                     for (var i = 0; i < file.failed.length; i++) {
                         report += "\n\tFailed to " + file.failed[i].action + " student: " + file.failed[i].externalDataReference + " Error: " + file.failed[i].errorMessage;
                     }
