@@ -13,29 +13,41 @@ function writeLog(report) {
     fs.appendFile("lists/log.txt", report, function (err) {
         if (err) throw err;
     });
-    console.log(chalk.green("\nUpdated the log"));
+    console.log(chalk.green("\nThe log has been updated"));
+}
+
+function getChangesMade(files) {
+    var totalChanges = 0;
+    files.forEach(function (file) {
+        totalChanges += file.aCount;
+        totalChanges += file.dCount;
+        totalChanges += file.dCount;
+    });
+    return totalChanges;
 }
 
 // create string to send to the log file
-function generateReport(err, files) {
+function generateReport(err, files, time) {
     var failCount = 0,
+        totalChanges = getChangesMade(files),
         timeStamp = new Date(),
         report = "\n\n--------------------------------------------------------------------------\n" + timeStamp + "\n--------------------------------------------------------------------------";
-
+    report += "\nElapsed Time: " + time + "\nTotal Changes Made: " + totalChanges;
     if (files === null) {
         report += "\nUnable to read configuration file\n" + err;
     } else {
         files.forEach(function (file) {
-            report += "\n\n-----------------------------------\n" + file.fileName + "\n-----------------------------------";
+            report += "\n\n------------------------------------------\n" + file.fileName + "\n------------------------------------------";
             //file errors are errors that caused the program to skip the file.
             if (file.fileError !== null) {
                 report += "\nFile failed to sync" + "\nError: " + file.fileError;
             } else {
                 report += "\nChanges to be made: " + file.toAlterAmount;
-                report += "\n\tStudents successfully Added: " + file.aCount;
-                report += "\n\tStudents successfully Updated: " + file.uCount;
-                report += "\n\tStudents successfully Deleted: " + file.dCount;
-
+                if (file.toAlterAmount > 0) {
+                    report += "\n\tStudents successfully Added: " + file.aCount;
+                    report += "\n\tStudents successfully Updated: " + file.uCount;
+                    report += "\n\tStudents successfully Deleted: " + file.dCount;
+                }
                 if (file.passed)
                     report += "\n\nFile successfully synced";
                 else {
@@ -51,6 +63,27 @@ function generateReport(err, files) {
     writeLog(report);
 }
 
+function getElapsedTime(start, end) {
+    //create elapsed time
+    var seconds = (end - start) / 1000,
+        minutes = '00',
+        hours = "00",
+        elapsedTime = "";
+    //calculate minutes
+    if (seconds >= 60) {
+        minutes = Math.floor(seconds / 60);
+        seconds = Math.floor(seconds % 60);
+    }
+    //calculate hours
+    if (minutes >= 60) {
+        hours = Math.floor(minutes / 60);
+        minutes = Math.floor(minutes % 60);
+    }
+    elapsedTime += hours + ":" + minutes + ":" + seconds;
+    return elapsedTime;
+}
+
+
 function init(err, links) {
     //check for errors while reading config.csv
     if (err) {
@@ -58,10 +91,16 @@ function init(err, links) {
         generateReport(err, null);
         return;
     }
+    var start = new Date();
 
     //process individual files one at a time
     async.mapLimit(links, 1, processMailingList, function (err, files) {
-        generateReport(null, files);
+        var end = new Date(),
+            elapsedTime = getElapsedTime(start, end);
+
+        console.log("\nElapsed Time:", elapsedTime);
+
+        generateReport(null, files, elapsedTime);
     });
 }
 

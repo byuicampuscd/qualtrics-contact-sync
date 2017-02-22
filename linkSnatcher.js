@@ -9,7 +9,6 @@ const fs = require('fs'),
     path = require('path');
 
 // get fileNames from directory
-// originally getFileNames
 proto.snatchLinks = function (cb) {
     fs.readdir('lists/', function (err, files) {
         if (err) throw new Error(err);

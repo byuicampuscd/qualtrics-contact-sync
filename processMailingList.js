@@ -165,7 +165,7 @@ function processTheData(students, cb, qStudents) {
             sendFileError(err, cb);
             return;
         }
-
+        // file is returned to cli.js
         var file = {
             fileName: link.csv.replace('lists/', ''),
             toAlterAmount: students.length,
