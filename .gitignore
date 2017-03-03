@@ -3,6 +3,7 @@
 *.csv
 node_modules/
 Qualtrics.bfg-report/
+lists/
 token.js
 mail.js
 options.js
