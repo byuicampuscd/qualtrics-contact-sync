@@ -4,6 +4,7 @@
 node_modules/
 Qualtrics.bfg-report/
 token.js
+mail.js
 options.js
 connection.js
 practiceStudents.json

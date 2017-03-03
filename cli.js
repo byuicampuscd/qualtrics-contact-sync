@@ -5,6 +5,7 @@ const fs = require('fs'),
     fws = require('fixed-width-string'),
     studentSnatcher = require('./studentSnatcher.js'),
     processMailingList = require('./processMailingList.js'),
+    sendMail = require('./email.js'),
     chalk = require('chalk'),
     async = require('async'),
     ss = new studentSnatcher();
@@ -42,18 +43,20 @@ function getFilesSynced(files) {
 
 // create string to send to the log file
 function generateReport(err, files, time) {
-    var filesSynced = fws("Files Synchronized: " + getFilesSynced(files), 26),
-        totalChanges = "Total Changes Made: " + getChangesMade(files),
-        elapsedTime = fws("Elapsed Time: " + time, 29),
-        report = "";
+    var report = "";
 
     report += "\n\n-------------------------------------------------------------------------------------------------------------------------------\n" + new Date() + "\n-------------------------------------------------------------------------------------------------------------------------------\n";
-    //add overall stats
-    report += elapsedTime + filesSynced + totalChanges;
 
     if (files === null) {
         report += "\n\nUnable to read configuration file\n" + err;
     } else {
+        //declare important var's
+        var filesSynced = fws("Files Synchronized: " + getFilesSynced(files), 26),
+            totalChanges = "Total Changes Made: " + getChangesMade(files),
+            elapsedTime = fws("Elapsed Time: " + time, 29);
+
+        //add overall stats
+        report += elapsedTime + filesSynced + totalChanges;
         files.forEach(function (file) {
             report += "\n\n";
             report += fws(file.fileName.replace('QualtricsSync-', ''), 29);
@@ -110,37 +113,58 @@ function getElapsedTime(start, end) {
     return elapsedTime;
 }
 
-/*function errorsExist(files) {
-    errorsExist = false;
+//WIP!!!
+function checkForErrors(files) {
+    var errs = "";
 
     files.forEach(function (file) {
-        if (file.fileError !== null && file.failed.length) {
-            //SEND EMAIL!!!!
+        if (file.fileError !== null) {
+            errs += "\n" + file.fileName + " failed to sync with the following error:\n" + file.fileError;
+            //            console.log('The email message:\n', errs);
+            sendMail(errs);
+        } else if (file.passed != true) {
+            errs += "the following erros were found in: " + file.fileName;
+            file.failed.forEach(function (student) {
+                errs += "\nFailed to " + student.action + " student: " + student.externalDataReference + " Error: " + student.errorMessage;
+            });
+            //            console.log('The email message:\n', errs);
+            sendMail(errs);
+        } else {
             return;
         }
     });
-
-    return errorsExist;
-}*/
+}
 
 function init(err, links) {
     //check for errors while reading config.csv
     if (err) {
-        console.log(chalk.red('Unable to read configuration file\n', err));
-        // SEND EMAIL!!!!
+        err = 'Unable to read configuration file\n' + err;
+        sendMail(err);
+        console.log(chalk.red(err));
         generateReport(err, null);
         return;
     }
 
     var start = new Date();
 
+    //on file error:
+    /*{ fileName: 'QualtricsSync-Clear.csv',
+  fileError: 'A fake Error was found' }*/
+
+
+
+
     //process individual files one at a time
     async.mapLimit(links, 1, processMailingList, function (err, files) {
+        //        console.log(files[0]);
         var end = new Date(),
             elapsedTime = getElapsedTime(start, end);
 
-        console.log("\nElapsed Time:", elapsedTime);
+        //check if row level errors exist
+        checkForErrors(files);
+        // if yes, get a list of them and send them to email with sendMail(message)
 
+        console.log("\nElapsed Time:", elapsedTime);
         generateReport(null, files, elapsedTime);
     });
 }
