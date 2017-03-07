@@ -12,7 +12,7 @@ const fs = require('fs'),
 
 // write to log
 function writeLog(report) {
-    fs.appendFile("lists/log.txt", report, function (err) {
+    fs.appendFile("Z:\\Online Contact Lists\\log.txt", report, function (err) {
         if (err) throw err;
     });
     console.log(chalk.green("\nThe log has been updated"));
@@ -115,24 +115,27 @@ function getElapsedTime(start, end) {
 
 //WIP!!!
 function checkForErrors(files) {
-    var errs = "";
+    var studentErrs = "",
+        fileErrs = "";
 
     files.forEach(function (file) {
         if (file.fileError !== null) {
-            errs += "\n" + file.fileName + " failed to sync with the following error:\n" + file.fileError;
-            //            console.log('The email message:\n', errs);
-            sendMail(errs);
+            fileErrs += "\n" + file.fileName + " failed to sync with the following error:\n" + file.fileError;
         } else if (file.passed != true) {
-            errs += "the following erros were found in: " + file.fileName;
+            studentErrs += "\n\nThe following students from " + file.fileName + " did not sync.";
             file.failed.forEach(function (student) {
-                errs += "\nFailed to " + student.action + " student: " + student.externalDataReference + " Error: " + student.errorMessage;
+                studentErrs += fws("\nStudent: " + student.externalDataReference, 30) + fws(" Action: " + student.action, 17) + " Error: " + student.errorMessage;
             });
-            //            console.log('The email message:\n', errs);
-            sendMail(errs);
-        } else {
-            return;
         }
     });
+
+    if (fileErrs !== "" || studentErrs !== "") {
+        var errs = fileErrs + studentErrs;
+        console.log(errs);
+        sendMail(errs);
+    } else {
+        return;
+    }
 }
 
 function init(err, links) {
@@ -146,23 +149,14 @@ function init(err, links) {
     }
 
     var start = new Date();
-
-    //on file error:
-    /*{ fileName: 'QualtricsSync-Clear.csv',
-  fileError: 'A fake Error was found' }*/
-
-
-
-
     //process individual files one at a time
     async.mapLimit(links, 1, processMailingList, function (err, files) {
         //        console.log(files[0]);
         var end = new Date(),
             elapsedTime = getElapsedTime(start, end);
 
-        //check if row level errors exist
+        //check if file or row level errors exist
         checkForErrors(files);
-        // if yes, get a list of them and send them to email with sendMail(message)
 
         console.log("\nElapsed Time:", elapsedTime);
         generateReport(null, files, elapsedTime);
