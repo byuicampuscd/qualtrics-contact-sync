@@ -135,6 +135,10 @@ function processTheData(students, cb, qStudents) {
             delete filteredQStudent.emailHistory;
 
             if (!deepEqual(filterStudent(student), filteredQStudent)) {
+                //                console.log("\n\nStudent:", filterStudent(student));
+                //                console.log("\n\nQ Student:", filteredQStudent);
+
+
                 student.id = qStudents[qIndex].id;
                 student.action = 'Update';
                 student = filterStudent(student); // don't filter to throw error when updating student with empty values

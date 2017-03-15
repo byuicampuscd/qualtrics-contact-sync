@@ -12,6 +12,8 @@ const fs = require('fs'),
 
 // write to log
 function writeLog(report) {
+    //"Z:\\Online Contact Lists\\log.txt"
+    //"lists/log.txt"
     fs.appendFile("Z:\\Online Contact Lists\\log.txt", report, function (err) {
         if (err) throw err;
     });
@@ -45,10 +47,10 @@ function getFilesSynced(files) {
 function generateReport(err, files, time) {
     var report = "";
 
-    report += "\n\n-------------------------------------------------------------------------------------------------------------------------------\n" + new Date() + "\n-------------------------------------------------------------------------------------------------------------------------------\n";
+    report += "\r\n\r\n-------------------------------------------------------------------------------------------------------------------------------\r\n" + new Date() + "\r\n-------------------------------------------------------------------------------------------------------------------------------\r\n";
 
     if (files === null) {
-        report += "\n\nUnable to read configuration file\n" + err;
+        report += "\r\n\r\nUnable to read configuration file\r\n" + err;
     } else {
         //declare important var's
         var filesSynced = fws("Files Synchronized: " + getFilesSynced(files), 26),
@@ -58,11 +60,11 @@ function generateReport(err, files, time) {
         //add overall stats
         report += elapsedTime + filesSynced + totalChanges;
         files.forEach(function (file) {
-            report += "\n\n";
+            report += "\r\n\r\n";
             report += fws(file.fileName.replace('QualtricsSync-', ''), 29);
             //output file Errors (caused file to be skipped)
             if (file.fileError !== null) {
-                report += "\nFile failed to sync" + "\nError: " + file.fileError;
+                report += "\r\nFile failed to sync" + "\r\nError: " + file.fileError;
             } else { //output file stats
                 report += fws("Changes found: " + file.toAlterAmount, 24);
                 report += fws("Added: " + file.aCount, 15);
@@ -71,15 +73,15 @@ function generateReport(err, files, time) {
                 if (file.passed)
                     report += fws("File successfully synced", 25);
                 else { //if there were individual errors
-                    report += "\nErrors encountered: " + file.failed.length;
+                    report += "\r\nErrors encountered: " + file.failed.length;
                     for (var i = 0; i < file.failed.length; i++) {
-                        report += "\n\tFailed to " + file.failed[i].action + " student: " + file.failed[i].externalDataReference + " Error: " + file.failed[i].errorMessage;
+                        report += "\r\n\tFailed to " + file.failed[i].action + " student: " + file.failed[i].externalDataReference + " Error: " + file.failed[i].errorMessage;
                     }
                 }
             }
         });
     }
-    report += "\n-------------------------------------------------------------------------------------------------------------------------------\n\n\n";
+    report += "\r\n-------------------------------------------------------------------------------------------------------------------------------\r\n\r\n\r\n";
     writeLog(report);
 }
 
@@ -113,7 +115,6 @@ function getElapsedTime(start, end) {
     return elapsedTime;
 }
 
-//WIP!!!
 function checkForErrors(files) {
     var studentErrs = "",
         fileErrs = "";
