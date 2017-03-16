@@ -12,8 +12,6 @@ const fs = require('fs'),
 
 // write to log
 function writeLog(report) {
-    //"Z:\\Online Contact Lists\\log.txt"
-    //"lists/log.txt"
     fs.appendFile("Z:\\Online Contact Lists\\log.txt", report, function (err) {
         if (err) throw err;
     });
@@ -132,7 +130,6 @@ function checkForErrors(files) {
 
     if (fileErrs !== "" || studentErrs !== "") {
         var errs = fileErrs + studentErrs;
-        console.log(errs);
         sendMail(errs);
     } else {
         return;

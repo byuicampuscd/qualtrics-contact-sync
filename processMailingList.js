@@ -62,11 +62,11 @@ function filterStudent(student) {
 }
 
 function formatStudents(students) {
-    // create keys for student object
+    // create keys for embeddedData object
     var emdKeys = Object.keys(students[0]).filter(function (key) {
         return key != 'Email' && key != 'UniqueID' && key != 'FirstName';
     });
-    // create keys for embeddedData object
+    // create keys for student object
     var keys = Object.keys(students[0]).filter(function (key) {
         return key == 'Email' || key == 'UniqueID' || key == 'FirstName';
     });
@@ -84,9 +84,12 @@ function formatStudents(students) {
                 tStudent[keys[j][0].toLowerCase() + keys[j].slice(1)] = currVal[keys[j]];
             }
         }
+        var commaFinder = new RegExp(/,/g);
+
         //create embeddedData object
         for (var i = 0; i < emdKeys.length; i++) {
-            tEmbeddedData[emdKeys[i]] = currVal[emdKeys[i]];
+            // filter commas out of embeddedData values so the qualtrics api won't throw a fit
+            tEmbeddedData[emdKeys[i]] = currVal[emdKeys[i]].replace(commaFinder, '');
         }
 
         if (emdKeys.length > 0)
@@ -134,11 +137,10 @@ function processTheData(students, cb, qStudents) {
             delete filteredQStudent.responseHistory;
             delete filteredQStudent.emailHistory;
 
+            //EQUALITY COMPARISON. THIS IS WHERE MOST PROBLEMS HAVE OCCURED
             if (!deepEqual(filterStudent(student), filteredQStudent)) {
-                //                console.log("\n\nStudent:", filterStudent(student));
-                //                console.log("\n\nQ Student:", filteredQStudent);
-
-
+                //console.log("\n\n Student: ", filterStudent(student));
+                //console.log("\n\nQ Student:", filteredQStudent);
                 student.id = qStudents[qIndex].id;
                 student.action = 'Update';
                 student = filterStudent(student); // don't filter to throw error when updating student with empty values
@@ -249,7 +251,7 @@ function init(list, cb) {
             return student.UniqueID && student.UniqueID !== '';
         });
 
-        // format tsv student object for qualtrics
+        // format csv student object for qualtrics
         if (students.length) {
             students = formatStudents(students);
             students.sort(sortList);

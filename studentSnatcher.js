@@ -11,8 +11,6 @@ const request = require('request'),
 
 // read the configuration file
 proto.readConfig = function (cb) {
-    //'Z:\\Online Contact Lists\\config.csv'
-    //'lists/testConfig.csv'
     fs.readFile('Z:\\Online Contact Lists\\config.csv', function (err, contents) {
         if (err) cb(err, contents);
         else {
