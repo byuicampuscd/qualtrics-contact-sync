@@ -10,6 +10,7 @@
     "d3-dsv": "^1.0.3",
     "deep-equal": "^1.0.1",
     "fixed-width-string": "^1.0.0",
+    "nodemailer": "^3.1.7",
     "object-filter": "^1.0.2",
     "request": "^2.79.0"
   },

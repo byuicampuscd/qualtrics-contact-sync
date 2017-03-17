@@ -149,7 +149,6 @@ function init(err, links) {
     var start = new Date();
     //process individual files one at a time
     async.mapLimit(links, 1, processMailingList, function (err, files) {
-        //        console.log(files[0]);
         var end = new Date(),
             elapsedTime = getElapsedTime(start, end);
 
