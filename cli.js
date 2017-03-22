@@ -138,6 +138,29 @@ function checkForErrors(files) {
 }
 
 
+
+function syncInit(err, links) {
+    console.log("RETURNED TO CLI!");
+
+    var start = new Date();
+
+    //process individual files one at a time
+    async.mapLimit(links, 1, processMailingList, function (err, files) {
+        var end = new Date(),
+            elapsedTime = getElapsedTime(start, end);
+
+        //check if file or row level errors exist
+        checkForErrors(files);
+
+        console.log("\nElapsed Time:", elapsedTime);
+        generateReport(null, files, elapsedTime);
+    });
+}
+
+
+
+
+// reads config file and starts the hash comparison
 function init(err, links) {
     //check for errors while reading config.csv
     if (err) {
@@ -147,22 +170,8 @@ function init(err, links) {
         generateReport(err, null);
         return;
     }
-    var start = new Date();
 
-    changeSnatcher(links);
-
-
-    //process individual files one at a time
-    /* async.mapLimit(links, 1, processMailingList, function (err, files) {
-         var end = new Date(),
-             elapsedTime = getElapsedTime(start, end);
-
-         //check if file or row level errors exist
-         checkForErrors(files);
-
-         console.log("\nElapsed Time:", elapsedTime);
-         generateReport(null, files, elapsedTime);
-     });*/
+    changeSnatcher(links, syncInit);
 }
 
 console.log("Started at:", new Date());
