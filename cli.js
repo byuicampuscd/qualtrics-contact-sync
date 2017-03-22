@@ -9,8 +9,7 @@ const fs = require('fs'),
     sendMail = require('./email.js'),
     chalk = require('chalk'),
     async = require('async'),
-    ss = new studentSnatcher(),
-    cs = new ChangeSnatcher();
+    ss = new studentSnatcher();
 
 // write to log
 function writeLog(report) {
@@ -126,7 +125,8 @@ function checkForErrors(files) {
             studentErrs += "\n\nThe following students from " + file.fileName + " did not sync.";
             file.failed.forEach(function (student) {
                 studentErrs += fws("\nStudent: " + student.externalDataReference, 30) + fws(" Action: " + student.action, 17) + " Error: " + student.errorMessage;
-            });}
+            });
+        }
     });
 
     if (fileErrs !== "" || studentErrs !== "") {
@@ -149,9 +149,7 @@ function init(err, links) {
     }
     var start = new Date();
 
-    console.log("links length", links.length);
-
-    cs.init;
+    changeSnatcher(links);
 
 
     //process individual files one at a time
