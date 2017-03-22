@@ -5,10 +5,12 @@ const fs = require('fs'),
     fws = require('fixed-width-string'),
     studentSnatcher = require('./studentSnatcher.js'),
     processMailingList = require('./processMailingList.js'),
+    changeSnatcher = require('./changeSnatcher.js'),
     sendMail = require('./email.js'),
     chalk = require('chalk'),
     async = require('async'),
-    ss = new studentSnatcher();
+    ss = new studentSnatcher(),
+    cs = new ChangeSnatcher();
 
 // write to log
 function writeLog(report) {
@@ -124,8 +126,7 @@ function checkForErrors(files) {
             studentErrs += "\n\nThe following students from " + file.fileName + " did not sync.";
             file.failed.forEach(function (student) {
                 studentErrs += fws("\nStudent: " + student.externalDataReference, 30) + fws(" Action: " + student.action, 17) + " Error: " + student.errorMessage;
-            });
-        }
+            });}
     });
 
     if (fileErrs !== "" || studentErrs !== "") {
@@ -136,6 +137,7 @@ function checkForErrors(files) {
     }
 }
 
+
 function init(err, links) {
     //check for errors while reading config.csv
     if (err) {
@@ -145,19 +147,24 @@ function init(err, links) {
         generateReport(err, null);
         return;
     }
-
     var start = new Date();
+
+    console.log("links length", links.length);
+
+    cs.init;
+
+
     //process individual files one at a time
-    async.mapLimit(links, 1, processMailingList, function (err, files) {
-        var end = new Date(),
-            elapsedTime = getElapsedTime(start, end);
+    /* async.mapLimit(links, 1, processMailingList, function (err, files) {
+         var end = new Date(),
+             elapsedTime = getElapsedTime(start, end);
 
-        //check if file or row level errors exist
-        checkForErrors(files);
+         //check if file or row level errors exist
+         checkForErrors(files);
 
-        console.log("\nElapsed Time:", elapsedTime);
-        generateReport(null, files, elapsedTime);
-    });
+         console.log("\nElapsed Time:", elapsedTime);
+         generateReport(null, files, elapsedTime);
+     });*/
 }
 
 console.log("Started at:", new Date());
