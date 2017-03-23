@@ -21,7 +21,8 @@ proto.getMLs = function () {
 }
 
 proto.add = function (ml, student) {
-    var toSend = JSON.parse(JSON.stringify(student));
+    //    var toSend = JSON.parse(JSON.stringify(student));
+    var toSend = Object.assign({}, student);
     toSend.externalDataRef = toSend.externalDataReference;
     delete toSend.externalDataReference;
     delete toSend.action;
@@ -34,7 +35,8 @@ proto.add = function (ml, student) {
 }
 
 proto.update = function (ml, student) {
-    var toSend = JSON.parse(JSON.stringify(student));
+    //    var toSend = JSON.parse(JSON.stringify(student));
+    var toSend = Object.assign({}, student);
     delete toSend.id;
     delete toSend.action;
 
