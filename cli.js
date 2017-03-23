@@ -13,7 +13,7 @@ const fs = require('fs'),
 
 // write to log
 function writeLog(report) {
-    fs.appendFile("Z:\\log.txt", report, function (err) {
+    fs.appendFile("Z:\\debug.txt", report, function (err) {
         if (err) throw err;
     });
     console.log(chalk.green("\nThe log has been updated"));
@@ -46,13 +46,13 @@ function getFilesSynced(files) {
 function generateReport(err, files, time) {
     var report = "";
 
-    report += "\r\n\r\n-------------------------------------------------------------------------------------------------------------------------------\r\n" + new Date() + "\r\n-------------------------------------------------------------------------------------------------------------------------------\r\n";
+    report += "\r\n\r\n-------------------------------------------------------------------------------------------------------------------------------------\r\n" + new Date() + "\r\n-------------------------------------------------------------------------------------------------------------------------------------\r\n";
 
     if (files === null) {
         report += "\r\n\r\nUnable to read configuration file\r\n" + err;
     } else {
         //declare important var's
-        var filesSynced = fws("Files Synchronized: " + getFilesSynced(files), 26),
+        var filesSynced = fws("Files Successfully Synchronized: " + getFilesSynced(files), 39),
             totalChanges = "Total Changes Made: " + getChangesMade(files),
             elapsedTime = fws("Elapsed Time: " + time, 29);
 
@@ -60,27 +60,27 @@ function generateReport(err, files, time) {
         report += elapsedTime + filesSynced + totalChanges;
         files.forEach(function (file) {
             report += "\r\n\r\n";
-            report += fws(file.fileName.replace('QualtricsSync-', ''), 29);
+            report += fws(file.fileName.replace('QualtricsSync-', ''), 30);
             //output file Errors (caused file to be skipped)
             if (file.fileError !== null) {
-                report += "\r\nFile failed to sync" + "\r\nError: " + file.fileError;
+                report += "\r\nFile Failed to sync" + "\r\nError: " + file.fileError;
             } else { //output file stats
-                report += fws("Changes found: " + file.toAlterAmount, 24);
+                report += fws("Changes to be Made: " + file.toAlterAmount, 30);
                 report += fws("Added: " + file.aCount, 15);
                 report += fws("Updated: " + file.uCount, 17);
                 report += fws("Deleted: " + file.dCount, 17);
                 if (file.passed)
                     report += fws("File successfully synced", 25);
                 else { //if there were individual errors
-                    report += "\r\nErrors encountered: " + file.failed.length;
-                    for (var i = 0; i < file.failed.length; i++) {
-                        report += "\r\n\tFailed to " + file.failed[i].action + " student: " + file.failed[i].externalDataReference + " Error: " + file.failed[i].errorMessage;
+                    report += "\r\nErrors encountered: " + file.studentErrors.length;
+                    for (var i = 0; i < file.studentErrors.length; i++) {
+                        report += "\r\n\tFailed to " + file.studentErrors[i].action + " student: " + file.studentErrors[i].externalDataReference + " Error: " + file.studentErrors[i].errorMessage;
                     }
                 }
             }
         });
     }
-    report += "\r\n-------------------------------------------------------------------------------------------------------------------------------\r\n\r\n\r\n";
+    report += "\r\n-------------------------------------------------------------------------------------------------------------------------------------\r\n\r\n\r\n";
     writeLog(report);
 }
 
@@ -114,16 +114,17 @@ function getElapsedTime(start, end) {
     return elapsedTime;
 }
 
+// looks for file level errors
 function checkForErrors(files) {
     var studentErrs = "",
         fileErrs = "";
 
     files.forEach(function (file) {
         if (file.fileError !== null) {
-            fileErrs += "\n" + file.fileName + " failed to sync with the following error:\n" + file.fileError;
+            fileErrs += "\n" + file.fileName + " Failed to sync with the following error:\n" + file.fileError;
         } else if (file.passed != true) {
             studentErrs += "\n\nThe following students from " + file.fileName + " did not sync.";
-            file.failed.forEach(function (student) {
+            file.studentErrors.forEach(function (student) {
                 studentErrs += fws("\nStudent: " + student.externalDataReference, 30) + fws(" Action: " + student.action, 17) + " Error: " + student.errorMessage;
             });
         }
@@ -138,16 +139,22 @@ function checkForErrors(files) {
 }
 
 
-
+//bridge between hashes and syncing
 function syncInit(err, links) {
     if (err) {
-        //freak out here
-        //probably ought to email the person in charge...
-        console.log(chalk.red("Error at CLI"));
-        console.error(err);
+        console.log(chalk.red("There was an error while comparing files via hash\n"), err);
+
+        //include status in email and log file!
+    }
+    console.log(chalk.yellow("at cli"));
+    console.log("LINKS:\n", links);
+
+
+    if (links.length <= 0) {
+        console.log(chalk.green('all hashes matched'));
+        //UPDATE LOG!
         return;
     }
-    console.log(chalk.blue("RETURNED TO CLI!"));
 
     var start = new Date();
 
@@ -155,6 +162,8 @@ function syncInit(err, links) {
     async.mapLimit(links, 1, processMailingList, function (err, files) {
         var end = new Date(),
             elapsedTime = getElapsedTime(start, end);
+
+        console.log("FILES:\n", files);
 
         //check if file or row level errors exist
         checkForErrors(files);

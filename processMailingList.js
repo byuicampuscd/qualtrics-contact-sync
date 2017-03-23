@@ -179,7 +179,7 @@ function processTheData(students, cb, qStudents) {
             uCount: 0,
             dCount: 0,
             passed: true,
-            failed: [],
+            studentErrors: [],
             fileError: null
         };
         // sort through students and create report based on worked/error attributes
@@ -192,7 +192,7 @@ function processTheData(students, cb, qStudents) {
                 else
                     file.dCount++;
             } else
-                file.failed.push(student);
+                file.studentErrors.push(student);
         });
 
         // generate report of completed additions/updates/deletions
@@ -204,12 +204,12 @@ function processTheData(students, cb, qStudents) {
             console.log(chalk.green("Students successfully deleted: " + file.dCount));
 
 
-        file.failed.forEach(function (student) {
+        file.studentErrors.forEach(function (student) {
             console.log(chalk.red("Failed to " +
                 student.action + " student: ") + student.externalDataReference, chalk.red("Error: " + student.errorMessage));
         });
 
-        if (file.failed.length)
+        if (file.studentErrors.length)
             file.passed = false;
 
         //return to cli.js

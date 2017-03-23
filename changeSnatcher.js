@@ -16,15 +16,18 @@ function saveHashes(links, cb) {
     });
 
     var toWrite = d3.csvFormat(links);
-    fs.writeFile("Z:\\config.csv", toWrite, function (err) {
+    fs.writeFile("Z:\\debug.csv", toWrite, function (err) {
         if (err) cb(err);
-        //        console.log(chalk.green("New hashes saved!"));
+        console.log(chalk.green("New hashes saved!"));
     });
 }
 
 //compare the hashes - same logic as processMailingList
 function compareHashes(links, hashes, cb) {
     var toUpdate;
+
+    //    console.log('LINKS:\n', links);
+    //    console.log('HASHES:\n', hashes);
 
     toUpdate = links.filter(function (link) {
         var hIndex;
@@ -43,7 +46,7 @@ function compareHashes(links, hashes, cb) {
 
     //update hashes.csv
     // if this errs then cli syncInit will be called up twice & mess everything up...
-    saveHashes(links, cb);
+    //    saveHashes(links, cb);
 
     //start the sync!
     cb(null, toUpdate);
@@ -88,8 +91,6 @@ function init(links, cb) {
         if (err) cb(err);
         getHashes(links, cb);
     });
-
 }
-
 
 module.exports = init;
