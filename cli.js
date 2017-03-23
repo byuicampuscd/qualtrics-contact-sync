@@ -13,7 +13,7 @@ const fs = require('fs'),
 
 // write to log
 function writeLog(report) {
-    fs.appendFile("Z:\\Online Contact Lists\\log.txt", report, function (err) {
+    fs.appendFile("Z:\\log.txt", report, function (err) {
         if (err) throw err;
     });
     console.log(chalk.green("\nThe log has been updated"));
@@ -140,7 +140,14 @@ function checkForErrors(files) {
 
 
 function syncInit(err, links) {
-    console.log("RETURNED TO CLI!");
+    if (err) {
+        //freak out here
+        //probably ought to email the person in charge...
+        console.log(chalk.red("Error at CLI"));
+        console.error(err);
+        return;
+    }
+    console.log(chalk.blue("RETURNED TO CLI!"));
 
     var start = new Date();
 
@@ -156,9 +163,6 @@ function syncInit(err, links) {
         generateReport(null, files, elapsedTime);
     });
 }
-
-
-
 
 // reads config file and starts the hash comparison
 function init(err, links) {

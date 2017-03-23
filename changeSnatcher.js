@@ -2,9 +2,6 @@
 /* eslint no-console:0 */
 'use strict';
 
-//var cs = function () {},
-//    proto = cs.prototype;
-
 const fs = require('fs'),
     d3 = require('d3-dsv'),
     createHash = require('string-hash'),
@@ -12,17 +9,20 @@ const fs = require('fs'),
     chalk = require('chalk'),
     async = require('async');
 
-//var finalCallback;
+function saveHashes(links, cb) {
+    links.forEach(function (link) {
+        link.hash = link.newHash;
+        delete link.newHash;
+    });
 
-function saveHashes(links) {
     var toWrite = d3.csvFormat(links);
-
-    fs.writeFile("testConfig.csv", toWrite, function (err) {
+    fs.writeFile("Z:\\config.csv", toWrite, function (err) {
         if (err) cb(err);
         //        console.log(chalk.green("New hashes saved!"));
     });
 }
 
+//compare the hashes - same logic as processMailingList
 function compareHashes(links, hashes, cb) {
     var toUpdate;
 
@@ -36,7 +36,7 @@ function compareHashes(links, hashes, cb) {
 
         //if found, compare
         if (hIndex > -1) {
-            if (link.hash != hashes[hIndex].hash) {
+            if (link.newHash != hashes[hIndex].hash) {
                 return link;
             }
         } else {
@@ -46,6 +46,7 @@ function compareHashes(links, hashes, cb) {
     //    console.log("TOUPDATE", toUpdate.length);
 
     //update hashes.csv
+    // if this errs then cli syncInit will be called up twice & mess everything up...
     saveHashes(links, cb);
 
     //start the sync!
@@ -59,35 +60,40 @@ function sortList(a, b) {
     return 0;
 }
 
+//create separate array of the existing hashes. sort the lists
 function getHashes(links, cb) {
-    fs.readFile("lists/hashes.csv", function (err, hashes) {
-        if (err) cb(err);
-        hashes = d3.csvParse(hashes.toString());
-        links.sort(sortList);
-        hashes.sort(sortList);
-        compareHashes(links, hashes, cb);
+    var tempObj = {},
+        hashes = [];
+
+    hashes = links.filter(function (link) {
+        tempObj.hash = link.hash;
+        tempObj.csv = link.csv;
+        return tempObj;
     });
+
+    links.sort(sortList);
+    hashes.sort(sortList);
+    compareHashes(links, hashes, cb);
 }
 
-function hashLinks(link, cb) {
-    //ONLY FOR TESTING!
-    //    var file = 'lists/' + link.csv;
-    var file = link.csv;
+//hash each file in the config file - saved to link objects
+function hashLinks(link, callback) {
+    var file = 'Z:\\' + link.csv;
     fs.readFile(file, function (err, content) {
-        if (err) cb(err);
-        link.hash = createHash(content.toString());
-        cb(null, link);
+        if (err) callback(err);
+        link.newHash = createHash(content.toString());
+        callback(null, link);
     });
 }
 
+//cb is the final callback!
 function init(links, cb) {
-    //    finalCallback = cb;
     async.map(links, hashLinks, function (err, links) {
+        if (err) cb(err);
         getHashes(links, cb);
     });
 
 }
-
 
 
 module.exports = init;

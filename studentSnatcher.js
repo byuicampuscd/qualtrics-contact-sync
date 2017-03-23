@@ -11,16 +11,11 @@ const request = require('request'),
 
 // read the configuration file
 proto.readConfig = function (cb) {
-    //Z:\\Online Contact Lists\\config.csv
-    fs.readFile('lists/Config.csv', function (err, contents) {
+    fs.readFile('Z:\\config.csv', function (err, contents) {
         if (err) cb(err, contents);
         else {
             contents = contents.toString();
             var links = d3.csvParse(contents);
-            //TO BE REMOVED!
-            links.forEach(function (link) {
-                link.csv = 'lists/' + link.csv;
-            });
             cb(null, links);
         }
     });
