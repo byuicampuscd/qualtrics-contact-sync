@@ -28,7 +28,7 @@ function sortList(a, b) {
 function sendFileError(err, cb) {
     console.log(chalk.red('Error:', err));
     cb(null, {
-        fileName: link.csv.replace('lists/', ''),
+        fileName: link.csv,
         fileError: err.toString()
     });
 }
@@ -173,7 +173,7 @@ function processTheData(students, cb, qStudents) {
         }
         // file is returned to cli.js
         var file = {
-            fileName: link.csv.replace('lists/', ''),
+            fileName: link.csv,
             toAlterAmount: students.length,
             aCount: 0,
             uCount: 0,
@@ -240,7 +240,8 @@ function init(list, cb) {
     link = list;
     console.log('\n', chalk.blue(link.csv));
     // get students from the tsv file
-    ss.readStudents(link.csv, function (err, students) {
+    var filePath = 'Z:\\' + link.csv;
+    ss.readStudents(filePath, function (err, students) {
         if (err) {
             sendFileError(err, cb);
             return;
