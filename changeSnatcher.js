@@ -26,9 +26,6 @@ function saveHashes(links, cb) {
 function compareHashes(links, hashes, cb) {
     var toUpdate;
 
-    //console.log("LINKS\n", links);
-    //console.log("HASHES\n", hashes);
-
     toUpdate = links.filter(function (link) {
         var hIndex;
         // run a binary search
@@ -43,7 +40,6 @@ function compareHashes(links, hashes, cb) {
             return link;
         }
     });
-    //    console.log("TOUPDATE", toUpdate.length);
 
     //update hashes.csv
     // if this errs then cli syncInit will be called up twice & mess everything up...

@@ -239,10 +239,10 @@ function pullStudents(students, cb, qStudents, nextPage) {
 function init(list, cb) {
     link = list;
     console.log('\n', chalk.blue(link.csv));
+    var filePath = 'Z:\\' + link.csv;
     // get students from the tsv file
-    ss.readStudents(link.csv, function (err, students) {
+    ss.readStudents(filePath, function (err, students) {
         if (err) {
-            console.log(chalk.cyan("I found da error!"));
             sendFileError(err, cb);
             return;
         }
