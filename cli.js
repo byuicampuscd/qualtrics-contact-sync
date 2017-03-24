@@ -6,9 +6,11 @@ const fs = require('fs'),
     studentSnatcher = require('./studentSnatcher.js'),
     processMailingList = require('./processMailingList.js'),
     changeSnatcher = require('./changeSnatcher.js'),
+    feedbackManager = require('./feedbackManager.js'),
     sendMail = require('./email.js'),
     chalk = require('chalk'),
     async = require('async'),
+    fm = new feedbackManager(),
     ss = new studentSnatcher();
 
 // write to log
@@ -175,6 +177,8 @@ function syncInit(err, links) {
 
 // reads config file and starts the hash comparison
 function init(err, links) {
+    fm.generateHeader();
+
     //check for errors while reading config.csv
     if (err) {
         err = 'Unable to read configuration file\n' + err;

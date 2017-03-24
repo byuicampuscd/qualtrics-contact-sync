@@ -12,7 +12,7 @@ const fs = require('fs'),
 
 
 
-proto.proto.write = function (string) {
+proto.write = function (string) {
     var filePath = 'test.txt';
     fs.appendFile(filePath, string, function (err) {
         if (err) console.error(err);
@@ -39,6 +39,7 @@ proto.generateFile = function (file) {
     var text = '';
 
     if (file.fileError) {
+        text += fws(file.fileName, 30);
         text += '\r' + file.fileError + '\r';
     } else {
         text += fws("Changes to be Made: " + file.toAlterAmount, 30);
@@ -55,10 +56,11 @@ proto.generateFile = function (file) {
 }
 
 proto.generateHeader = function (configError) {
-    var head = '\r\r-------------------------------------------------------------------------------------------------------------------------------\r';
-    head += new Date();
+    var date = new Date(),
+        head = '\r\r-------------------------------------------------------------------------------------------------------------------------------\r';
+    head += fws(date.toDateString(), 20) + date.toTimeString();
     head += '\r-------------------------------------------------------------------------------------------------------------------------------------\r';
-    if (configError !== null) {
+    if (configError !== undefined) {
         head += configError + '\r';
     }
     proto.write(head);

@@ -1,6 +1,5 @@
 /* eslint-env node */
 /* eslint no-console:0 */
-
 'use strict';
 
 var pml = function () {},
@@ -8,12 +7,14 @@ var pml = function () {},
     link;
 
 const deepEqual = require('deep-equal'),
-    async = require('async'),
     objFilter = require('object-filter'),
     bs = require('binarysearch'),
     chalk = require('chalk'),
     StudentSnatcher = require('./studentSnatcher.js'),
     optionSnatcher = require('./optionSnatcher.js'),
+    feedbackManager = require('./feedbackManager.js'),
+    async = require('async'),
+    fm = new feedbackManager(),
     ss = new StudentSnatcher(),
     os = new optionSnatcher();
 
@@ -26,11 +27,18 @@ function sortList(a, b) {
 
 //format errors and send to callback
 function sendFileError(err, cb) {
-    console.log(chalk.red('Error:', err));
-    cb(null, {
+    var file = {
         fileName: link.csv,
         fileError: err.toString()
-    });
+    };
+    console.log(chalk.red(err));
+
+    fm.generateFile(file);
+    cb();
+    /*cb(null, {
+    fileName: link.csv,
+    fileError: err.toString()
+});*/
 }
 
 function filterStudent(student) {

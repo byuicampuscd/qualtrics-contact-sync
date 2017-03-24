@@ -2,12 +2,14 @@
 /* eslint no-console:0 */
 'use strict';
 
-const fs = require('fs'),
+const feedbackManager = require('./feedbackManager.js'),
+    fs = require('fs'),
     d3 = require('d3-dsv'),
     createHash = require('string-hash'),
     bs = require('binarysearch'),
     chalk = require('chalk'),
-    async = require('async');
+    async = require('async'),
+    fm = new feedbackManager();
 
 function saveHashes(links, cb) {
     links.forEach(function (link) {
@@ -79,17 +81,35 @@ function getHashes(links, cb) {
 function hashLinks(link, callback) {
     var file = 'Z:\\' + link.csv;
     fs.readFile(file, function (err, content) {
-        if (err) callback(err);
+        if (err) {
+            //tell the log that the file cannot be processed
+            fm.generateFile({
+                fileName: link.csv,
+                fileError: err
+            });
+            //skip this file and keep going!
+            callback();
+            return;
+        }
         link.newHash = createHash(content.toString());
         callback(null, link);
     });
 }
 
-//cb is the final callback!
+//cb is the final callback! (syncInit)
 function init(links, cb) {
     async.map(links, hashLinks, function (err, links) {
-        if (err) cb(err);
-        getHashes(links, cb);
+        if (err) {
+            console.error('A fatal error has occured.', err);
+            fm.write('A fatal error has occured.' + err);
+            fm.generateFooter("called from changeSnatcher Init()");
+        }
+        links = links.filter(function (link) {
+            if (link !== null) return link;
+        });
+
+        console.log('LINKS:\n', links);
+        //        getHashes(links, cb);
     });
 }
 
