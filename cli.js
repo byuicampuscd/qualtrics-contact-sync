@@ -2,10 +2,11 @@
 'use strict';
 
 const fs = require('fs'),
+    d3 = require('d3-dsv'),
     fws = require('fixed-width-string'),
     studentSnatcher = require('./studentSnatcher.js'),
     processMailingList = require('./processMailingList.js'),
-    changeSnatcher = require('./changeSnatcher.js'),
+    hashManager = require('./hashManager.js'),
     feedbackManager = require('./feedbackManager.js'),
     sendMail = require('./email.js'),
     chalk = require('chalk'),
@@ -86,7 +87,8 @@ function generateReport(err, files, time) {
     writeLog(report);
 }
 
-function getElapsedTime(start, end) {
+function getElapsedTime(start) {
+    var end = new Date();
     //create elapsed time
     var seconds = (end - start) / 1000,
         minutes = 0,
@@ -134,44 +136,58 @@ function checkForErrors(files) {
 
     if (fileErrs !== "" || studentErrs !== "") {
         var errs = fileErrs + studentErrs;
-        sendMail(errs);
+        //sendMail(errs);
     } else {
         return;
     }
 }
 
+function updateHashes(links, cb) {
+    links.forEach(function (link) {
+        link.hash = link.newHash;
+        delete link.newHash;
+    });
+
+    var toWrite = d3.csvFormat(links);
+    fs.writeFile("Z:\\debug.csv", toWrite, function (err) {
+        if (err) cb(err);
+        console.log(chalk.green("New hashes saved!"));
+        fm.write('\rHashes have been updated');
+        cb();
+    });
+}
 
 //bridge between hashes and syncing
 function syncInit(err, links) {
+    var elapsedTime = getElapsedTime(startTime);
     if (err) {
-        console.log(chalk.red("There was an error while comparing files via hash\n"), err);
-
-        //include status in email and log file!
-    }
-    console.log(chalk.yellow("at cli"));
-    console.log("LINKS:\n", links);
-
-
-    if (links.length <= 0) {
-        console.log(chalk.green('all hashes matched'));
-        //UPDATE LOG!
+        err = "There was a fatal error while comparing files via hash\n" + err;
+        console.log(chalk.red(err));
+        fm.write(err, fm.generateFooter('called at syncInit', elapedTime));
+        //sendMail(err);
         return;
     }
 
-    var start = new Date();
+    if (links.length <= 0) {
+        console.log(chalk.green('All hashes matched'));
+        fm.generateFooter('All hashes matched', elapsedTime);
+        return;
+    }
 
     //process individual files one at a time
     async.mapLimit(links, 1, processMailingList, function (err, files) {
-        var end = new Date(),
-            elapsedTime = getElapsedTime(start, end);
+        //console.log('LINKS:\n', links);
+        //console.log("FILES:\n", files);
 
-        console.log("FILES:\n", files);
-
-        //check if file or row level errors exist
-        checkForErrors(files);
-
-        console.log("\nElapsed Time:", elapsedTime);
-        generateReport(null, files, elapsedTime);
+        //UPDATE HASHES
+        updateHashes(links, function (err) {
+            if (err) {
+                console.error(err);
+            }
+            var elapsedTime = getElapsedTime(startTime);
+            console.log("\nElapsed Time:", elapsedTime);
+            fm.generateFooter(null, elapsedTime, files);
+        });
     });
 }
 
@@ -182,14 +198,16 @@ function init(err, links) {
     //check for errors while reading config.csv
     if (err) {
         err = 'Unable to read configuration file\n' + err;
-        sendMail(err);
         console.log(chalk.red(err));
-        generateReport(err, null);
+        var elapsedTime = getElapsedTime(startTime);
+        fm.write(err, fm.generateFooter("called cli init()", elapsedTime));
+        //sendMail(err);
         return;
     }
 
-    changeSnatcher(links, syncInit);
+    hashManager(links, syncInit);
 }
 
-console.log("Started at:", new Date());
+var startTime = new Date();
+console.log("Started at:", startTime);
 ss.readConfig(init);

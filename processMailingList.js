@@ -35,10 +35,6 @@ function sendFileError(err, cb) {
 
     fm.generateFile(file);
     cb();
-    /*cb(null, {
-    fileName: link.csv,
-    fileError: err.toString()
-});*/
 }
 
 function filterStudent(student) {
@@ -220,7 +216,12 @@ function processTheData(students, cb, qStudents) {
         if (file.studentErrors.length)
             file.passed = false;
 
+
+        //        console.log('FILE:\n', file);
+
         //return to cli.js
+        fm.generateFile(file);
+
         cb(err, file);
     });
 }
