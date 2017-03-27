@@ -5,43 +5,38 @@
 var fm = function () {},
     proto = fm.prototype;
 
-
 const fs = require('fs'),
     fws = require('fixed-width-string'),
     chalk = require('chalk'),
     sendMail = require('./email.js');
 
-/*proto.getElapsedTime = function (start) {
-    var end
 
-    //create elapsed time
-    var seconds = (end - start) / 1000,
-        minutes = 0,
-        hours = 0,
-        elapsedTime = "";
-    //calculate minutes
-    if (seconds >= 60) {
-        minutes = Math.floor(seconds / 60);
-        seconds = Math.floor(seconds % 60);
-    }
-    //format seconds
-    if (seconds < 10)
-        seconds = '0' + seconds;
-    //calculate hours
-    if (minutes >= 60) {
-        hours = Math.floor(minutes / 60);
-        minutes = Math.floor(minutes % 60);
-    }
-    //format minutes
-    if (minutes < 10)
-        minutes = '0' + minutes;
-    //format hours
-    if (hours < 10)
-        hours = '0' + hours;
 
-    elapsedTime += hours + ":" + minutes + ":" + seconds;
-    return elapsedTime;
-}*/
+
+function getFilesSynced(files) {
+    var totalFiles = 0;
+    files.forEach(function (file) {
+        if (file.passed) {
+            totalFiles++;
+        }
+    });
+    return totalFiles;
+}
+
+function getChangesMade(files) {
+    var totalChanges = 0;
+
+    files.forEach(function (file) {
+        if (file.passed == true) {
+            totalChanges += file.aCount;
+            totalChanges += file.uCount;
+            totalChanges += file.dCount;
+        }
+    });
+    return totalChanges;
+}
+
+
 
 
 proto.write = function (string, cb) {
@@ -54,38 +49,44 @@ proto.write = function (string, cb) {
 }
 
 proto.generateFooter = function (message, elapsedTime, files) {
-    var footer = '';
+    var footer = '\r\n\r\n';
     if (message != undefined) {
-        footer += message;
-    } else {
-
-
-        footer += '\r' + files;
-        footer += '\r-------------------------------------------------------------------------------------------------------------------------------';
-
+        footer += fws(message, 20);
+    }
+    if (elapsedTime != undefined) {
+        footer += fws('Elapsed Time: ' + elapsedTime, 32);
+    }
+    if (files != undefined) {
+        var filesSynced = getFilesSynced(files),
+            changesMade = getChangesMade(files);
+        footer += fws('Files Successfully Synced: ' + filesSynced, 36);
+        footer += 'Total Students Altered: ' + changesMade;
+        //check for student level errors!
     }
 
+    footer += '\r\n-------------------------------------------------------------------------------------------------------------------------------\r\n\r\n\r\n\r\n';
     console.log(chalk.green('The log Has been updated'));
     proto.write(footer);
 }
 
 proto.generateFile = function (file) {
     var text = '';
-    text += '\r\r' + fws(file.fileName, 30);
+    text += '\r\n' + fws(file.fileName, 30);
 
     if (file.fileError != undefined) {
         //        text += fws(file.fileName, 30);
-        text += '\r' + file.fileError;
+        text += '\r\n' + file.fileError + '\r\n';
     } else if (file.sameHash === true) {
-        text += '\r\t The hashes matched';
+        text += '\r\n\t' + 'The hashes matched' + '\r\n';
     } else {
         text += fws("Changes to be Made: " + file.toAlterAmount, 30);
         text += fws("Added: " + file.aCount, 15);
         text += fws("Updated: " + file.uCount, 17);
         text += fws("Deleted: " + file.dCount, 17);
+        text += '\r\n';
         if (file.StudentErrors) {
             file.studentErrors.forEach(function (error) {
-                text += '\r\tFailed to ' + error.action + ' student: ' + error.externalDataReference + 'Error: ' + error.errorMessage;
+                text += '\tFailed to ' + error.action + ' student: ' + error.externalDataReference + 'Error: ' + error.errorMessage + '\r\n';
             });
         }
     }
@@ -94,11 +95,11 @@ proto.generateFile = function (file) {
 
 proto.generateHeader = function (configError) {
     var date = new Date(),
-        head = '\r\r-------------------------------------------------------------------------------------------------------------------------------\r';
+        head = '-------------------------------------------------------------------------------------------------------------------------------\r\n';
     head += fws(date.toDateString(), 20) + date.toTimeString();
-    head += '\r-------------------------------------------------------------------------------------------------------------------------------------';
+    head += '\r\n-------------------------------------------------------------------------------------------------------------------------------------';
     if (configError !== undefined) {
-        head += configError + '\r';
+        head += configError + '\r\n';
     }
     proto.write(head);
 }

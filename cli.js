@@ -14,39 +14,10 @@ const fs = require('fs'),
     fm = new feedbackManager(),
     ss = new studentSnatcher();
 
-// write to log
-function writeLog(report) {
-    fs.appendFile("Z:\\debug.txt", report, function (err) {
-        if (err) throw err;
-    });
-    console.log(chalk.green("\nThe log has been updated"));
-}
-
-function getChangesMade(files) {
-    var totalChanges = 0;
-    if (!files)
-        return totalChanges;
-
-    files.forEach(function (file) {
-        totalChanges += file.aCount;
-        totalChanges += file.uCount;
-        totalChanges += file.dCount;
-    });
-    return totalChanges;
-}
-
-function getFilesSynced(files) {
-    var totalFiles = 0;
-    files.forEach(function (file) {
-        if (file.passed) {
-            totalFiles++;
-        }
-    });
-    return totalFiles;
-}
+const fakeFiles = require('./fakeFiles.js');
 
 // create string to send to the log file
-function generateReport(err, files, time) {
+/*function generateReport(err, files, time) {
     var report = "";
 
     report += "\r\n\r\n-------------------------------------------------------------------------------------------------------------------------------------\r\n" + new Date() + "\r\n-------------------------------------------------------------------------------------------------------------------------------------\r\n";
@@ -85,7 +56,7 @@ function generateReport(err, files, time) {
     }
     report += "\r\n-------------------------------------------------------------------------------------------------------------------------------------\r\n\r\n\r\n";
     writeLog(report);
-}
+}*/
 
 function getElapsedTime(start) {
     var end = new Date();
@@ -176,6 +147,7 @@ function syncInit(err, links) {
 
     //process individual files one at a time
     async.mapLimit(links, 1, processMailingList, function (err, files) {
+        files = fakeFiles;
         //console.log('LINKS:\n', links);
         //console.log("FILES:\n", files);
 
