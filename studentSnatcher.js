@@ -5,13 +5,14 @@
 var ss = function () {},
     proto = ss.prototype;
 
-const request = require('request'),
+const configPath = 'Z:\\debug.csv',
+    request = require('request'),
     fs = require('fs'),
     d3 = require('d3-dsv');
 
 // read the configuration file
 proto.readConfig = function (cb) {
-    fs.readFile('Z:\\debug.csv', function (err, contents) {
+    fs.readFile(configPath, function (err, contents) {
         if (err) cb(err, contents);
         else {
             contents = contents.toString();

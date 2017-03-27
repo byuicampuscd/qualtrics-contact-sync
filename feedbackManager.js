@@ -5,7 +5,8 @@
 var fm = function () {},
     proto = fm.prototype;
 
-const fs = require('fs'),
+const logPath = 'test.txt',
+    fs = require('fs'),
     fws = require('fixed-width-string'),
     chalk = require('chalk'),
     sendMail = require('./email.js');
@@ -37,11 +38,8 @@ function getChangesMade(files) {
 }
 
 
-
-
 proto.write = function (string, cb) {
-    var filePath = 'test.txt';
-    fs.appendFile(filePath, string, function (err) {
+    fs.appendFile(logPath, string, function (err) {
         if (err) console.error(err);
     });
     if (cb != undefined)
@@ -61,17 +59,17 @@ proto.generateFooter = function (message, elapsedTime, files) {
             changesMade = getChangesMade(files);
         footer += fws('Files Successfully Synced: ' + filesSynced, 36);
         footer += 'Total Students Altered: ' + changesMade;
-        //check for student level errors!
     }
 
-    footer += '\r\n-------------------------------------------------------------------------------------------------------------------------------\r\n\r\n\r\n\r\n';
+    footer += '\r\n-------------------------------------------------------------------------------------------------------------------------------------\r\n\r\n\r\n\r\n';
     console.log(chalk.green('The log Has been updated'));
     proto.write(footer);
 }
 
 proto.generateFile = function (file) {
-    var text = '';
-    text += '\r\n' + fws(file.fileName, 30);
+    var text = '',
+        fileName = file.fileName.replace(/^QualtricsSync-/, '');
+    text += '\r\n' + fws(fileName, 30);
 
     if (file.fileError != undefined) {
         //        text += fws(file.fileName, 30);
@@ -84,7 +82,7 @@ proto.generateFile = function (file) {
         text += fws("Updated: " + file.uCount, 17);
         text += fws("Deleted: " + file.dCount, 17);
         text += '\r\n';
-        if (file.StudentErrors) {
+        if (file.studentErrors.length > 0) {
             file.studentErrors.forEach(function (error) {
                 text += '\tFailed to ' + error.action + ' student: ' + error.externalDataReference + 'Error: ' + error.errorMessage + '\r\n';
             });
@@ -95,7 +93,7 @@ proto.generateFile = function (file) {
 
 proto.generateHeader = function (configError) {
     var date = new Date(),
-        head = '-------------------------------------------------------------------------------------------------------------------------------\r\n';
+        head = '-------------------------------------------------------------------------------------------------------------------------------------\r\n';
     head += fws(date.toDateString(), 20) + date.toTimeString();
     head += '\r\n-------------------------------------------------------------------------------------------------------------------------------------';
     if (configError !== undefined) {
