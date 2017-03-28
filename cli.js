@@ -12,7 +12,7 @@ const fs = require('fs'),
 
 // write to log
 function writeLog(report) {
-    fs.appendFile("Z:\\debug.txt", report, function (err) {
+    fs.appendFile("Z:\\log.txt", report, function (err) {
         if (err) throw err;
     });
     console.log(chalk.green("\nThe log has been updated"));
