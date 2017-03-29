@@ -48,28 +48,38 @@ function getElapsedTime(start) {
     return elapsedTime;
 }
 
-function updateHashes(links, cb) {
+function updateHashes(results, cb) {
     var toUpdate = [],
         tempLink = {};
-    toUpdate = links.map(function (link) {
-        tempLink.csv = link.csv;
-        tempLink.MailingListID = link.MailingListID;
-        tempLink.LibraryID = link.LibraryID;
-        tempLink.hash = link.newHash;
-        return tempLink;
-    });
 
-    var toWrite = d3.csvFormat(toUpdate);
-    fs.writeFile(configPath, toWrite, function (err) {
-        if (err) cb(err);
-        console.log(chalk.green("New hashes saved!"));
-        fm.write('\rHashes have been updated');
-        cb();
-    });
+    /*results.forEach(function (result) {
+    console.log("Result", result);
+    console.log("Result.file", result.file);
+    console.log("Result.link", result.link);
+    console.log("Result.csv", result.csv);
+});*/
+
+    /*toUpdate = results.map(function (result) {
+        console.log('SILDFBGS ', result);
+        tempLink.csv = result.link.csv;
+        tempLink.MailingListID = result.link.MailingListID;
+        tempLink.LibraryID = result.link.LibraryID;
+        tempLink.hash = result.link.newHash;
+        return tempLink;
+    });*/
+
+    /* var toWrite = d3.csvFormat(toUpdate);
+ fs.writeFile(configPath, toWrite, function (err) {
+     if (err) cb(err);
+     console.log(chalk.green("New hashes saved!"));
+     fm.write('\rHashes have been updated');
+     cb();
+ });*/
+    cb();
 }
 
 //bridge between hashes and syncing
-function syncInit(err, links, linksToUpdate) {
+function syncInit(err, dataToSync) {
     var elapsedTime = getElapsedTime(startTime);
     if (err) {
         err = "There was a fatal error while comparing files via hash\n" + err;
@@ -79,29 +89,24 @@ function syncInit(err, links, linksToUpdate) {
         return;
     }
 
-    if (linksToUpdate.length <= 0) {
-        console.log(chalk.green('\nAll hashes matched'));
-        fm.generateFooter('All hashes matched', elapsedTime);
-        return;
-    }
+    //if all hashes matched?
+    //    console.log(chalk.yellow("Data To Sync:\n"), dataToSync);
 
     //process individual files one at a time
-    async.mapLimit(linksToUpdate, 1, processMailingList, function (err, files) {
-        //console.log('LINKS:\n', links);
-        //console.log('LINKS TO UPDATE:\n', linksToUpdate);
-        //console.log("FILES:\n", files);
+    async.mapLimit(dataToSync, 1, processMailingList, function (err, results) {
+        //        console.log(chalk.yellow("RESULTS:\n"), results);
+        //        console.log(chalk.yellow("RESULTS.LINK:\n"), results[0].link);
 
-        //WILL THIS WORK WITH A FILE-LEVEL ERROR??
 
 
         //UPDATE HASHES
-        updateHashes(links, function (err) {
+        updateHashes(dataToSync, function (err) {
             if (err) {
                 console.error(err);
             }
             var elapsedTime = getElapsedTime(startTime);
             console.log("\nElapsed Time:", elapsedTime);
-            fm.generateFooter(null, elapsedTime, files);
+            fm.generateFooter(null, elapsedTime, results.files);
         });
     });
 }

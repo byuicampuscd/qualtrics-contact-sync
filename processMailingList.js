@@ -27,13 +27,16 @@ function sortList(a, b) {
 
 //format errors and send to callback
 function sendFileError(err, cb) {
-    var file = {
-        fileName: link.csv,
-        fileError: err.toString()
+    var dataToSync = {
+        file: {
+            fileName: link.csv,
+            fileError: err.toString()
+        },
+        link: link
     };
     console.log(chalk.red(err));
 
-    fm.generateFile(file);
+    fm.generateFile(dataToSync);
     cb();
 }
 
@@ -66,6 +69,7 @@ function filterStudent(student) {
 }
 
 function formatStudents(students) {
+    console.log(chalk.magenta('formatStudents'));
     // create keys for embeddedData object
     var emdKeys = Object.keys(students[0]).filter(function (key) {
         return key != 'Email' && key != 'UniqueID' && key != 'FirstName';
@@ -105,6 +109,7 @@ function formatStudents(students) {
 }
 
 function setOptions(student, callback) {
+    console.log(chalk.magenta('setOptions'));
     var option = "";
     // create approptriate API call
     switch (student.action) {
@@ -123,6 +128,7 @@ function setOptions(student, callback) {
 }
 
 function processTheData(students, cb, qStudents) {
+    console.log(chalk.magenta('processTheData'));
     var toAlter = [];
 
     students.forEach(function (student) {
@@ -207,26 +213,28 @@ function processTheData(students, cb, qStudents) {
         if (file.dCount > 0)
             console.log(chalk.green("Students successfully deleted: " + file.dCount));
 
-
         file.studentErrors.forEach(function (student) {
             console.log(chalk.red("Failed to " +
                 student.action + " student: ") + student.externalDataReference, chalk.red("Error: " + student.errorMessage));
         });
-
         if (file.studentErrors.length)
             file.passed = false;
-
-
         //        console.log('FILE:\n', file);
 
-        //return to cli.js
-        fm.generateFile(file);
+        var dataToSync = {
+            file: file,
+            link: link
+        };
 
-        cb(err, file);
+        fm.generateFile(dataToSync);
+
+        //return to cli.js
+        cb(err, dataToSync);
     });
 }
 
 function pullStudents(students, cb, qStudents, nextPage) {
+    console.log(chalk.magenta('pullStudents'));
     if (!qStudents) qStudents = [];
     ss.pullStudents(os.get(link.MailingListID, nextPage), function (err, newStudents, nextPage) {
         if (err) {
@@ -245,8 +253,15 @@ function pullStudents(students, cb, qStudents, nextPage) {
     });
 }
 //cb returns to cli
-function init(list, cb) {
-    link = list;
+function init(dataToSync, cb) {
+    console.log(chalk.magenta('init'));
+    console.log(chalk.yellow('data to sync:\n'), dataToSync);
+    link = dataToSync.link;
+
+    if (link.matchingHashes == true) {
+        cb(null, link.link);
+        return;
+    }
     console.log('\n', chalk.blue(link.csv));
     var filePath = 'Z:\\' + link.csv;
     // get students from the tsv file
