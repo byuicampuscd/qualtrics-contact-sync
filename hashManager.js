@@ -20,7 +20,6 @@ function createDataToSync(links, cb) {
         tempObj.file = false;
         return tempObj;
     });
-
     //    console.log(chalk.yellow('data to sync:\n'), dataToSync);
 
     cb(null, dataToSync);
@@ -33,18 +32,22 @@ function compareHashes(links, cb) {
         console.log('Comparing Hashes');
         if (link.hash == link.newHash) {
             console.log(chalk.green('Hashes Matched'));
-            //output to the log!
             link.matchingHashes = true;
+            //output to the log!
+            var result = {
+                file: false,
+                link: link
+            };
+            fm.generateFile(result);
         } else {
             console.log(chalk.yellow("Hashes Didn't Match"));
             link.matchingHashes = false;
         }
     });
-    //    console.log(chalk.yellow('LINKS:\n'), links);
+    //console.log(chalk.yellow('LINKS:\n'), links);
 
     //start the sync! return to cli
     createDataToSync(links, cb);
-    //    cb(null, links);
 }
 
 //hash each file in the config file - saved to link objects

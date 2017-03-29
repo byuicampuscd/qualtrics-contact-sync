@@ -25,7 +25,7 @@ function sortList(a, b) {
     return 0;
 }
 
-//format errors and send to callback
+// format errors and send to callback
 function sendFileError(err, cb) {
     var dataToSync = {
         file: {
@@ -41,7 +41,7 @@ function sendFileError(err, cb) {
 }
 
 function filterStudent(student) {
-    //filter student outside of embeddedData
+    // filter student outside of embeddedData
     var filteredStudent = objFilter(student, function (value) {
         return value !== '' && value !== null;
     });
@@ -49,16 +49,16 @@ function filterStudent(student) {
     if (student.action === 'Update')
         return filteredStudent;
 
-    //if null delete it and return
+    // if null delete it and return
     if (student.embeddedData === null) {
         delete filteredStudent.embeddedData;
     } else {
-        //filter embeddedData
+        // filter embeddedData
         var filteredData = objFilter(student.embeddedData, function (value) {
             return value !== '' && value !== null;
         });
 
-        //append filteredData if not empty
+        // append filteredData if not empty
         if (Object.keys(filteredData).length <= 0) {
             delete filteredStudent.embeddedData;
         } else {
@@ -69,7 +69,7 @@ function filterStudent(student) {
 }
 
 function formatStudents(students) {
-    //    console.log(chalk.magenta('formatting Students'));
+    // console.log(chalk.magenta('formatting Students'));
     // create keys for embeddedData object
     var emdKeys = Object.keys(students[0]).filter(function (key) {
         return key != 'Email' && key != 'UniqueID' && key != 'FirstName';
@@ -82,19 +82,19 @@ function formatStudents(students) {
     var formattedStudents = students.map(function (currVal, formattedStudents) {
         var tStudent = {},
             tEmbeddedData = {};
-        //format keys and create tempStudent object
+        // format keys and create tempStudent object
         for (var j = 0; j < keys.length; j++) {
-            //UniqueID must be converted to externalDataReference
+            // UniqueID must be converted to externalDataReference
             if (keys[j] === 'UniqueID') {
                 tStudent.externalDataReference = currVal[keys[j]];
             } else {
-                //first letter of each key ot lower case
+                // first letter of each key ot lower case
                 tStudent[keys[j][0].toLowerCase() + keys[j].slice(1)] = currVal[keys[j]];
             }
         }
         var commaFinder = new RegExp(/,/g);
 
-        //create embeddedData object
+        // create embeddedData object
         for (var i = 0; i < emdKeys.length; i++) {
             // filter commas out of embeddedData values so the qualtrics api won't throw a fit
             tEmbeddedData[emdKeys[i]] = currVal[emdKeys[i]].replace(commaFinder, '');
@@ -123,7 +123,6 @@ function setOptions(student, callback) {
             var option = os.delete(link.MailingListID, student.id);
             break;
     }
-    // Send request
     ss.send(student, option, callback);
 }
 
@@ -138,7 +137,7 @@ function processTheData(students, cb, qStudents) {
         // get the index of matching students
         qIndex = bs(qStudents, student, sortList);
 
-        //perform magic decision making logic
+        // perform magic decision making logic
         if (qIndex > -1) {
             //create version to use for equality check
             var filteredQStudent = filterStudent(qStudents[qIndex]);
@@ -175,7 +174,7 @@ function processTheData(students, cb, qStudents) {
 
     console.log('Changes to be made: ', toAlter.length);
 
-    //make api calls X at a time - callback returns here
+    // make api calls X at a time - callback returns here
     async.mapLimit(toAlter, 25, setOptions, function (err, students) {
         if (err) {
             sendFileError(err, cb);
@@ -219,7 +218,7 @@ function processTheData(students, cb, qStudents) {
         });
         if (file.studentErrors.length)
             file.passed = false;
-        //        console.log('FILE:\n', file);
+        // console.log('FILE:\n', file);
 
         var dataToSync = {
             file: file,
@@ -228,7 +227,7 @@ function processTheData(students, cb, qStudents) {
 
         fm.generateFile(dataToSync);
 
-        //return to cli.js
+        // return to cli.js
         cb(err, dataToSync);
     });
 }
@@ -254,8 +253,8 @@ function pullStudents(students, cb, qStudents, nextPage) {
 }
 //cb returns to cli
 function init(dataToSync, cb) {
-    //    console.log(chalk.magenta('init'));
-    //    console.log(chalk.yellow('data to sync:\n'), dataToSync);
+    // console.log(chalk.magenta('init'));
+    // console.log(chalk.yellow('data to sync:\n'), dataToSync);
     link = dataToSync.link;
 
     if (link.matchingHashes == true) {

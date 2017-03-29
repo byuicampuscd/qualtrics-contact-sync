@@ -1,7 +1,7 @@
 // call linkSnatcher & get all mailing list objects
 'use strict';
 
-const configPath = 'Z:\\debug.csv',
+const configPath = 'Z:\\config.csv',
     fs = require('fs'),
     d3 = require('d3-dsv'),
     fws = require('fixed-width-string'),
@@ -76,7 +76,7 @@ function updateHashes(results, cb) {
     });
 }
 
-//bridge between hashes and syncing
+// bridge between hashes and syncing
 function syncInit(err, dataToSync) {
     var elapsedTime = getElapsedTime(startTime);
     if (err) {
@@ -86,15 +86,13 @@ function syncInit(err, dataToSync) {
         sendMail(err);
         return;
     }
-    //    console.log(chalk.yellow("Data To Sync:\n"), dataToSync);
+    // console.log(chalk.yellow("Data To Sync:\n"), dataToSync);
 
-    //if all hashes matched?
+    // if all hashes matched?
 
     //process individual files one at a time
     async.mapLimit(dataToSync, 1, processMailingList, function (err, results) {
-        //        console.log(chalk.yellow("RESULTS:\n"), results);
-
-        //UPDATE HASHES
+        // console.log(chalk.yellow("RESULTS:\n"), results);
         updateHashes(results, function (err) {
             if (err) {
                 console.error(err);
@@ -110,7 +108,7 @@ function syncInit(err, dataToSync) {
 function init(err, links) {
     fm.generateHeader();
 
-    //check for errors while reading config.csv
+    // check for errors while reading config.csv
     if (err) {
         err = 'Unable to read configuration file\n' + err;
         console.log(chalk.red(err));
@@ -119,7 +117,6 @@ function init(err, links) {
         sendMail(err);
         return;
     }
-
     hashManager(links, syncInit);
 }
 

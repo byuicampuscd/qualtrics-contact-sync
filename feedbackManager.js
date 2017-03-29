@@ -5,13 +5,11 @@
 var fm = function () {},
     proto = fm.prototype;
 
-const logPath = 'test.txt',
+const logPath = 'Z:\\log.txt',
     fs = require('fs'),
     fws = require('fixed-width-string'),
     chalk = require('chalk'),
     sendMail = require('./email.js');
-
-
 
 
 function getFilesSynced(files) {
@@ -36,6 +34,7 @@ function getChangesMade(files) {
     });
     return totalChanges;
 }
+
 
 
 proto.write = function (string, cb) {
@@ -67,28 +66,40 @@ proto.generateFooter = function (message, elapsedTime, files) {
 }
 
 proto.generateFile = function (dataToSync) {
-    var file = dataToSync.file;
+    // console.log(chalk.yellow('Data to sync:\n'), dataToSync);
     var text = '',
-        fileName = file.fileName.replace(/^QualtricsSync-/, '');
-    text += '\r\n' + fws(fileName, 30);
+        file = dataToSync.file,
+        link = dataToSync.link,
+        fileName = '';
 
-    if (file.fileError != undefined) {
-        //        text += fws(file.fileName, 30);
-        text += '\r\n' + file.fileError + '\r\n';
-    } else if (file.sameHash === true) {
+    // if file was synced
+    if (dataToSync.file) {
+        fileName = file.fileName.replace(/^QualtricsSync-/, '');
         text += '\r\n\t' + 'The hashes matched' + '\r\n';
+
+        if (file.fileError != undefined) {
+            text += '\r\n' + file.fileError + '\r\n';
+        } else {
+            text += fws("Changes to be Made: " + file.toAlterAmount, 30);
+            text += fws("Added: " + file.aCount, 15);
+            text += fws("Updated: " + file.uCount, 17);
+            text += fws("Deleted: " + file.dCount, 17);
+            text += '\r\n';
+            if (file.studentErrors.length > 0) {
+                file.studentErrors.forEach(function (error) {
+                    text += '\tFailed to ' + error.action + ' student: ' + error.externalDataReference + 'Error: ' + error.errorMessage + '\r\n';
+                });
+            }
+        }
     } else {
-        text += fws("Changes to be Made: " + file.toAlterAmount, 30);
-        text += fws("Added: " + file.aCount, 15);
-        text += fws("Updated: " + file.uCount, 17);
-        text += fws("Deleted: " + file.dCount, 17);
-        text += '\r\n';
-        if (file.studentErrors.length > 0) {
-            file.studentErrors.forEach(function (error) {
-                text += '\tFailed to ' + error.action + ' student: ' + error.externalDataReference + 'Error: ' + error.errorMessage + '\r\n';
-            });
+        fileName = link.csv.replace(/^QualtricsSync-/, '');
+        text += '\r\n' + fws(fileName, 30);
+
+        if (link.matchingHashes) {
+            text += '\r\n\t' + 'The hashes matched' + '\r\n';
         }
     }
+
     proto.write(text);
 }
 
