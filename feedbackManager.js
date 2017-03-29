@@ -68,7 +68,6 @@ proto.generateFooter = function (message, elapsedTime, files) {
 
 proto.generateFile = function (dataToSync) {
     var file = dataToSync.file;
-    console.log(dataToSync);
     var text = '',
         fileName = file.fileName.replace(/^QualtricsSync-/, '');
     text += '\r\n' + fws(fileName, 30);

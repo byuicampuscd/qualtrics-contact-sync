@@ -69,7 +69,7 @@ function filterStudent(student) {
 }
 
 function formatStudents(students) {
-    console.log(chalk.magenta('formatStudents'));
+    //    console.log(chalk.magenta('formatting Students'));
     // create keys for embeddedData object
     var emdKeys = Object.keys(students[0]).filter(function (key) {
         return key != 'Email' && key != 'UniqueID' && key != 'FirstName';
@@ -109,7 +109,7 @@ function formatStudents(students) {
 }
 
 function setOptions(student, callback) {
-    console.log(chalk.magenta('setOptions'));
+    //    console.log(chalk.magenta('setOptions'));
     var option = "";
     // create approptriate API call
     switch (student.action) {
@@ -128,7 +128,7 @@ function setOptions(student, callback) {
 }
 
 function processTheData(students, cb, qStudents) {
-    console.log(chalk.magenta('processTheData'));
+    console.log(chalk.magenta('Comparing Students'));
     var toAlter = [];
 
     students.forEach(function (student) {
@@ -234,7 +234,7 @@ function processTheData(students, cb, qStudents) {
 }
 
 function pullStudents(students, cb, qStudents, nextPage) {
-    console.log(chalk.magenta('pullStudents'));
+    //    console.log(chalk.magenta('pullStudents'));
     if (!qStudents) qStudents = [];
     ss.pullStudents(os.get(link.MailingListID, nextPage), function (err, newStudents, nextPage) {
         if (err) {
@@ -254,12 +254,12 @@ function pullStudents(students, cb, qStudents, nextPage) {
 }
 //cb returns to cli
 function init(dataToSync, cb) {
-    console.log(chalk.magenta('init'));
-    console.log(chalk.yellow('data to sync:\n'), dataToSync);
+    //    console.log(chalk.magenta('init'));
+    //    console.log(chalk.yellow('data to sync:\n'), dataToSync);
     link = dataToSync.link;
 
     if (link.matchingHashes == true) {
-        cb(null, link.link);
+        cb(null, dataToSync);
         return;
     }
     console.log('\n', chalk.blue(link.csv));
@@ -283,6 +283,7 @@ function init(dataToSync, cb) {
         }
 
         // get students from qualtrics
+        console.log(chalk.magenta('Pulling students from Qualtrics'));
         pullStudents(students, cb);
     });
 }

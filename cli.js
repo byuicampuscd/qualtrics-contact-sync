@@ -52,30 +52,28 @@ function updateHashes(results, cb) {
     var toUpdate = [],
         tempLink = {};
 
-    /*results.forEach(function (result) {
-    console.log("Result", result);
-    console.log("Result.file", result.file);
-    console.log("Result.link", result.link);
-    console.log("Result.csv", result.csv);
-});*/
+    toUpdate = results.map(function (result) {
+        tempLink = {};
 
-    /*toUpdate = results.map(function (result) {
-        console.log('SILDFBGS ', result);
         tempLink.csv = result.link.csv;
         tempLink.MailingListID = result.link.MailingListID;
         tempLink.LibraryID = result.link.LibraryID;
-        tempLink.hash = result.link.newHash;
-        return tempLink;
-    });*/
 
-    /* var toWrite = d3.csvFormat(toUpdate);
- fs.writeFile(configPath, toWrite, function (err) {
-     if (err) cb(err);
-     console.log(chalk.green("New hashes saved!"));
-     fm.write('\rHashes have been updated');
-     cb();
- });*/
-    cb();
+        if (result.file.passed === true)
+            tempLink.hash = result.link.newHash;
+        else
+            tempLink.hash = result.link.hash;
+
+        return tempLink;
+    });
+
+    var toWrite = d3.csvFormat(toUpdate);
+    fs.writeFile(configPath, toWrite, function (err) {
+        if (err) cb(err);
+        console.log(chalk.green("New hashes saved!"));
+        fm.write('\rHashes have been updated');
+        cb();
+    });
 }
 
 //bridge between hashes and syncing
@@ -88,19 +86,16 @@ function syncInit(err, dataToSync) {
         sendMail(err);
         return;
     }
+    //    console.log(chalk.yellow("Data To Sync:\n"), dataToSync);
 
     //if all hashes matched?
-    //    console.log(chalk.yellow("Data To Sync:\n"), dataToSync);
 
     //process individual files one at a time
     async.mapLimit(dataToSync, 1, processMailingList, function (err, results) {
         //        console.log(chalk.yellow("RESULTS:\n"), results);
-        //        console.log(chalk.yellow("RESULTS.LINK:\n"), results[0].link);
-
-
 
         //UPDATE HASHES
-        updateHashes(dataToSync, function (err) {
+        updateHashes(results, function (err) {
             if (err) {
                 console.error(err);
             }
