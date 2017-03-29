@@ -5,7 +5,7 @@
 var ss = function () {},
     proto = ss.prototype;
 
-const configPath = 'Z:\\config.csv',
+const configPath = 'Z:\\debug.csv',
     request = require('request'),
     fs = require('fs'),
     d3 = require('d3-dsv');

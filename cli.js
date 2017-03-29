@@ -1,7 +1,7 @@
 // call linkSnatcher & get all mailing list objects
 'use strict';
 
-const configPath = 'Z:\\config.csv',
+const configPath = 'Z:\\debug.csv',
     fs = require('fs'),
     d3 = require('d3-dsv'),
     fws = require('fixed-width-string'),
@@ -71,7 +71,7 @@ function updateHashes(results, cb) {
     fs.writeFile(configPath, toWrite, function (err) {
         if (err) cb(err);
         console.log(chalk.green("New hashes saved!"));
-        fm.write('\rHashes have been updated');
+        fm.write('\rHashes were updated');
         cb();
     });
 }
@@ -93,14 +93,14 @@ function syncInit(err, dataToSync) {
     //process individual files one at a time
     async.mapLimit(dataToSync, 1, processMailingList, function (err, results) {
         // console.log(chalk.yellow("RESULTS:\n"), results);
-        updateHashes(results, function (err) {
-            if (err) {
-                console.error(err);
-            }
-            var elapsedTime = getElapsedTime(startTime);
-            console.log("\nElapsed Time:", elapsedTime);
-            fm.generateFooter(null, elapsedTime, results.files);
-        });
+        //        updateHashes(results, function (err) {
+        //            if (err) {
+        //                console.error(err);
+        //            }
+        var elapsedTime = getElapsedTime(startTime);
+        console.log("\nElapsed Time:", elapsedTime);
+        fm.generateFooter(null, elapsedTime, results.files);
+        //        });
     });
 }
 

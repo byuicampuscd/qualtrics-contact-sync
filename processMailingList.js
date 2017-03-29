@@ -40,16 +40,16 @@ function sendFileError(err, cb) {
     cb();
 }
 
+// filter student object for equality comparison
 function filterStudent(student) {
     // filter student outside of embeddedData
     var filteredStudent = objFilter(student, function (value) {
         return value !== '' && value !== null;
     });
-
-    if (student.action === 'Update')
+    //filter empty values out of a student before updating them
+    if (student.action == 'Update')
         return filteredStudent;
 
-    // if null delete it and return
     if (student.embeddedData === null) {
         delete filteredStudent.embeddedData;
     } else {
@@ -68,6 +68,7 @@ function filterStudent(student) {
     return filteredStudent;
 }
 
+// format students to match qualtrics students
 function formatStudents(students) {
     // console.log(chalk.magenta('formatting Students'));
     // create keys for embeddedData object

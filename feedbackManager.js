@@ -5,7 +5,7 @@
 var fm = function () {},
     proto = fm.prototype;
 
-const logPath = 'Z:\\log.txt',
+const logPath = 'test.txt',
     fs = require('fs'),
     fws = require('fixed-width-string'),
     chalk = require('chalk'),
@@ -73,10 +73,9 @@ proto.generateFile = function (dataToSync) {
         fileName = '';
 
     // if file was synced
-    if (dataToSync.file) {
+    if (dataToSync.file != false) {
         fileName = file.fileName.replace(/^QualtricsSync-/, '');
-        text += '\r\n\t' + 'The hashes matched' + '\r\n';
-
+        text += '\r\n' + fws(fileName, 30);
         if (file.fileError != undefined) {
             text += '\r\n' + file.fileError + '\r\n';
         } else {

@@ -29,7 +29,6 @@ function createDataToSync(links, cb) {
 function compareHashes(links, cb) {
     links.forEach(function (link) {
         console.log('\n', chalk.blue(link.csv));
-        console.log('Comparing Hashes');
         if (link.hash == link.newHash) {
             console.log(chalk.green('Hashes Matched'));
             link.matchingHashes = true;
