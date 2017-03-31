@@ -48,7 +48,7 @@ proto.write = function (string, cb) {
 proto.generateFooter = function (message, elapsedTime, files) {
     var footer = '\r\n\r\n';
     if (message != undefined) {
-        footer += fws(message, 20);
+        footer += message;
     }
     if (elapsedTime != undefined) {
         footer += fws('Elapsed Time: ' + elapsedTime, 32);
@@ -77,7 +77,7 @@ proto.generateFile = function (dataToSync) {
         fileName = file.fileName.replace(/^QualtricsSync-/, '');
         text += '\r\n' + fws(fileName, 30);
         if (file.fileError != undefined) {
-            text += '\r\n' + file.fileError + '\r\n';
+            text += '\r\n\t' + file.fileError + '\r\n';
         } else {
             text += fws("Changes to be Made: " + file.toAlterAmount, 30);
             text += fws("Added: " + file.aCount, 15);

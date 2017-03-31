@@ -86,7 +86,7 @@ function init(links, cb) {
 
         // if all were empty that means none of the files could be read
         if (links.length <= 0) {
-            fm.generateFooter("called from hashManager init");
+            fm.generateFooter("None of the files in config.csv could be read");
             return;
         }
 

@@ -17,6 +17,19 @@ const configPath = 'Z:\\debug.csv',
 
 const fakeFiles = require('./fakeFiles.js');
 
+function checkForErrors(results) {
+    var errsExist = false;
+    results.forEach(function (result) {
+        if (result.file.passed === false || result.file.fileError !== undefined)
+            errsExist = true;
+    });
+    console.log(chalk.magenta(errsExist));
+    if (errsExist) {
+        console.log(chalk.magenta('poop'));
+        sendMail('There was an error with the Qualtrics Sync Tool. Please refer to the log for more detail');
+    }
+}
+
 function getElapsedTime(start) {
     var end = new Date();
     //create elapsed time
@@ -52,27 +65,48 @@ function updateHashes(results, cb) {
     var toUpdate = [],
         tempLink = {};
 
-    toUpdate = results.map(function (result) {
-        tempLink = {};
+    console.log('\n\nresults\n\n', results);
 
-        tempLink.csv = result.link.csv;
-        tempLink.MailingListID = result.link.MailingListID;
-        tempLink.LibraryID = result.link.LibraryID;
+    try {
+        var passed = 0,
+            failed = 0;
+        toUpdate = results.map(function (result) {
+            tempLink = {};
 
-        if (result.file.passed === true)
-            tempLink.hash = result.link.newHash;
-        else
-            tempLink.hash = result.link.hash;
+            tempLink.csv = result.link.csv;
+            tempLink.MailingListID = result.link.MailingListID;
+            tempLink.LibraryID = result.link.LibraryID;
 
-        return tempLink;
-    });
+            if (result.file.passed === true) {
+                tempLink.hash = result.link.newHash;
+                passed++;
+            } else {
+                tempLink.hash = result.link.hash;
+                failed++;
+            }
 
+            return tempLink;
+        });
+    } catch (err) {
+        cb(err);
+        return;
+    }
+
+    if (passed == toUpdate.length || failed == toUpdate.length) {
+        cb();
+        return;
+    }
+
+    //states it's gonna change hashes even if none of the files passed
+    console.log(chalk.yellow('About to save the hashes!'));
     var toWrite = d3.csvFormat(toUpdate);
     fs.writeFile(configPath, toWrite, function (err) {
         if (err) cb(err);
-        console.log(chalk.green("New hashes saved!"));
-        fm.write('\rHashes were updated');
-        cb();
+        else {
+            console.log(chalk.green("New hashes saved!"));
+            fm.write('\rHashes were updated');
+            cb();
+        }
     });
 }
 
@@ -93,14 +127,25 @@ function syncInit(err, dataToSync) {
     //process individual files one at a time
     async.mapLimit(dataToSync, 1, processMailingList, function (err, results) {
         // console.log(chalk.yellow("RESULTS:\n"), results);
-        //        updateHashes(results, function (err) {
-        //            if (err) {
-        //                console.error(err);
-        //            }
-        var elapsedTime = getElapsedTime(startTime);
-        console.log("\nElapsed Time:", elapsedTime);
-        fm.generateFooter(null, elapsedTime, results.files);
-        //        });
+        if (err) {
+            console.error(chalk.red('Error'), err);
+            console.log("RESULTS\n", results);
+            sendMail(err);
+            return;
+        }
+
+        //checkForErrors(results);
+
+        updateHashes(results, function (err) {
+            if (err) {
+                console.error(chalk.red("Error while updating hashes"), err);
+                sendMail(err);
+            }
+            checkForErrors(results);
+            var elapsedTime = getElapsedTime(startTime);
+            console.log("\nElapsed Time:", elapsedTime);
+            fm.generateFooter(null, elapsedTime, results.files);
+        });
     });
 }
 

@@ -37,7 +37,7 @@ function sendFileError(err, cb) {
     console.log(chalk.red(err));
 
     fm.generateFile(dataToSync);
-    cb();
+    cb(null, dataToSync);
 }
 
 // filter student object for equality comparison
@@ -46,7 +46,7 @@ function filterStudent(student) {
     var filteredStudent = objFilter(student, function (value) {
         return value !== '' && value !== null;
     });
-    //filter empty values out of a student before updating them
+    //Only filter student (without EmbeddedData) when updating them
     if (student.action == 'Update')
         return filteredStudent;
 
@@ -149,8 +149,8 @@ function processTheData(students, cb, qStudents) {
 
             //EQUALITY COMPARISON. THIS IS WHERE MOST PROBLEMS HAVE OCCURED
             if (!deepEqual(filterStudent(student), filteredQStudent)) {
-                //console.log("\n\n Student: ", filterStudent(student));
-                //console.log("\n\nQ Student:", filteredQStudent);
+                // console.log("\n\n Student: ", filterStudent(student));
+                // console.log("\n\nQ Student:", filteredQStudent);
                 student.id = qStudents[qIndex].id;
                 student.action = 'Update';
                 student = filterStudent(student); // don't filter to throw error when updating student with empty values
@@ -178,6 +178,7 @@ function processTheData(students, cb, qStudents) {
     // make api calls X at a time - callback returns here
     async.mapLimit(toAlter, 25, setOptions, function (err, students) {
         if (err) {
+            console.log(err);
             sendFileError(err, cb);
             return;
         }
