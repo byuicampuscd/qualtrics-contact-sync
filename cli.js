@@ -20,12 +20,10 @@ const fakeFiles = require('./fakeFiles.js');
 function checkForErrors(results) {
     var errsExist = false;
     results.forEach(function (result) {
-        if (result.file.passed === false || result.file.fileError !== undefined)
+        if (result.file.passed === false)
             errsExist = true;
     });
-    console.log(chalk.magenta(errsExist));
     if (errsExist) {
-        console.log(chalk.magenta('poop'));
         sendMail('There was an error with the Qualtrics Sync Tool. Please refer to the log for more detail');
     }
 }
@@ -65,7 +63,7 @@ function updateHashes(results, cb) {
     var toUpdate = [],
         tempLink = {};
 
-    console.log('\n\nresults\n\n', results);
+    //    console.log('\n\nresults\n\n', results);
 
     try {
         var passed = 0,

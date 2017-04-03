@@ -28,8 +28,8 @@ function createDataToSync(links, cb) {
 //compare the hashes - same logic as processMailingList
 function compareHashes(links, cb) {
     links.forEach(function (link) {
-        console.log('\n', chalk.blue(link.csv));
         if (link.hash == link.newHash) {
+            console.log('\n', chalk.blue(link.csv));
             console.log(chalk.green('Hashes Matched'));
             link.matchingHashes = true;
             //output to the log!
@@ -39,7 +39,6 @@ function compareHashes(links, cb) {
             };
             fm.generateFile(result);
         } else {
-            console.log(chalk.yellow("Hashes Didn't Match"));
             link.matchingHashes = false;
         }
     });

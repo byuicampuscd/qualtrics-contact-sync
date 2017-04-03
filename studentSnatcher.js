@@ -59,19 +59,20 @@ proto.pullStudents = function (options, callback) {
 
 proto.send = function (student, option, callback) {
     request(option, function (err, response, body) {
-        if (err) callback(err, body);
-        else if (response.statusCode === 200) {
+        if (err) {
+            //shouldn't ever throw a file error here...
+            student.pass = false;
+            student.errorMessage = err;
+            callback(null, student);
+        } else if (response.statusCode === 200) {
             student.pass = true;
             callback(null, student);
         } else {
             student.pass = false;
-            try {
-                body = JSON.parse(body);
-            } catch (err) {
-                console.error(err);
-                console.log("Student", student);
-                console.log("Body", body);
-            }
+            body = JSON.parse(body);
+            console.error(err);
+            console.log("Student", student);
+            console.log("Body", body);
             student.errorMessage = body.meta.error.errorMessage;
             callback(null, student);
         }

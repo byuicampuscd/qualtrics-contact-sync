@@ -178,7 +178,7 @@ function processTheData(students, cb, qStudents) {
     // make api calls X at a time - callback returns here
     async.mapLimit(toAlter, 25, setOptions, function (err, students) {
         if (err) {
-            console.log(err);
+            console.error(err);
             sendFileError(err, cb);
             return;
         }
