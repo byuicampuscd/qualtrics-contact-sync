@@ -1,6 +1,5 @@
 /* eslint-env node */
 /* eslint no-console:0 */
-
 'use strict';
 
 var pml = function () {},
@@ -8,12 +7,14 @@ var pml = function () {},
     link;
 
 const deepEqual = require('deep-equal'),
-    async = require('async'),
     objFilter = require('object-filter'),
     bs = require('binarysearch'),
     chalk = require('chalk'),
     StudentSnatcher = require('./studentSnatcher.js'),
     optionSnatcher = require('./optionSnatcher.js'),
+    feedbackManager = require('./feedbackManager.js'),
+    async = require('async'),
+    fm = new feedbackManager(),
     ss = new StudentSnatcher(),
     os = new optionSnatcher();
 
@@ -24,34 +25,40 @@ function sortList(a, b) {
     return 0;
 }
 
-//format errors and send to callback
+// format errors and send to callback
 function sendFileError(err, cb) {
-    console.log(chalk.red('Error:', err));
-    cb(null, {
-        fileName: link.csv,
-        fileError: err.toString()
-    });
+    var dataToSync = {
+        file: {
+            fileName: link.csv,
+            fileError: err.toString()
+        },
+        link: link
+    };
+    console.log(chalk.red(err));
+
+    fm.generateFile(dataToSync);
+    cb(null, dataToSync);
 }
 
+// filter student object for equality comparison
 function filterStudent(student) {
-    //filter student outside of embeddedData
+    // filter student outside of embeddedData
     var filteredStudent = objFilter(student, function (value) {
         return value !== '' && value !== null;
     });
-
-    if (student.action === 'Update')
+    //Only filter student (without EmbeddedData) when updating them
+    if (student.action == 'Update')
         return filteredStudent;
 
-    //if null delete it and return
     if (student.embeddedData === null) {
         delete filteredStudent.embeddedData;
     } else {
-        //filter embeddedData
+        // filter embeddedData
         var filteredData = objFilter(student.embeddedData, function (value) {
             return value !== '' && value !== null;
         });
 
-        //append filteredData if not empty
+        // append filteredData if not empty
         if (Object.keys(filteredData).length <= 0) {
             delete filteredStudent.embeddedData;
         } else {
@@ -61,7 +68,9 @@ function filterStudent(student) {
     return filteredStudent;
 }
 
+// format students to match qualtrics students
 function formatStudents(students) {
+    // console.log(chalk.magenta('formatting Students'));
     // create keys for embeddedData object
     var emdKeys = Object.keys(students[0]).filter(function (key) {
         return key != 'Email' && key != 'UniqueID' && key != 'FirstName';
@@ -74,19 +83,19 @@ function formatStudents(students) {
     var formattedStudents = students.map(function (currVal, formattedStudents) {
         var tStudent = {},
             tEmbeddedData = {};
-        //format keys and create tempStudent object
+        // format keys and create tempStudent object
         for (var j = 0; j < keys.length; j++) {
-            //UniqueID must be converted to externalDataReference
+            // UniqueID must be converted to externalDataReference
             if (keys[j] === 'UniqueID') {
                 tStudent.externalDataReference = currVal[keys[j]];
             } else {
-                //first letter of each key ot lower case
+                // first letter of each key ot lower case
                 tStudent[keys[j][0].toLowerCase() + keys[j].slice(1)] = currVal[keys[j]];
             }
         }
         var commaFinder = new RegExp(/,/g);
 
-        //create embeddedData object
+        // create embeddedData object
         for (var i = 0; i < emdKeys.length; i++) {
             // filter commas out of embeddedData values so the qualtrics api won't throw a fit
             tEmbeddedData[emdKeys[i]] = currVal[emdKeys[i]].replace(commaFinder, '');
@@ -101,6 +110,7 @@ function formatStudents(students) {
 }
 
 function setOptions(student, callback) {
+    //    console.log(chalk.magenta('setOptions'));
     var option = "";
     // create approptriate API call
     switch (student.action) {
@@ -114,11 +124,11 @@ function setOptions(student, callback) {
             var option = os.delete(link.MailingListID, student.id);
             break;
     }
-    // Send request
     ss.send(student, option, callback);
 }
 
 function processTheData(students, cb, qStudents) {
+    console.log(chalk.magenta('Comparing Students'));
     var toAlter = [];
 
     students.forEach(function (student) {
@@ -128,7 +138,7 @@ function processTheData(students, cb, qStudents) {
         // get the index of matching students
         qIndex = bs(qStudents, student, sortList);
 
-        //perform magic decision making logic
+        // perform magic decision making logic
         if (qIndex > -1) {
             //create version to use for equality check
             var filteredQStudent = filterStudent(qStudents[qIndex]);
@@ -139,8 +149,8 @@ function processTheData(students, cb, qStudents) {
 
             //EQUALITY COMPARISON. THIS IS WHERE MOST PROBLEMS HAVE OCCURED
             if (!deepEqual(filterStudent(student), filteredQStudent)) {
-                //console.log("\n\n Student: ", filterStudent(student));
-                //console.log("\n\nQ Student:", filteredQStudent);
+                // console.log("\n\n Student: ", filterStudent(student));
+                // console.log("\n\nQ Student:", filteredQStudent);
                 student.id = qStudents[qIndex].id;
                 student.action = 'Update';
                 student = filterStudent(student); // don't filter to throw error when updating student with empty values
@@ -165,9 +175,10 @@ function processTheData(students, cb, qStudents) {
 
     console.log('Changes to be made: ', toAlter.length);
 
-    //make api calls X at a time - callback returns here
+    // make api calls X at a time - callback returns here
     async.mapLimit(toAlter, 25, setOptions, function (err, students) {
         if (err) {
+            console.error(err);
             sendFileError(err, cb);
             return;
         }
@@ -179,7 +190,7 @@ function processTheData(students, cb, qStudents) {
             uCount: 0,
             dCount: 0,
             passed: true,
-            failed: [],
+            studentErrors: [],
             fileError: null
         };
         // sort through students and create report based on worked/error attributes
@@ -192,7 +203,7 @@ function processTheData(students, cb, qStudents) {
                 else
                     file.dCount++;
             } else
-                file.failed.push(student);
+                file.studentErrors.push(student);
         });
 
         // generate report of completed additions/updates/deletions
@@ -203,21 +214,28 @@ function processTheData(students, cb, qStudents) {
         if (file.dCount > 0)
             console.log(chalk.green("Students successfully deleted: " + file.dCount));
 
-
-        file.failed.forEach(function (student) {
+        file.studentErrors.forEach(function (student) {
             console.log(chalk.red("Failed to " +
                 student.action + " student: ") + student.externalDataReference, chalk.red("Error: " + student.errorMessage));
         });
-
-        if (file.failed.length)
+        if (file.studentErrors.length)
             file.passed = false;
+        // console.log('FILE:\n', file);
 
-        //return to cli.js
-        cb(err, file);
+        var dataToSync = {
+            file: file,
+            link: link
+        };
+
+        fm.generateFile(dataToSync);
+
+        // return to cli.js
+        cb(err, dataToSync);
     });
 }
 
 function pullStudents(students, cb, qStudents, nextPage) {
+    //    console.log(chalk.magenta('pullStudents'));
     if (!qStudents) qStudents = [];
     ss.pullStudents(os.get(link.MailingListID, nextPage), function (err, newStudents, nextPage) {
         if (err) {
@@ -236,11 +254,18 @@ function pullStudents(students, cb, qStudents, nextPage) {
     });
 }
 //cb returns to cli
-function init(list, cb) {
-    link = list;
+function init(dataToSync, cb) {
+    // console.log(chalk.magenta('init'));
+    // console.log(chalk.yellow('data to sync:\n'), dataToSync);
+    link = dataToSync.link;
+
+    if (link.matchingHashes == true) {
+        cb(null, dataToSync);
+        return;
+    }
     console.log('\n', chalk.blue(link.csv));
-    // get students from the tsv file
     var filePath = 'Z:\\' + link.csv;
+    // get students from the tsv file
     ss.readStudents(filePath, function (err, students) {
         if (err) {
             sendFileError(err, cb);
@@ -259,6 +284,7 @@ function init(list, cb) {
         }
 
         // get students from qualtrics
+        console.log(chalk.magenta('Pulling students from Qualtrics'));
         pullStudents(students, cb);
     });
 }

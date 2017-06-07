@@ -5,13 +5,15 @@
 var ss = function () {},
     proto = ss.prototype;
 
-const request = require('request'),
+const configPath = 'Z:\\config.csv',
+    request = require('request'),
     fs = require('fs'),
     d3 = require('d3-dsv');
 
 // read the configuration file
 proto.readConfig = function (cb) {
-    fs.readFile('Z:\\config.csv', function (err, contents) {
+    fs.readFile(configPath, function (err, contents) {
+
         if (err) cb(err, contents);
         else {
             contents = contents.toString();
@@ -27,8 +29,11 @@ proto.readStudents = function (filePath, callback) {
         if (err) callback(err, contents);
         else {
             //remove zero width no break space from csv (especially the beginning)
-            var regEx = new RegExp(String.fromCharCode(65279), 'g');
-            contents = contents.replace(regEx, '');
+            var invisibleSpace = new RegExp(String.fromCharCode(65279), 'g');
+            contents = contents.replace(invisibleSpace, '');
+            // Excel changes True to TRUE causing unexpected updates
+            contents = contents.replace(/TRUE/g, 'True');
+            contents = contents.replace(/FALSE/g, 'False');
             var students = d3.csvParse(contents);
             callback(null, students);
         }
@@ -39,10 +44,13 @@ proto.readStudents = function (filePath, callback) {
 proto.pullStudents = function (options, callback) {
     request(options, function (err, response, body) {
         if (err) {
-            callback(err, body);
+            // Callback only handles one parameter
+            callback(err);
             return;
         } else if (response.statusCode !== 200) {
-            callback("Couldn't retrieve students from Qualtrics\n", body);
+            // Callback only handles one parameter
+            var errMessage = JSON.parse(body).meta.error.errorMessage;
+            callback("Couldn't retrieve students from Qualtrics\n\tError: " + errMessage);
             return;
         }
         var students = JSON.parse(body);
@@ -52,13 +60,20 @@ proto.pullStudents = function (options, callback) {
 
 proto.send = function (student, option, callback) {
     request(option, function (err, response, body) {
-        if (err) callback(err, body);
-        else if (response.statusCode === 200) {
+        if (err) {
+            //shouldn't ever throw a file error here...
+            student.pass = false;
+            student.errorMessage = err;
+            callback(null, student);
+        } else if (response.statusCode === 200) {
             student.pass = true;
             callback(null, student);
         } else {
             student.pass = false;
             body = JSON.parse(body);
+            console.error(err);
+            console.log("Student", student);
+            console.log("Body", body);
             student.errorMessage = body.meta.error.errorMessage;
             callback(null, student);
         }

@@ -1,15 +1,22 @@
 // call linkSnatcher & get all mailing list objects
 'use strict';
 
-const fs = require('fs'),
+const configPath = 'Z:\\config.csv',
+    fs = require('fs'),
+    d3 = require('d3-dsv'),
     fws = require('fixed-width-string'),
     studentSnatcher = require('./studentSnatcher.js'),
     processMailingList = require('./processMailingList.js'),
+    hashManager = require('./hashManager.js'),
+    feedbackManager = require('./feedbackManager.js'),
     sendMail = require('./email.js'),
     chalk = require('chalk'),
     async = require('async'),
+    fm = new feedbackManager(),
     ss = new studentSnatcher();
 
+
+// Code from this line to 
 // write to log
 function writeLog(report) {
     fs.appendFile("Z:\\log.txt", report, function (err) {
@@ -18,72 +25,24 @@ function writeLog(report) {
     console.log(chalk.green("\nThe log has been updated"));
 }
 
-function getChangesMade(files) {
+/*function getChangesMade(files) {
     var totalChanges = 0;
     if (!files)
-        return totalChanges;
-
-    files.forEach(function (file) {
-        totalChanges += file.aCount;
-        totalChanges += file.uCount;
-        totalChanges += file.dCount;
+        return totalChanges;*/
+// This line might not belong here...
+function checkForErrors(results) {
+    var errsExist = false;
+    results.forEach(function (result) {
+        if (result.file.passed === false)
+            errsExist = true;
     });
-    return totalChanges;
-}
-
-function getFilesSynced(files) {
-    var totalFiles = 0;
-    files.forEach(function (file) {
-        if (file.passed) {
-            totalFiles++;
-        }
-    });
-    return totalFiles;
-}
-
-// create string to send to the log file
-function generateReport(err, files, time) {
-    var report = "";
-
-    report += "\r\n\r\n-------------------------------------------------------------------------------------------------------------------------------\r\n" + new Date() + "\r\n-------------------------------------------------------------------------------------------------------------------------------\r\n";
-
-    if (files === null) {
-        report += "\r\n\r\nUnable to read configuration file\r\n" + err;
-    } else {
-        //declare important var's
-        var filesSynced = fws("Files Synchronized: " + getFilesSynced(files), 26),
-            totalChanges = "Total Changes Made: " + getChangesMade(files),
-            elapsedTime = fws("Elapsed Time: " + time, 29);
-
-        //add overall stats
-        report += elapsedTime + filesSynced + totalChanges;
-        files.forEach(function (file) {
-            report += "\r\n\r\n";
-            report += fws(file.fileName.replace('QualtricsSync-', ''), 29);
-            //output file Errors (caused file to be skipped)
-            if (file.fileError !== null) {
-                report += "\r\nFile failed to sync" + "\r\nError: " + file.fileError;
-            } else { //output file stats
-                report += fws("Changes found: " + file.toAlterAmount, 24);
-                report += fws("Added: " + file.aCount, 15);
-                report += fws("Updated: " + file.uCount, 17);
-                report += fws("Deleted: " + file.dCount, 17);
-                if (file.passed)
-                    report += fws("File successfully synced", 25);
-                else { //if there were individual errors
-                    report += "\r\nErrors encountered: " + file.failed.length;
-                    for (var i = 0; i < file.failed.length; i++) {
-                        report += "\r\n\tFailed to " + file.failed[i].action + " student: " + file.failed[i].externalDataReference + " Error: " + file.failed[i].errorMessage;
-                    }
-                }
-            }
-        });
+    if (errsExist) {
+        sendMail('There was an error with the Qualtrics Sync Tool. Please refer to the log for more detail');
     }
-    report += "\r\n-------------------------------------------------------------------------------------------------------------------------------\r\n\r\n\r\n";
-    writeLog(report);
 }
 
-function getElapsedTime(start, end) {
+function getElapsedTime(start) {
+    var end = new Date();
     //create elapsed time
     var seconds = (end - start) / 1000,
         minutes = 0,
@@ -113,52 +72,110 @@ function getElapsedTime(start, end) {
     return elapsedTime;
 }
 
-function checkForErrors(files) {
-    var studentErrs = "",
-        fileErrs = "";
+function updateHashes(results, cb) {
+    var toUpdate = [],
+        tempLink = {};
 
-    files.forEach(function (file) {
-        if (file.fileError !== null) {
-            fileErrs += "\n" + file.fileName + " failed to sync with the following error:\n" + file.fileError;
-        } else if (file.passed != true) {
-            studentErrs += "\n\nThe following students from " + file.fileName + " did not sync.";
-            file.failed.forEach(function (student) {
-                studentErrs += fws("\nStudent: " + student.externalDataReference, 30) + fws(" Action: " + student.action, 17) + " Error: " + student.errorMessage;
-            });
+    //    console.log('\n\nresults\n\n', results);
+
+    try {
+        var passed = 0,
+            failed = 0;
+        toUpdate = results.map(function (result) {
+            tempLink = {};
+
+            tempLink.csv = result.link.csv;
+            tempLink.MailingListID = result.link.MailingListID;
+            tempLink.LibraryID = result.link.LibraryID;
+
+            if (result.file.passed === true) {
+                tempLink.hash = result.link.newHash;
+                passed++;
+            } else {
+                tempLink.hash = result.link.hash;
+                failed++;
+            }
+
+            return tempLink;
+        });
+    } catch (err) {
+        cb(err);
+        return;
+    }
+
+    if (passed == toUpdate.length || failed == toUpdate.length) {
+        cb();
+        return;
+    }
+
+    //states it's gonna change hashes even if none of the files passed
+    console.log(chalk.yellow('About to save the hashes!'));
+    var toWrite = d3.csvFormat(toUpdate);
+    fs.writeFile(configPath, toWrite, function (err) {
+        if (err) cb(err);
+        else {
+            console.log(chalk.green("New hashes saved!"));
+            fm.write('\rHashes were updated');
+            cb();
         }
     });
-
-    if (fileErrs !== "" || studentErrs !== "") {
-        var errs = fileErrs + studentErrs;
-        sendMail(errs);
-    } else {
-        return;
-    }
 }
 
-function init(err, links) {
-    //check for errors while reading config.csv
+// bridge between hashes and syncing
+function syncInit(err, dataToSync) {
+    var elapsedTime = getElapsedTime(startTime);
     if (err) {
-        err = 'Unable to read configuration file\n' + err;
-        sendMail(err);
+        err = "There was a fatal error while comparing files via hash\n" + err;
         console.log(chalk.red(err));
-        generateReport(err, null);
+        fm.write(err, fm.generateFooter('called at syncInit', elapedTime));
+        sendMail(err);
         return;
     }
+    // console.log(chalk.yellow("Data To Sync:\n"), dataToSync);
 
-    var start = new Date();
+    // if all hashes matched?
+
     //process individual files one at a time
-    async.mapLimit(links, 1, processMailingList, function (err, files) {
-        var end = new Date(),
-            elapsedTime = getElapsedTime(start, end);
+    async.mapLimit(dataToSync, 1, processMailingList, function (err, results) {
+        // console.log(chalk.yellow("RESULTS:\n"), results);
+        if (err) {
+            console.error(chalk.red('Error'), err);
+            console.log("RESULTS\n", results);
+            sendMail(err);
+            return;
+        }
 
-        //check if file or row level errors exist
-        checkForErrors(files);
+        //checkForErrors(results);
 
-        console.log("\nElapsed Time:", elapsedTime);
-        generateReport(null, files, elapsedTime);
+        updateHashes(results, function (err) {
+            if (err) {
+                console.error(chalk.red("Error while updating hashes"), err);
+                sendMail(err);
+            }
+            checkForErrors(results);
+            var elapsedTime = getElapsedTime(startTime);
+            console.log("\nElapsed Time:", elapsedTime);
+            fm.generateFooter(null, elapsedTime, results.files);
+        });
     });
 }
 
-console.log("Started at:", new Date());
+// reads config file and starts the hash comparison
+function init(err, links) {
+    fm.generateHeader();
+
+    // check for errors while reading config.csv
+    if (err) {
+        err = 'Unable to read configuration file\n' + err;
+        console.log(chalk.red(err));
+        var elapsedTime = getElapsedTime(startTime);
+        fm.write(err, fm.generateFooter("called cli init()", elapsedTime));
+        sendMail(err);
+        return;
+    }
+    hashManager(links, syncInit);
+}
+
+var startTime = new Date();
+console.log("Started at:", startTime);
 ss.readConfig(init);
