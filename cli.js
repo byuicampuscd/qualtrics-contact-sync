@@ -1,35 +1,22 @@
 // call linkSnatcher & get all mailing list objects
 'use strict';
 
-const configPath = 'Z:\\config.csv',
+const settings = require('./settings'),
+    configPath = settings.configLocation,
     fs = require('fs'),
     d3 = require('d3-dsv'),
     fws = require('fixed-width-string'),
     studentSnatcher = require('./studentSnatcher.js'),
     processMailingList = require('./processMailingList.js'),
     hashManager = require('./hashManager.js'),
-    feedbackManager = require('./feedbackManager.js'),
+    logWriter = require('./logWriter.js'),
     sendMail = require('./email.js'),
     chalk = require('chalk'),
     async = require('async'),
-    fm = new feedbackManager(),
+    lw = new logWriter(),
     ss = new studentSnatcher();
 
 
-// Code from this line to 
-// write to log
-function writeLog(report) {
-    fs.appendFile("Z:\\log.txt", report, function (err) {
-        if (err) throw err;
-    });
-    console.log(chalk.green("\nThe log has been updated"));
-}
-
-/*function getChangesMade(files) {
-    var totalChanges = 0;
-    if (!files)
-        return totalChanges;*/
-// This line might not belong here...
 function checkForErrors(results) {
     var errsExist = false;
     results.forEach(function (result) {
@@ -115,7 +102,7 @@ function updateHashes(results, cb) {
         if (err) cb(err);
         else {
             console.log(chalk.green("New hashes saved!"));
-            fm.write('\rHashes were updated');
+            lw.write('\rHashes were updated');
             cb();
         }
     });
@@ -127,7 +114,7 @@ function syncInit(err, dataToSync) {
     if (err) {
         err = "There was a fatal error while comparing files via hash\n" + err;
         console.log(chalk.red(err));
-        fm.write(err, fm.generateFooter('called at syncInit', elapedTime));
+        lw.write(err, lw.generateFooter('called at syncInit', elapedTime));
         sendMail(err);
         return;
     }
@@ -155,25 +142,26 @@ function syncInit(err, dataToSync) {
             checkForErrors(results);
             var elapsedTime = getElapsedTime(startTime);
             console.log("\nElapsed Time:", elapsedTime);
-            fm.generateFooter(null, elapsedTime, results.files);
+            lw.generateFooter(null, elapsedTime, results.files);
         });
     });
 }
 
 // reads config file and starts the hash comparison
 function init(err, links) {
-    fm.generateHeader();
-
-    // check for errors while reading config.csv
+    // Errors while reading config file
     if (err) {
-        err = 'Unable to read configuration file\n' + err;
+        err = '\nUnable to read configuration file\n' + err;
         console.log(chalk.red(err));
         var elapsedTime = getElapsedTime(startTime);
-        fm.write(err, fm.generateFooter("called cli init()", elapsedTime));
+        lw.generateHeader(err);
+        lw.generateFooter(null, elapsedTime);
         sendMail(err);
         return;
     }
-    hashManager(links, syncInit);
+    console.log(chalk.yellow(JSON.stringify(links, null, 3)));
+    lw.generateHeader();
+    //    hashManager(links, syncInit);
 }
 
 var startTime = new Date();

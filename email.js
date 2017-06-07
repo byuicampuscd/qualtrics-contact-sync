@@ -3,20 +3,20 @@
 'use strict';
 
 const nodemailer = require('nodeMailer'),
-    mailInfo = require('./emailInfo.js');
+    auth = require('./auth.js');
 
 function sendMail(message) {
     let transporter = nodemailer.createTransport({
-        service: mailInfo.service, //Outlook365
+        service: auth.service, //Outlook365
         auth: {
-            user: mailInfo.username,
-            pass: mailInfo.password
+            user: auth.username,
+            pass: auth.password
         }
     });
 
     let mailOptions = {
-        from: mailInfo.from,
-        to: mailInfo.to,
+        from: auth.from,
+        to: auth.to,
         subject: "Error with Qualtrics Contact Sync",
         text: message
     };

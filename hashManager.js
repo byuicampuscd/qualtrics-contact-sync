@@ -2,12 +2,12 @@
 /* eslint no-console:0 */
 'use strict';
 
-const feedbackManager = require('./feedbackManager.js'),
+const logWriter = require('./logWriter.js'),
     fs = require('fs'),
     createHash = require('string-hash'),
     chalk = require('chalk'),
     async = require('async'),
-    fm = new feedbackManager();
+    lw = new logWriter();
 
 //creates the object tha will be used for the rest of the program
 function createDataToSync(links, cb) {
@@ -37,7 +37,7 @@ function compareHashes(links, cb) {
                 file: false,
                 link: link
             };
-            fm.generateFile(result);
+            lw.generateFile(result);
         } else {
             link.matchingHashes = false;
         }
@@ -55,7 +55,7 @@ function hashLinks(link, callback) {
         if (err) {
             console.log(chalk.red(err));
             //tell the log that the file cannot be processed
-            fm.generateFile({
+            lw.generateFile({
                 file: {
                     fileName: link.csv,
                     fileError: err
@@ -85,7 +85,7 @@ function init(links, cb) {
 
         // if all were empty that means none of the files could be read
         if (links.length <= 0) {
-            fm.generateFooter("None of the files in config.csv could be read");
+            lw.generateFooter("None of the files in config.csv could be read");
             return;
         }
 

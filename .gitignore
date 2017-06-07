@@ -1,6 +1,7 @@
 *.xlsx
 *.tsv
 *.csv
+auth.js
 node_modules/
 Qualtrics.bfg-report/
 lists/

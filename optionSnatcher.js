@@ -1,6 +1,6 @@
 /* eslint-env node */
 'use strict';
-const token = require('./token.js');
+const auth = require('./auth.js');
 
 var optionSnatcher = function () {};
 var proto = optionSnatcher.prototype;
@@ -10,7 +10,7 @@ var baseURL = "https://byui.az1.qualtrics.com/API/v3/mailinglists",
         method: "",
         url: "",
         headers: {
-            'x-api-token': token
+            'x-api-token': auth.token
         }
     };
 

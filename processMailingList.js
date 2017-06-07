@@ -12,9 +12,9 @@ const deepEqual = require('deep-equal'),
     chalk = require('chalk'),
     StudentSnatcher = require('./studentSnatcher.js'),
     optionSnatcher = require('./optionSnatcher.js'),
-    feedbackManager = require('./feedbackManager.js'),
+    logWriter = require('./logWriter.js'),
     async = require('async'),
-    fm = new feedbackManager(),
+    lw = new logWriter(),
     ss = new StudentSnatcher(),
     os = new optionSnatcher();
 
@@ -36,7 +36,7 @@ function sendFileError(err, cb) {
     };
     console.log(chalk.red(err));
 
-    fm.generateFile(dataToSync);
+    lw.generateFile(dataToSync);
     cb(null, dataToSync);
 }
 
@@ -227,7 +227,7 @@ function processTheData(students, cb, qStudents) {
             link: link
         };
 
-        fm.generateFile(dataToSync);
+        lw.generateFile(dataToSync);
 
         // return to cli.js
         cb(err, dataToSync);
