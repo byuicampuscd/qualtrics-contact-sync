@@ -69,15 +69,15 @@ proto.generateFooter = function (message, elapsedTime, files) {
     proto.writeSync(footer);
 }
 
-proto.generateFile = function (dataToSync) {
-    // console.log(chalk.yellow('Data to sync:\n'), dataToSync);
+proto.generateFile = function (wrapper) {
+    // console.log(chalk.yellow('Wrapper Object:\n'), wrapper);
     var text = '',
-        file = dataToSync.file,
-        link = dataToSync.link,
+        file = wrapper.file,
+        link = wrapper.link,
         fileName = '';
 
     // if file was synced
-    if (dataToSync.file != false) {
+    if (file != false) {
         fileName = file.fileName.replace(/^QualtricsSync-/, '');
         text += '\r\n' + fws(fileName, 30);
         if (file.fileError != undefined) {

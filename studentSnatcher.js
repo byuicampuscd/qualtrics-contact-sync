@@ -8,6 +8,7 @@ var ss = function () {},
 const settings = require('./settings.json'),
     request = require('request'),
     fs = require('fs'),
+    chalk = require('chalk'),
     d3 = require('d3-dsv');
 
 // read the configuration file
@@ -51,9 +52,17 @@ proto.pullStudents = function (options, callback) {
             var errMessage = JSON.parse(body).meta.error.errorMessage;
             callback("Couldn't retrieve students from Qualtrics\n\tError: " + errMessage);
             return;
+        } else {
+            try {
+                var students = JSON.parse(body);
+                callback(null, students.result.elements, students.result.nextPage);
+            } catch (err) {
+                console.error(chalk.red(err));
+                console.log(response.statusCode);
+                //file level error!
+                callback(err);
+            }
         }
-        var students = JSON.parse(body);
-        callback(null, students.result.elements, students.result.nextPage);
     });
 }
 
@@ -69,8 +78,13 @@ proto.send = function (student, option, callback) {
             callback(null, student);
         } else {
             student.pass = false;
-            body = JSON.parse(body);
-            console.error(err);
+            try {
+                body = JSON.parse(body);
+            } catch (err) {
+                console.log(response.statusCode);
+                console.error(chalk.red(err));
+                console.log(body);
+            }
             console.log("Student", student);
             console.log("Body", body);
             student.errorMessage = body.meta.error.errorMessage;

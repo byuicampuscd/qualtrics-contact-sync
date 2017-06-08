@@ -1,4 +1,5 @@
 {
     "configLocation": "lists/debug.csv",
-    "logLocation": "log.txt"
+    "logLocation": "log.txt",
+    "filePath": "Z:\\"
 }

@@ -8,7 +8,7 @@ const settings = require('./settings'),
     fws = require('fixed-width-string'),
     studentSnatcher = require('./studentSnatcher.js'),
     processMailingList = require('./processMailingList.js'),
-    hashManager = require('./hashManager.js'),
+    hasher = require('./hash.js'),
     logWriter = require('./logWriter.js'),
     sendMail = require('./email.js'),
     chalk = require('chalk'),
@@ -110,7 +110,6 @@ function updateHashes(results, cb) {
 
 // bridge between hashes and syncing
 function syncInit(err, dataToSync) {
-    var elapsedTime = getElapsedTime(startTime);
     if (err) {
         err = "There was a fatal error while comparing files via hash\n" + err;
         console.log(chalk.red(err));
@@ -118,13 +117,14 @@ function syncInit(err, dataToSync) {
         sendMail(err);
         return;
     }
+    var elapsedTime = getElapsedTime(startTime);
     // console.log(chalk.yellow("Data To Sync:\n"), dataToSync);
 
     // if all hashes matched?
 
     //process individual files one at a time
     async.mapLimit(dataToSync, 1, processMailingList, function (err, results) {
-        // console.log(chalk.yellow("RESULTS:\n"), results);
+        console.log(chalk.yellow("RESULTS:\n"), results);
         if (err) {
             console.error(chalk.red('Error'), err);
             console.log("RESULTS\n", results);
@@ -161,7 +161,11 @@ function init(err, links) {
     }
     console.log(chalk.yellow(JSON.stringify(links, null, 3)));
     lw.generateHeader();
-    //    hashManager(links, syncInit);
+    /*hasher(links, syncInit);*/
+    // dataToSync, limit, function to run, cb
+    async.mapLimit(links, 1, hasher, function (err, links) {
+        console.log('\nALL LINKS:\n', links);
+    });
 }
 
 var startTime = new Date();
