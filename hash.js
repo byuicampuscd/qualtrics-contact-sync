@@ -25,7 +25,7 @@ function formatLink(link, cb) {
         link: link,
         file: false
     }
-    console.log('\nformattedLink:\n', wrappedLink);
+    //console.log('\nformattedLink:\n', wrappedLink);
     if (wrappedLink.link.matchingHashes === true) {
         cb(null, wrappedLink);
     } else {
@@ -50,11 +50,8 @@ function compareHash(link, cb) {
     } else {
         link.matchingHashes = false;
     }
-    console.log(chalk.yellow('LINK:\n'), link);
-    //    cb(null, link);
+    //console.log(chalk.yellow('LINK:\n'), link);
     formatLink(link, cb);
-    //start the sync! return to cli
-    /*createDataToSync(links, cb);*/
 }
 
 /*******************************
@@ -65,16 +62,18 @@ function hashLinks(link, cb) {
     var file = settings.filePath + link.csv;
     fs.readFile(file, function (err, content) {
         if (err) {
-            console.log(chalk.red(err));
+            console.log('err hashing', chalk.red(err));
             //tell the log that the file cannot be processed
-            lw.generateFile({
+            var result = {
+                link: link,
                 file: {
                     fileName: link.csv,
-                    fileError: err
+                    fileError: err.toString()
                 }
-            });
+            };
+            lw.generateFile(result);
             //skip this file and keep going!
-            cb();
+            cb(null, result);
             return;
         }
         link.newHash = createHash(content.toString());
@@ -83,7 +82,7 @@ function hashLinks(link, cb) {
 }
 
 /****************************
- * cb is the final callback and returns to cli init
+ * THIS FUNCTION IS NOT CURRENTLY BEING USED
  ****************************/
 function init(links, cb) {
     async.map(links, hashLinks, function (err, links) {
@@ -92,7 +91,7 @@ function init(links, cb) {
             cb(err);
             return;
         }
-        //filter out empty values (fileErrors)
+        //filter out empty values (fileErrors) WHY????
         links = links.filter(function (link) {
             if (link !== null) return link;
         });

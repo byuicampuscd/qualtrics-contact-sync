@@ -1,6 +1,6 @@
 /* eslint-env node */
 'use strict';
-const auth = require('./auth.js');
+var auth = require('./auth.js');
 
 var optionSnatcher = function () {};
 var proto = optionSnatcher.prototype;

@@ -1,16 +1,14 @@
-/*eslint-env:node*/
+/*eslint-env node*/
 /*eslint no-console:0*/
 'use-strict';
 
-var fm = function () {},
-    proto = fm.prototype;
+var lw = function () {},
+    proto = lw.prototype;
 
-const settings = require('./settings.json'),
-    logPath = settings.logLocation,
+var settings = require('./settings.json'),
     fs = require('fs'),
     fws = require('fixed-width-string'),
-    chalk = require('chalk'),
-    sendMail = require('./email.js');
+    chalk = require('chalk');
 
 
 function getFilesSynced(files) {
@@ -37,14 +35,7 @@ function getChangesMade(files) {
 }
 
 proto.writeSync = function (string, cb) {
-    fs.appendFileSync(logPath, string);
-}
-
-
-proto.write = function (string, cb) {
-    fs.appendFile(logPath, string, function (err) {
-        if (err) console.error(err);
-    });
+    fs.appendFileSync(settings.logLocation, string);
     if (cb != undefined)
         cb();
 }
@@ -103,7 +94,7 @@ proto.generateFile = function (wrapper) {
         }
     }
 
-    proto.write(text);
+    proto.writeSync(text);
 }
 
 proto.generateHeader = function (configError) {
@@ -117,4 +108,4 @@ proto.generateHeader = function (configError) {
     proto.writeSync(head);
 }
 
-module.exports = fm;
+module.exports = lw;

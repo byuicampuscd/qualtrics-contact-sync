@@ -2,11 +2,9 @@
 /* eslint no-console:0 */
 'use strict';
 
-var pml = function () {},
-    proto = pml.prototype,
-    link;
+var link;
 
-const deepEqual = require('deep-equal'),
+var deepEqual = require('deep-equal'),
     objFilter = require('object-filter'),
     bs = require('binarysearch'),
     chalk = require('chalk'),
@@ -25,22 +23,26 @@ function sortList(a, b) {
     return 0;
 }
 
-// format errors and send to callback
+/************************************
+ *format errors and send to callback
+ *************************************/
 function sendFileError(err, cb) {
-    var dataToSync = {
+    var result = {
+        link: link,
         file: {
             fileName: link.csv,
             fileError: err.toString()
-        },
-        link: link
+        }
     };
     console.log(chalk.red(err));
 
-    lw.generateFile(dataToSync);
-    cb(null, dataToSync);
+    lw.generateFile(result);
+    cb(null, result);
 }
 
-// filter student object for equality comparison
+/***********************************************
+ * filter student object for equality comparison
+ *************************************************/
 function filterStudent(student) {
     // filter student outside of embeddedData
     var filteredStudent = objFilter(student, function (value) {
@@ -68,7 +70,10 @@ function filterStudent(student) {
     return filteredStudent;
 }
 
-// format students to match qualtrics students
+/***********************************************
+ * filter student object so the format matches 
+ * qualtrics api format
+ *************************************************/
 function formatStudents(students) {
     // console.log(chalk.magenta('formatting Students'));
     // create keys for embeddedData object
@@ -109,31 +114,41 @@ function formatStudents(students) {
     return formattedStudents;
 }
 
+/***********************************************
+ * create approptriate API call for each action
+ ************************************************/
 function setOptions(student, callback) {
     //    console.log(chalk.magenta('setOptions'));
     var option = "";
     // create approptriate API call
     switch (student.action) {
         case 'Add':
-            var option = os.add(link.MailingListID, student);
+            option = os.add(link.MailingListID, student);
             break;
         case 'Update':
-            var option = os.update(link.MailingListID, student);
+            option = os.update(link.MailingListID, student);
             break;
         case 'Delete':
-            var option = os.delete(link.MailingListID, student.id);
+            option = os.delete(link.MailingListID, student.id);
             break;
     }
     ss.send(student, option, callback);
 }
 
+
+function nameless(err, student) {
+
+}
+
+/*********************************************
+ * basically does everything.... I need to break up this function
+ **********************************************/
 function processTheData(students, cb, qStudents) {
     console.log(chalk.magenta('Comparing Students'));
     var toAlter = [];
 
     students.forEach(function (student) {
-        var qIndex,
-            id;
+        var qIndex;
 
         // get the index of matching students
         qIndex = bs(qStudents, student, sortList);
@@ -176,6 +191,7 @@ function processTheData(students, cb, qStudents) {
     console.log('Changes to be made: ', toAlter.length);
 
     // make api calls X at a time - callback returns here
+    // async.mapLimit(toAlter, 10, setOptions, nameless.bind(cb));
     async.mapLimit(toAlter, 10, setOptions, function (err, students) {
         if (err) {
             console.error(err);

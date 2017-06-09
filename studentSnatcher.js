@@ -5,7 +5,7 @@
 var ss = function () {},
     proto = ss.prototype;
 
-const settings = require('./settings.json'),
+var settings = require('./settings.json'),
     request = require('request'),
     fs = require('fs'),
     chalk = require('chalk'),

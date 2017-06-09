@@ -1,11 +1,13 @@
+/*eslint-env node*/
+/*eslint no-console:0*/
+
 // call linkSnatcher & get all mailing list objects
 'use strict';
 
-const settings = require('./settings'),
+var settings = require('./settings'),
     configPath = settings.configLocation,
     fs = require('fs'),
     d3 = require('d3-dsv'),
-    fws = require('fixed-width-string'),
     studentSnatcher = require('./studentSnatcher.js'),
     processMailingList = require('./processMailingList.js'),
     hasher = require('./hash.js'),
@@ -16,7 +18,13 @@ const settings = require('./settings'),
     lw = new logWriter(),
     ss = new studentSnatcher();
 
+var startTime = new Date();
 
+
+/*********************************************
+ * scans the results of the sync for errors
+ * and send an email if any are found
+ *********************************************/
 function checkForErrors(results) {
     var errsExist = false;
     results.forEach(function (result) {
@@ -28,10 +36,13 @@ function checkForErrors(results) {
     }
 }
 
-function getElapsedTime(start) {
+/***********************************************
+ * Returns formatted start time - current time 
+ ***********************************************/
+function getElapsedTime() {
     var end = new Date();
     //create elapsed time
-    var seconds = (end - start) / 1000,
+    var seconds = (end - startTime) / 1000,
         minutes = 0,
         hours = 0,
         elapsedTime = "";
@@ -59,15 +70,16 @@ function getElapsedTime(start) {
     return elapsedTime;
 }
 
+/*****************************************************
+ * re-writes the config file with the updated hashes
+ *****************************************************/
 function updateHashes(results, cb) {
     var toUpdate = [],
-        tempLink = {};
-
-    //    console.log('\n\nresults\n\n', results);
+        tempLink = {},
+        passed = 0,
+        failed = 0;
 
     try {
-        var passed = 0,
-            failed = 0;
         toUpdate = results.map(function (result) {
             tempLink = {};
 
@@ -96,78 +108,64 @@ function updateHashes(results, cb) {
     }
 
     //states it's gonna change hashes even if none of the files passed
-    console.log(chalk.yellow('About to save the hashes!'));
     var toWrite = d3.csvFormat(toUpdate);
     fs.writeFile(configPath, toWrite, function (err) {
         if (err) cb(err);
         else {
             console.log(chalk.green("New hashes saved!"));
-            lw.write('\rHashes were updated');
-            cb();
+            //lw.write('\rHashes were updated', cb);
+            lw.writeSync('\rHashes were updated', cb);
         }
     });
 }
 
-// bridge between hashes and syncing
-function syncInit(err, dataToSync) {
+
+/****************************************
+ * Updates the hashes, checks for errors,
+ * and writes the footer after the sync
+ *****************************************/
+function processResults(err, results) {
     if (err) {
-        err = "There was a fatal error while comparing files via hash\n" + err;
-        console.log(chalk.red(err));
-        lw.write(err, lw.generateFooter('called at syncInit', elapedTime));
+        console.error("A fatal error occured:", chalk.red(err));
+        if (typeof results === "object")
+            JSON.stringify(results);
+        console.log(chalk.yellow(results));
+        lw.write(err, lw.generateFooter('called at syncInit', getElapsedTime()));
         sendMail(err);
-        return;
     }
-    var elapsedTime = getElapsedTime(startTime);
-    // console.log(chalk.yellow("Data To Sync:\n"), dataToSync);
+    //console.log('\nALL LINKS:\n', results);
 
-    // if all hashes matched?
-
-    //process individual files one at a time
-    async.mapLimit(dataToSync, 1, processMailingList, function (err, results) {
-        console.log(chalk.yellow("RESULTS:\n"), results);
+    updateHashes(results, function (err) {
         if (err) {
-            console.error(chalk.red('Error'), err);
-            console.log("RESULTS\n", results);
+            console.error(chalk.red("Error while updating hashes"), err);
+            sendMail(err);
+        }
+        checkForErrors(results);
+        console.log("\nElapsed Time:", getElapsedTime());
+        lw.generateFooter(null, getElapsedTime(), results.files);
+    });
+}
+
+/**********************************************
+ * reads the config file and starts the sync
+ **********************************************/
+function init() {
+    console.log("Started at:", startTime);
+
+    ss.readConfig(function (err, links) {
+        if (err) {
+            err = '\nUnable to read configuration file\n' + err;
+            console.log(chalk.red(err));
+            var elapsedTime = getElapsedTime();
+            lw.generateHeader(err);
+            lw.generateFooter(null, elapsedTime);
             sendMail(err);
             return;
         }
-
-        //checkForErrors(results);
-
-        updateHashes(results, function (err) {
-            if (err) {
-                console.error(chalk.red("Error while updating hashes"), err);
-                sendMail(err);
-            }
-            checkForErrors(results);
-            var elapsedTime = getElapsedTime(startTime);
-            console.log("\nElapsed Time:", elapsedTime);
-            lw.generateFooter(null, elapsedTime, results.files);
-        });
+        console.log(chalk.yellow(JSON.stringify(links, null, 3)));
+        lw.generateHeader();
+        async.mapLimit(links, 1, hasher, processResults);
     });
 }
 
-// reads config file and starts the hash comparison
-function init(err, links) {
-    // Errors while reading config file
-    if (err) {
-        err = '\nUnable to read configuration file\n' + err;
-        console.log(chalk.red(err));
-        var elapsedTime = getElapsedTime(startTime);
-        lw.generateHeader(err);
-        lw.generateFooter(null, elapsedTime);
-        sendMail(err);
-        return;
-    }
-    console.log(chalk.yellow(JSON.stringify(links, null, 3)));
-    lw.generateHeader();
-    /*hasher(links, syncInit);*/
-    // dataToSync, limit, function to run, cb
-    async.mapLimit(links, 1, hasher, function (err, links) {
-        console.log('\nALL LINKS:\n', links);
-    });
-}
-
-var startTime = new Date();
-console.log("Started at:", startTime);
-ss.readConfig(init);
+init();
