@@ -4,7 +4,7 @@
 
 var link;
 
-var deepEqual = require('deep-equal'),
+const deepEqual = require('deep-equal'),
     objFilter = require('object-filter'),
     bs = require('binarysearch'),
     chalk = require('chalk'),
@@ -26,7 +26,7 @@ function sortList(a, b) {
 }
 
 /************************************
- *format errors and send to callback
+ * format errors and send to callback
  *************************************/
 function sendFileError(err, cb) {
     var result = {
@@ -289,7 +289,6 @@ function init(wrapper, cb) {
     // console.log(chalk.yellow('data to sync:\n'), wrapper);
     link = wrapper.link;
 
-    console.log('\n', chalk.blue(link.csv));
     var filePath = 'Z:\\' + link.csv;
     // get students from the csv file
     ss.readStudents(filePath, function (err, students) {

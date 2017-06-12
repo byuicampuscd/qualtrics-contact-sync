@@ -8,13 +8,7 @@ const logWriter = require('./logWriter.js'),
     chalk = require('chalk'),
     settings = require('./settings.json'),
     processMailingList = require('./processMailingList.js'),
-    async = require('async'),
     lw = new logWriter();
-
-// TO DO!!!!
-// double check the log & ensure it's writing correctly
-
-
 
 /********************************
  * wraps the link object for use by the rest of the program
@@ -38,7 +32,6 @@ function formatLink(link, cb) {
  *********************************/
 function compareHash(link, cb) {
     if (link.hash == link.newHash) {
-        console.log('\n', chalk.blue(link.csv));
         console.log(chalk.green('Hashes Matched'));
         link.matchingHashes = true;
         //output to the log!
@@ -59,10 +52,11 @@ function compareHash(link, cb) {
  * saved to link objects
  ******************************/
 function hashLinks(link, cb) {
+    console.log('\n' + chalk.blue(link.csv));
     var file = settings.filePath + link.csv;
     fs.readFile(file, function (err, content) {
         if (err) {
-            console.log('err hashing', chalk.red(err));
+            console.log('Error hashing file\n', chalk.red(err));
             //tell the log that the file cannot be processed
             var result = {
                 link: link,
@@ -78,31 +72,6 @@ function hashLinks(link, cb) {
         }
         link.newHash = createHash(content.toString());
         compareHash(link, cb);
-    });
-}
-
-/****************************
- * THIS FUNCTION IS NOT CURRENTLY BEING USED
- ****************************/
-function init(links, cb) {
-    async.map(links, hashLinks, function (err, links) {
-        if (err) {
-            //this should never be called
-            cb(err);
-            return;
-        }
-        //filter out empty values (fileErrors) WHY????
-        links = links.filter(function (link) {
-            if (link !== null) return link;
-        });
-
-        // if all were empty that means none of the files could be read
-        if (links.length <= 0) {
-            lw.generateFooter("None of the files in config.csv could be read");
-            return;
-        }
-        //console.log('LINKS:\n', links);
-        compareHashes(links, cb);
     });
 }
 

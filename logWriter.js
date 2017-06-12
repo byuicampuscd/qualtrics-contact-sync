@@ -5,12 +5,15 @@
 var lw = function () {},
     proto = lw.prototype;
 
-var settings = require('./settings.json'),
+const settings = require('./settings.json'),
     fs = require('fs'),
     fws = require('fixed-width-string'),
     chalk = require('chalk');
 
-
+/*******************************
+ * returns the number of files that 
+ * synced without any errors
+ *******************************/
 function getFilesSynced(files) {
     var totalFiles = 0;
     files.forEach(function (file) {
@@ -21,6 +24,10 @@ function getFilesSynced(files) {
     return totalFiles;
 }
 
+/**********************************
+ * returns the total number of changes 
+ * made successfully
+ **********************************/
 function getChangesMade(files) {
     var totalChanges = 0;
 
@@ -34,12 +41,19 @@ function getChangesMade(files) {
     return totalChanges;
 }
 
+/***********************************************************
+ * write a string to the log with an optional cb
+ * MUST by synchronous or the log won't write in the correct order
+ **********************************************************/
 proto.writeSync = function (string, cb) {
     fs.appendFileSync(settings.logLocation, string);
     if (cb != undefined)
         cb();
 }
 
+/***************************************
+ * generate the footer as a string
+ ***************************************/
 proto.generateFooter = function (message, elapsedTime, files) {
     var footer = '\r\n\r\n';
     if (message != undefined) {
@@ -60,6 +74,9 @@ proto.generateFooter = function (message, elapsedTime, files) {
     proto.writeSync(footer);
 }
 
+/*********************************************************
+ * generate the status of an individual csv as a string
+ **********************************************************/
 proto.generateFile = function (wrapper) {
     // console.log(chalk.yellow('Wrapper Object:\n'), wrapper);
     var text = '',
@@ -81,7 +98,7 @@ proto.generateFile = function (wrapper) {
             text += '\r\n';
             if (file.studentErrors.length > 0) {
                 file.studentErrors.forEach(function (error) {
-                    text += '\tFailed to ' + error.action + ' student: ' + error.externalDataReference + 'Error: ' + error.errorMessage + '\r\n';
+                    text += '\tFailed to ' + error.action + ' student: ' + error.externalDataReference + ' Error: ' + error.errorMessage + '\r\n';
                 });
             }
         }
@@ -97,6 +114,9 @@ proto.generateFile = function (wrapper) {
     proto.writeSync(text);
 }
 
+/***************************************
+ * generate the header as a string
+ ***************************************/
 proto.generateHeader = function (configError) {
     var date = new Date(),
         head = '-------------------------------------------------------------------------------------------------------------------------------------\r\n';

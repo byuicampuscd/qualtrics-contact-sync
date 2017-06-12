@@ -1,15 +1,20 @@
 /*eslint-env node*/
 /*eslint no-console:0*/
 
-// call linkSnatcher & get all mailing list objects
+
+/***************************************************
+ * This program's wording suggests students are
+ * being synced, when in actuality the csv's don't
+ * always contain student data
+ ***************************************************/
+
 'use strict';
 
-var settings = require('./settings'),
+const settings = require('./settings'),
     configPath = settings.configLocation,
     fs = require('fs'),
     d3 = require('d3-dsv'),
     studentSnatcher = require('./studentSnatcher.js'),
-    processMailingList = require('./processMailingList.js'),
     hasher = require('./hash.js'),
     logWriter = require('./logWriter.js'),
     sendMail = require('./email.js'),
@@ -107,13 +112,11 @@ function updateHashes(results, cb) {
         return;
     }
 
-    //states it's gonna change hashes even if none of the files passed
     var toWrite = d3.csvFormat(toUpdate);
     fs.writeFile(configPath, toWrite, function (err) {
         if (err) cb(err);
         else {
             console.log(chalk.green("New hashes saved!"));
-            //lw.write('\rHashes were updated', cb);
             lw.writeSync('\rHashes were updated', cb);
         }
     });
@@ -129,7 +132,7 @@ function processResults(err, results) {
         console.error("A fatal error occured:", chalk.red(err));
         if (typeof results === "object")
             JSON.stringify(results);
-        console.log(chalk.yellow(results));
+        //console.log(chalk.yellow(results));
         lw.write(err, lw.generateFooter('called at syncInit', getElapsedTime()));
         sendMail(err);
     }
@@ -162,7 +165,7 @@ function init() {
             sendMail(err);
             return;
         }
-        console.log(chalk.yellow(JSON.stringify(links, null, 3)));
+        //console.log(chalk.yellow(JSON.stringify(links, null, 3)));
         lw.generateHeader();
         async.mapLimit(links, 1, hasher, processResults);
     });

@@ -5,13 +5,16 @@
 var ss = function () {},
     proto = ss.prototype;
 
-var settings = require('./settings.json'),
+//const
+const settings = require('./settings.json'),
     request = require('request'),
     fs = require('fs'),
     chalk = require('chalk'),
     d3 = require('d3-dsv');
 
-// read the configuration file
+/********************************
+ * read the configuration file
+ ********************************/
 proto.readConfig = function (cb) {
     fs.readFile(settings.configLocation, function (err, contents) {
         if (err) cb(err, contents);
@@ -23,7 +26,9 @@ proto.readConfig = function (cb) {
     });
 }
 
-//reading student list from file
+/*********************
+ * read a csv file
+ *********************/
 proto.readStudents = function (filePath, callback) {
     fs.readFile(filePath, 'utf8', function (err, contents) {
         if (err) callback(err, contents);
@@ -40,7 +45,9 @@ proto.readStudents = function (filePath, callback) {
     });
 }
 
-//pull existing student list from qualtrics
+/************************************
+ * pull existing student list from qualtrics
+ **************************************/
 proto.pullStudents = function (options, callback) {
     request(options, function (err, response, body) {
         if (err) {
@@ -66,6 +73,9 @@ proto.pullStudents = function (options, callback) {
     });
 }
 
+/********************************************************
+ * send a POST, PUT, or DELETE request to qualtrics API
+ ********************************************************/
 proto.send = function (student, option, callback) {
     request(option, function (err, response, body) {
         if (err) {
@@ -81,13 +91,19 @@ proto.send = function (student, option, callback) {
             try {
                 body = JSON.parse(body);
             } catch (err) {
-                console.log(response.statusCode);
+                console.log('Status code:', response.statusCode);
                 console.error(chalk.red(err));
                 console.log(body);
             }
             console.log("Student", student);
             console.log("Body", body);
-            student.errorMessage = body.meta.error.errorMessage;
+            /*try {
+                student.errorMessage = body.meta.error.errorMessage;
+            } catch (err) {
+                console.error(chalk.red(err));
+                student.errorMessage = 'Status Code ' + response.statusCode;
+            }*/
+            student.errorMessage = 'Status Code: ' + response.statusCode;
             callback(null, student);
         }
     });

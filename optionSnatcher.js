@@ -1,11 +1,11 @@
 /* eslint-env node */
 'use strict';
-var auth = require('./auth.js');
 
-var optionSnatcher = function () {};
-var proto = optionSnatcher.prototype;
+const auth = require('./auth.js');
 
-var baseURL = "https://byui.az1.qualtrics.com/API/v3/mailinglists",
+var optionSnatcher = function () {},
+    proto = optionSnatcher.prototype,
+    baseURL = "https://byui.az1.qualtrics.com/API/v3/mailinglists",
     option = {
         method: "",
         url: "",
