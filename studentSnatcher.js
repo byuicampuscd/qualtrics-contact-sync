@@ -77,11 +77,12 @@ proto.pullStudents = function (options, callback) {
  * send a POST, PUT, or DELETE request to qualtrics API
  ********************************************************/
 proto.send = function (student, option, callback) {
+    //    console.log(chalk.magenta('sending student'));
     request(option, function (err, response, body) {
         if (err) {
             //shouldn't ever throw a file error here...
             student.pass = false;
-            student.errorMessage = err;
+            student.errorMessage = err; // Sometimes throws a parse error
             callback(null, student);
         } else if (response.statusCode === 200) {
             student.pass = true;
@@ -89,21 +90,14 @@ proto.send = function (student, option, callback) {
         } else {
             student.pass = false;
             try {
+                //on 503 the server returns html which can't be parsed
                 body = JSON.parse(body);
-            } catch (err) {
-                console.log('Status code:', response.statusCode);
-                console.error(chalk.red(err));
-                console.log(body);
-            }
-            console.log("Student", student);
-            console.log("Body", body);
-            /*try {
                 student.errorMessage = body.meta.error.errorMessage;
             } catch (err) {
-                console.error(chalk.red(err));
-                student.errorMessage = 'Status Code ' + response.statusCode;
-            }*/
-            student.errorMessage = 'Status Code: ' + response.statusCode;
+                student.errorMessage = 'Status Code: ' + response.statusCode;
+            }
+            //console.log("Student", student);
+            //console.log("Body", body);
             callback(null, student);
         }
     });

@@ -33,7 +33,7 @@ var startTime = new Date();
 function checkForErrors(results) {
     var errsExist = false;
     results.forEach(function (result) {
-        if (result.file.passed === false)
+        if (result.file.passed === false || result.file.fileError != undefined)
             errsExist = true;
     });
     if (errsExist) {
@@ -81,7 +81,7 @@ function getElapsedTime() {
 function updateHashes(results, cb) {
     var toUpdate = [],
         tempLink = {},
-        passed = 0,
+        matchingHashCount = 0,
         failed = 0;
 
     try {
@@ -94,11 +94,13 @@ function updateHashes(results, cb) {
 
             if (result.file.passed === true) {
                 tempLink.hash = result.link.newHash;
-                passed++;
             } else {
                 tempLink.hash = result.link.hash;
                 failed++;
             }
+
+            if (result.link.matchingHashes === true)
+                matchingHashCount++;
 
             return tempLink;
         });
@@ -107,7 +109,8 @@ function updateHashes(results, cb) {
         return;
     }
 
-    if (passed == toUpdate.length || failed == toUpdate.length) {
+    // Don't update the hashes if they all matched or if they all had errors
+    if (matchingHashCount == toUpdate.length || failed == toUpdate.length) {
         cb();
         return;
     }

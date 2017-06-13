@@ -11,6 +11,7 @@ const deepEqual = require('deep-equal'),
     StudentSnatcher = require('./studentSnatcher.js'),
     optionSnatcher = require('./optionSnatcher.js'),
     logWriter = require('./logWriter.js'),
+    settings = require('./settings.json'),
     async = require('async'),
     lw = new logWriter(),
     ss = new StudentSnatcher(),
@@ -88,7 +89,7 @@ function generateFileData(err, students) {
 
     file.studentErrors.forEach(function (student) {
         console.log(chalk.red("Failed to " +
-            student.action + " student: ") + student.externalDataReference, chalk.red("Error: " + student.errorMessage));
+            student.action + " student: ") + student.externalDataReference, chalk.red(student.errorMessage));
     });
     if (file.studentErrors.length)
         file.passed = false;
@@ -180,7 +181,7 @@ function compareStudents(students, cb, qStudents) {
             delete filteredQStudent.responseHistory;
             delete filteredQStudent.emailHistory;
 
-            //EQUALITY COMPARISON. THIS IS WHERE MOST PROBLEMS HAVE OCCURED
+            //EQUALITY COMPARISON. THIS IS WHERE A LOT OF PROBLEMS HAVE OCCURED
             if (!deepEqual(filterStudent(student), filteredQStudent)) {
                 // console.log("\n\n Student: ", filterStudent(student));
                 // console.log("\n\nQ Student:", filteredQStudent);
@@ -289,7 +290,7 @@ function init(wrapper, cb) {
     // console.log(chalk.yellow('data to sync:\n'), wrapper);
     link = wrapper.link;
 
-    var filePath = 'Z:\\' + link.csv;
+    var filePath = settings.filePath + link.csv;
     // get students from the csv file
     ss.readStudents(filePath, function (err, students) {
         if (err) {

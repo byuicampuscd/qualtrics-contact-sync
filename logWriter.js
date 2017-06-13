@@ -98,7 +98,7 @@ proto.generateFile = function (wrapper) {
             text += '\r\n';
             if (file.studentErrors.length > 0) {
                 file.studentErrors.forEach(function (error) {
-                    text += '\tFailed to ' + error.action + ' student: ' + error.externalDataReference + ' Error: ' + error.errorMessage + '\r\n';
+                    text += '\tFailed to ' + error.action + ' student: ' + error.externalDataReference + ' ' + error.errorMessage + '\r\n';
                 });
             }
         }
