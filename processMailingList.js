@@ -49,23 +49,23 @@ function sendFileError(err, cb) {
  * and deleted count
  ********************************************************/
 function generateFileData(err, students) {
+    var cb = this;
     if (err) {
         console.error(err);
         sendFileError(err, cb);
         return;
     }
     // file is returned to cli.js
-    var cb = this,
-        file = {
-            fileName: link.csv,
-            toAlterAmount: students.length,
-            aCount: 0,
-            uCount: 0,
-            dCount: 0,
-            passed: true,
-            studentErrors: [],
-            fileError: null
-        };
+    var file = {
+        fileName: link.csv,
+        toAlterAmount: students.length,
+        aCount: 0,
+        uCount: 0,
+        dCount: 0,
+        passed: true,
+        studentErrors: [],
+        fileError: null
+    };
     // sort through students and create report based on worked/error attributes
     students.forEach(function (student) {
         if (student.pass) {
@@ -158,6 +158,44 @@ function filterStudent(student) {
     return filteredStudent;
 }
 
+
+
+function retryfailedStudents(err, students) {
+    var cb = this;
+    if (err) {
+        console.error(err);
+        sendFileError(err, cb);
+        return;
+    }
+
+    var failedStudents = students.filter(function (student) {
+        if (student.pass == false)
+            return student;
+    });
+    console.log('typeof cb', typeof cb);
+
+    if (failedStudents.length > 0) {
+        console.log(failedStudents.length + ' Students failed to sync. Attempting to re-sync now.')
+        async.mapLimit(failedStudents, 10, function (student, callback) {
+            delete student.pass;
+            setOptions(student, callback);
+        }, function (err, failedStudentResult) {
+            if (err) {
+                console.error(err);
+                sendFileError(err, cb);
+                return;
+            }
+            console.log('typeof this', typeof this);
+            students = students.concat(failedStudentResult);
+            generateFileData(null, students).bind(cb);
+        });
+    } else {
+        console.log('typeof cb', typeof cb);
+        generateFileData(null, students).bind(cb);
+    }
+
+}
+
 /********************************************************
  * sorts the qualtrics list & csv lists and uses a binary
  * search to check for equality
@@ -211,7 +249,8 @@ function compareStudents(students, cb, qStudents) {
 
     // make api calls X at a time -- callback returns here
     // .bind sends the final cb to generateFileData as the this value
-    async.mapLimit(toAlter, 10, setOptions, generateFileData.bind(cb));
+    //async.mapLimit(toAlter, 10, setOptions, generateFileData.bind(cb));
+    async.mapLimit(toAlter, 10, setOptions, retryfailedStudents.bind(cb));
 }
 
 /*********************************************

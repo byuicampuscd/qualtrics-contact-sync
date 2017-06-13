@@ -96,6 +96,7 @@ proto.send = function (student, option, callback) {
             } catch (err) {
                 student.errorMessage = 'Status Code: ' + response.statusCode;
             }
+            student.pass = false;
             //console.log("Student", student);
             //console.log("Body", body);
             callback(null, student);
