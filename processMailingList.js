@@ -159,25 +159,32 @@ function filterStudent(student) {
 }
 
 
-
+/****************************************************
+ * attempts tp re-sync all students who didn't pass. 
+ * the server throws a lot of 503 errors and parse errors
+ * when handling large lists.
+ *****************************************************/
 function retryfailedStudents(err, students) {
-    var cb = this;
     if (err) {
         console.error(err);
         sendFileError(err, cb);
         return;
     }
 
-    var failedStudents = students.filter(function (student) {
-        if (student.pass == false)
-            return student;
-    });
-    console.log('typeof cb', typeof cb);
+    // Because mapLimit was used, the cb had to be passed in with bind as the this value.
+    // In order to pass cb to the next function we have to bind it to the function with a different name and call the bound version
+    var cb = this,
+        generateFileDataBound = generateFileData.bind(cb),
+        failedStudents = students.filter(function (student) {
+            if (student.pass == false)
+                return student;
+        });
 
     if (failedStudents.length > 0) {
-        console.log(failedStudents.length + ' Students failed to sync. Attempting to re-sync now.')
+        console.log(failedStudents.length + chalk.yellow(' Students failed to sync. Attempting to re-sync now.'));
         async.mapLimit(failedStudents, 10, function (student, callback) {
             delete student.pass;
+            delete student.errorMessage;
             setOptions(student, callback);
         }, function (err, failedStudentResult) {
             if (err) {
@@ -185,13 +192,11 @@ function retryfailedStudents(err, students) {
                 sendFileError(err, cb);
                 return;
             }
-            console.log('typeof this', typeof this);
             students = students.concat(failedStudentResult);
-            generateFileData(null, students).bind(cb);
+            generateFileDataBound(null, students);
         });
     } else {
-        console.log('typeof cb', typeof cb);
-        generateFileData(null, students).bind(cb);
+        generateFileDataBound(null, students);
     }
 
 }
