@@ -12,6 +12,7 @@
         "fixed-width-string": "^1.0.0",
         "nodemailer": "^3.1.7",
         "object-filter": "^1.0.2",
+        "prompt": "^1.0.0",
         "request": "^2.79.0",
         "string-hash": "^1.1.3"
     },

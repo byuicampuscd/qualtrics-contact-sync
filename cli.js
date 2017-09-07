@@ -18,6 +18,7 @@ const settings = require('./settings'),
     hasher = require('./hash.js'),
     logWriter = require('./logWriter.js'),
     sendMail = require('./email.js'),
+    timer = require('./timer.js'),
     chalk = require('chalk'),
     async = require('async'),
     lw = new logWriter(),
@@ -125,7 +126,6 @@ function updateHashes(results, cb) {
     });
 }
 
-
 /****************************************
  * Updates the hashes, checks for errors,
  * and writes the footer after the sync
@@ -174,4 +174,6 @@ function init() {
     });
 }
 
-init();
+//module.exports = init;
+//init();
+timer(init);
