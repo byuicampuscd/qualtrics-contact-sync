@@ -24,7 +24,7 @@ const settings = require('./settings'),
     lw = new logWriter(),
     ss = new studentSnatcher();
 
-var startTime = new Date();
+var startTime;
 
 
 /*********************************************
@@ -156,6 +156,8 @@ function processResults(err, results) {
  * reads the config file and starts the sync
  **********************************************/
 function init() {
+    startTime = new Date();
+    
     console.log("Started at:", startTime);
 
     ss.readConfig(function (err, links) {
