@@ -18,7 +18,7 @@ const settings = require('./settings'),
     hasher = require('./hash.js'),
     logWriter = require('./logWriter.js'),
     sendMail = require('./email.js'),
-    timer = require('./timer.js'),
+    timer = require('repeat-timer'),
     chalk = require('chalk'),
     async = require('async'),
     lw = new logWriter(),
@@ -157,7 +157,7 @@ function processResults(err, results) {
  **********************************************/
 function init() {
     startTime = new Date();
-    
+
     console.log("Started at:", startTime);
 
     ss.readConfig(function (err, links) {
