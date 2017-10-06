@@ -1,4 +1,4 @@
-/* eslint-env node */
+/* eslint-env node, es6 */
 /* eslint no-console:0 */
 'use strict';
 
@@ -12,7 +12,7 @@ const deepEqual = require('deep-equal'),
     optionSnatcher = require('./optionSnatcher.js'),
     logWriter = require('./logWriter.js'),
     settings = require('./settings.json'),
-    async = require('async'),
+    asyncLib = require('async'),
     lw = new logWriter(),
     ss = new StudentSnatcher(),
     os = new optionSnatcher();
@@ -182,7 +182,7 @@ function retryfailedStudents(err, students) {
 
     if (failedStudents.length > 0) {
         console.log(failedStudents.length + chalk.yellow(' Students failed to sync. Attempting to re-sync now.'));
-        async.mapLimit(failedStudents, 10, function (student, callback) {
+        asyncLib.mapLimit(failedStudents, 10, function (student, callback) {
             delete student.pass;
             delete student.errorMessage;
             setOptions(student, callback);
@@ -254,8 +254,8 @@ function compareStudents(students, cb, qStudents) {
 
     // make api calls X at a time -- callback returns here
     // .bind sends the final cb to generateFileData as the this value
-    //async.mapLimit(toAlter, 10, setOptions, generateFileData.bind(cb));
-    async.mapLimit(toAlter, 10, setOptions, retryfailedStudents.bind(cb));
+    //asyncLib.mapLimit(toAlter, 10, setOptions, generateFileData.bind(cb));
+    asyncLib.mapLimit(toAlter, 10, setOptions, retryfailedStudents.bind(cb));
 }
 
 /*********************************************

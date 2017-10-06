@@ -1,9 +1,9 @@
-/* eslint-env node */
+/* eslint-env node, es6 */
 /* eslint no-console:0 */
 'use strict';
 
 const nodemailer = require('nodeMailer'),
-    auth = require('./auth.js');
+    auth = require('./auth.json');
 
 function sendMail(message) {
     let transporter = nodemailer.createTransport({

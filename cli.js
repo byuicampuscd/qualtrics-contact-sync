@@ -1,4 +1,4 @@
-/*eslint-env node*/
+/*eslint-env node, es6*/
 /*eslint no-console:0*/
 
 
@@ -20,7 +20,7 @@ const settings = require('./settings'),
     sendMail = require('./email.js'),
     timer = require('repeat-timer'),
     chalk = require('chalk'),
-    async = require('async'),
+    asyncLib = require('async'),
     lw = new logWriter(),
     ss = new studentSnatcher();
 
@@ -172,7 +172,7 @@ function init() {
         }
         //console.log(chalk.yellow(JSON.stringify(links, null, 3)));
         lw.generateHeader();
-        async.mapLimit(links, 1, hasher, processResults);
+        asyncLib.mapLimit(links, 1, hasher, processResults);
     });
 }
 

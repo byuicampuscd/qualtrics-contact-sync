@@ -1,4 +1,4 @@
-/* eslint-env node */
+/* eslint-env node, es6 */
 /* eslint no-console:0 */
 'use strict';
 
