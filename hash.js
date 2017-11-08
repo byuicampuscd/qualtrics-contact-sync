@@ -22,14 +22,15 @@ function formatLink(link, cb) {
     //console.log('\nformattedLink:\n', wrappedLink);
     if (wrappedLink.link.matchingHashes === true) {
         cb(null, wrappedLink);
+        return;
     } else {
         processMailingList(wrappedLink, cb);
     }
 }
 
-/*********************************
+/********************************************************
  * compare the hashes - same logic as processMailingList
- *********************************/
+ *******************************************************/
 function compareHash(link, cb) {
     if (link.hash == link.newHash) {
         console.log(chalk.green('Hashes Matched'));

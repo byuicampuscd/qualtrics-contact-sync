@@ -45,30 +45,30 @@ proto.readStudents = function (filePath, callback) {
     });
 }
 
-/************************************
+/*********************************************
  * pull existing student list from qualtrics
- **************************************/
+ *********************************************/
 proto.pullStudents = function (options, callback) {
     request(options, function (err, response, body) {
         if (err) {
-            // Callback only handles one parameter
-            callback(err);
+            callback(err, null, null);
             return;
         } else if (response.statusCode !== 200) {
-            // Callback only handles one parameter
+            /* Could be throwing a parse error */
             var errMessage = JSON.parse(body).meta.error.errorMessage;
-            callback("Couldn't retrieve students from Qualtrics\n\tError: " + errMessage);
+            callback("Couldn't retrieve students from Qualtrics\n\tError: " + errMessage, null, null);
             return;
         } else {
             try {
                 var students = JSON.parse(body);
-                callback(null, students.result.elements, students.result.nextPage);
             } catch (err) {
                 console.error(chalk.red(err));
                 console.log(response.statusCode);
-                //file level error!
-                callback(err);
+                // fatal error!
+                callback(err, null, null);
+                return;
             }
+            callback(null, students.result.elements, students.result.nextPage);
         }
     });
 }

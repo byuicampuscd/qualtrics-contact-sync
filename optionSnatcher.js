@@ -57,7 +57,6 @@ proto.get = function (ml, nextPage) {
     else option.url = nextPage;
 
     option.method = 'GET';
-
     return option;
 }
 

@@ -139,6 +139,7 @@ function processResults(err, results) {
         lw.write(err, lw.generateFooter('called at syncInit', getElapsedTime()));
         sendMail(err);
     }
+    
     //console.log('\nALL LINKS:\n', results);
 
     updateHashes(results, function (err) {
@@ -171,11 +172,11 @@ function init() {
             return;
         }
         //console.log(chalk.yellow(JSON.stringify(links, null, 3)));
+        
+        /* EACH LIMIT MUST BE REPLACED WITH MAPLIMIT FOR CODE TO RUN PROPERLY!!! */
         lw.generateHeader();
         asyncLib.mapLimit(links, 1, hasher, processResults);
     });
 }
 
-//module.exports = init;
-//init();
 timer(init);

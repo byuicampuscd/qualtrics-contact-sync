@@ -55,7 +55,7 @@ function generateFileData(err, students) {
         sendFileError(err, cb);
         return;
     }
-    // file is returned to cli.js
+    /* file is returned to cli.js */
     var file = {
         fileName: link.csv,
         toAlterAmount: students.length,
@@ -66,7 +66,7 @@ function generateFileData(err, students) {
         studentErrors: [],
         fileError: null
     };
-    // sort through students and create report based on worked/error attributes
+    /* sort through students and create report based on worked/error attributes */
     students.forEach(function (student) {
         if (student.pass) {
             if (student.action == "Add")
@@ -79,7 +79,7 @@ function generateFileData(err, students) {
             file.studentErrors.push(student);
     });
 
-    // generate report of completed additions/updates/deletions
+    /* generate report of completed additions/updates/deletions */
     if (file.aCount > 0)
         console.log(chalk.green("Students successfully added: " + file.aCount));
     if (file.uCount > 0)
@@ -111,9 +111,9 @@ function generateFileData(err, students) {
  * create approptriate API call for each action
  ************************************************/
 function setOptions(student, callback) {
-    //    console.log(chalk.magenta('setOptions'));
+    // console.log(chalk.magenta('setOptions'));
     var option = "";
-    // create approptriate API call
+    /* create approptriate API call */
     switch (student.action) {
         case 'Add':
             option = os.add(link.MailingListID, student);
@@ -132,23 +132,23 @@ function setOptions(student, callback) {
  * filter student object for equality comparison
  *************************************************/
 function filterStudent(student) {
-    // filter student outside of embeddedData
+    /* filter student outside of embeddedData */
     var filteredStudent = objFilter(student, function (value) {
         return value !== '' && value !== null;
     });
-    //Only filter student (without EmbeddedData) when updating them
+    /* Only filter student (without EmbeddedData) when updating them */
     if (student.action == 'Update')
         return filteredStudent;
 
     if (student.embeddedData === null) {
         delete filteredStudent.embeddedData;
     } else {
-        // filter embeddedData
+        /* filter embeddedData */
         var filteredData = objFilter(student.embeddedData, function (value) {
             return value !== '' && value !== null;
         });
 
-        // append filteredData if not empty
+        /* append filteredData if not empty */
         if (Object.keys(filteredData).length <= 0) {
             delete filteredStudent.embeddedData;
         } else {
@@ -171,8 +171,8 @@ function retryfailedStudents(err, students) {
         return;
     }
 
-    // Because mapLimit was used, the cb had to be passed in with bind as the this value.
-    // In order to pass cb to the next function we have to bind it to the function with a different name and call the bound version
+    /* Because mapLimit was used, the cb had to be passed in with bind as the this value.
+     In order to pass cb to the next function we have to bind it to the function with a different name and call the bound version */
     var cb = this,
         generateFileDataBound = generateFileData.bind(cb),
         failedStudents = students.filter(function (student) {
@@ -212,25 +212,27 @@ function compareStudents(students, cb, qStudents) {
     students.forEach(function (student) {
         var qIndex;
 
-        // get the index of matching students
+        /* get the index of matching students by externalDataRef property */
         qIndex = bs(qStudents, student, sortList);
 
-        // perform magic decision making logic
+        /* If the student exists in both lists, check for equality */
         if (qIndex > -1) {
-            //create version to use for equality check
+            /* create version to use for equality check. Remove fields created and used by qualtrics only */
             var filteredQStudent = filterStudent(qStudents[qIndex]);
+            //var filteredQStudent = qStudents[qIndex];
             delete filteredQStudent.id;
             delete filteredQStudent.unsubscribed;
             delete filteredQStudent.responseHistory;
             delete filteredQStudent.emailHistory;
 
-            //EQUALITY COMPARISON. THIS IS WHERE A LOT OF PROBLEMS HAVE OCCURED
+            /* EQUALITY COMPARISON. THIS IS WHERE A LOT OF PROBLEMS HAVE OCCURED */
+            /* Compares students with all empty fields removed... */
             if (!deepEqual(filterStudent(student), filteredQStudent)) {
                 // console.log("\n\n Student: ", filterStudent(student));
                 // console.log("\n\nQ Student:", filteredQStudent);
                 student.id = qStudents[qIndex].id;
                 student.action = 'Update';
-                student = filterStudent(student); // don't filter to throw error when updating student with empty values
+                student = filterStudent(student); /* not filtering throws an error when updating student with empty values */
                 toAlter.push(student);
                 qStudents[qIndex].checked = true;
             } else {
@@ -238,11 +240,11 @@ function compareStudents(students, cb, qStudents) {
             }
         } else {
             student.action = 'Add';
-            // Filter out empty values that can't be added!
+            /* Filter out empty values that can't be added! */
             toAlter.push(filterStudent(student));
         }
     });
-    // exists in qualtrics but not in master file
+    /* exists in qualtrics but not in master file */
     qStudents.forEach(function (student) {
         if (!student.checked) {
             student.action = 'Delete';
@@ -252,8 +254,8 @@ function compareStudents(students, cb, qStudents) {
 
     console.log('Changes to be made: ', toAlter.length);
 
-    // make api calls X at a time -- callback returns here
-    // .bind sends the final cb to generateFileData as the this value
+    /* make api calls X at a time -- callback returns here
+     .bind sends the final cb to generateFileData as the this value */
     //asyncLib.mapLimit(toAlter, 10, setOptions, generateFileData.bind(cb));
     asyncLib.mapLimit(toAlter, 10, setOptions, retryfailedStudents.bind(cb));
 }
@@ -270,10 +272,10 @@ function pullStudents(students, cb, qStudents, nextPage) {
             sendFileError(err, cb);
             return;
         }
-        // add page to student list
+        /* add page to student list */
         qStudents = qStudents.concat(newStudents);
         if (nextPage) {
-            // call again if there was another page of students in qualtrics
+            /* call again if there was another page of students in qualtrics */
             pullStudents(students, cb, qStudents, nextPage);
         } else {
             qStudents.sort(sortList);
@@ -288,33 +290,33 @@ function pullStudents(students, cb, qStudents, nextPage) {
  *************************************************/
 function formatStudents(students) {
     // console.log(chalk.magenta('formatting Students'));
-    // create keys for embeddedData object
+    /* create keys for embeddedData object */
     var emdKeys = Object.keys(students[0]).filter(function (key) {
-        return key != 'Email' && key != 'UniqueID' && key != 'FirstName';
+        return key != 'Email' && key != 'UniqueID' && key != 'FirstName' && key != 'LastName';
     });
     // create keys for student object
     var keys = Object.keys(students[0]).filter(function (key) {
-        return key == 'Email' || key == 'UniqueID' || key == 'FirstName';
+        return key == 'Email' || key == 'UniqueID' || key == 'FirstName' || key == 'LastName';
     });
 
-    var formattedStudents = students.map(function (currVal, formattedStudents) {
+    var formattedStudents = students.map(function (currVal) {
         var tStudent = {},
             tEmbeddedData = {};
-        // format keys and create tempStudent object
+        /* format keys and create tempStudent object */
         for (var j = 0; j < keys.length; j++) {
-            // UniqueID must be converted to externalDataReference
+            /* UniqueID must be converted to externalDataReference */
             if (keys[j] === 'UniqueID') {
                 tStudent.externalDataReference = currVal[keys[j]];
             } else {
-                // first letter of each key ot lower case
+                /* first letter of each key ot lower case */
                 tStudent[keys[j][0].toLowerCase() + keys[j].slice(1)] = currVal[keys[j]];
             }
         }
         var commaFinder = new RegExp(/,/g);
 
-        // create embeddedData object
+        /* create embeddedData object */
         for (var i = 0; i < emdKeys.length; i++) {
-            // filter commas out of embeddedData values so the qualtrics api won't throw a fit
+            /* filter commas out of embeddedData values so the qualtrics api won't throw a fit */
             tEmbeddedData[emdKeys[i]] = currVal[emdKeys[i]].replace(commaFinder, '');
         }
 
@@ -335,25 +337,25 @@ function init(wrapper, cb) {
     link = wrapper.link;
 
     var filePath = settings.filePath + link.csv;
-    // get students from the csv file
+    /* get students from the csv file */
     ss.readStudents(filePath, function (err, students) {
         if (err) {
             sendFileError(err, cb);
             return;
         }
 
-        // remove any empty rows
+        /* remove any empty rows */
         students = students.filter(function (student) {
             return student.UniqueID && student.UniqueID !== '';
         });
 
-        // format csv student object to match qualtrics API format
+        /* format csv student object to match qualtrics API format */
         if (students.length) {
             students = formatStudents(students);
             students.sort(sortList);
         }
 
-        // get students from qualtrics
+        /* get students from qualtrics */
         console.log(chalk.magenta('Pulling students from Qualtrics'));
         pullStudents(students, cb);
     });
