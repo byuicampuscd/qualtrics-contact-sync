@@ -1,0 +1,8 @@
+{
+   "token": "your token here",
+   "username": "username of email sender",
+   "password": "password of email sender",
+   "service": "name of sender email service ex: Outlook365",
+   "from": "sender email address",
+   "to": ["recipient 1", "recipient 2"]
+}

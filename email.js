@@ -3,31 +3,55 @@
 'use strict';
 
 const nodemailer = require('nodeMailer'),
-    auth = require('./auth.json');
+   auth = require('./auth.json');
 
-function sendMail(message) {
-    let transporter = nodemailer.createTransport({
-        service: auth.service, //Outlook365
-        auth: {
-            user: auth.username,
-            pass: auth.password
-        }
-    });
+/*********************************************
+ * Prepare error messages and call sendMail
+ * when complete. Can send one or many emails
+ *********************************************/
+function prepMail(message) {
+   /***********************
+    * Send a single email
+    ***********************/
+   function sendMail(mailOption) {
+      transporter.sendMail(mailOption, (error, result) => {
+         if (error) {
+            return console.log(error, mailOption.to);
+         }
+         return console.log('message %s sent: %s', result.messageId, result.response);
+      });
+   }
 
-    let mailOptions = {
-        from: auth.from,
-        to: auth.to,
-        subject: "Error with Qualtrics Contact Sync",
-        text: message
-    };
+   var transporter = nodemailer.createTransport({
+      service: auth.service, //Outlook365 for BYUI email
+      auth: {
+         user: auth.username,
+         pass: auth.password
+      }
+   });
 
-    transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-            return console.log(error);
-        }
-        return console.log('message %s sent: %s', info.messageId, info.response);
-    });
+   /* create an arry of options if multiple senders are specified.
+    makes file backwards compatible */
+   if (auth.to instanceof Array) {
+      var mailingList = auth.to.map((receiver) => {
+         return {
+            from: auth.from,
+            to: receiver,
+            subject: "Error with Qualtrics Contact Sync",
+            text: message
+         };
+      });
+      mailingList.forEach(sendMail);
+   } /* else send one */
+   else {
+      sendMail({
+         from: auth.from,
+         to: auth.to,
+         subject: "Error with Qualtrics Contact Sync",
+         text: message
+      });
+   }
 }
 
 
-module.exports = sendMail;
+module.exports = prepMails;
