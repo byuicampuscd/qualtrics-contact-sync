@@ -10,6 +10,7 @@ const nodemailer = require('nodeMailer'),
  * when complete. Can send one or many emails
  *********************************************/
 function prepMail(message) {
+   message += "\n\n This is an automatic message. Please do not respond.";
    /***********************
     * Send a single email
     ***********************/
@@ -18,7 +19,7 @@ function prepMail(message) {
          if (error) {
             return console.log(error, mailOption.to);
          }
-         return console.log('message %s sent: %s', result.messageId, result.response);
+         return console.log('message %s sent: %s', mailOption.to, result.response);
       });
    }
 
@@ -52,6 +53,5 @@ function prepMail(message) {
       });
    }
 }
-
 
 module.exports = prepMails;
