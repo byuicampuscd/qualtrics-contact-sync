@@ -128,36 +128,60 @@ function setOptions(student, callback) {
     ss.send(student, option, callback);
 }
 
-/***********************************************
- * filter student object for equality comparison
- *************************************************/
-function filterStudent(student) {
-    /* filter student outside of embeddedData */
-    var filteredStudent = objFilter(student, function (value) {
-        return value !== '' && value !== null;
-    });
-    /* Only filter student (without EmbeddedData) when updating them */
-    if (student.action == 'Update')
-        return filteredStudent;
+/****************************************************
+ * filter out all empty values before adding student
+ ***************************************************/
+function addFilter(student) {
+    var keys = Object.keys(student),
+        emKeys = Object.keys(student.embeddedData);
 
-    if (student.embeddedData === null) {
-        delete filteredStudent.embeddedData;
-    } else {
-        /* filter embeddedData */
-        var filteredData = objFilter(student.embeddedData, function (value) {
-            return value !== '' && value !== null;
-        });
-
-        /* append filteredData if not empty */
-        if (Object.keys(filteredData).length <= 0) {
-            delete filteredStudent.embeddedData;
-        } else {
-            filteredStudent.embeddedData = filteredData;
+    /* remove empty fields*/
+    keys.forEach((key) => {
+        if (student[key] === "" || student[key] === undefined) {
+            delete student[key];
         }
-    }
-    return filteredStudent;
+    });
+
+    /* remove empty embeddedData fields*/
+    emKeys.forEach((emKey) => {
+        if (student.embeddedData[emKey] === "" || student.embeddedData[emKey] === undefined) {
+            delete student.embeddedData[emKey];
+        }
+    });
+
+    return student;
 }
 
+/***********************************************
+ * filter student object for equality comparison. 
+ * returns a  filtered copy of the object
+ *************************************************/
+function equalityFilter(student, comparisonStudent) {
+    
+    var studentToFilter = Object.assign({}, student),
+        keysToRemove = ['id', 'unsubscribed', 'responseHistory', 'emailHistory', 'language'],
+        outerStudentKeys = Object.keys(studentToFilter),
+        fEmDataKeys = Object.keys(studentToFilter.embeddedData),
+        cEmDataKeys = Object.keys(comparisonStudent.embeddedData);
+
+    /* remove qualtrics specific keys from studentToFilter */
+    outerStudentKeys.forEach((key) => {
+        if (keysToRemove.indexOf(key) > -1) {
+            /* if key is listed in keysToRemove, delete it */
+            delete studentToFilter[key];
+        }
+    });
+
+    /* remove old data fields from Qualtrics. These are empty strings in studentToFilter
+     and don't exist in comparisonStudent*/
+    fEmDataKeys.forEach((emKey) => {
+        if (studentToFilter.embeddedData[emKey] === "" && cEmDataKeys.indexOf(emKey) == -1) {
+            delete studentToFilter.embeddedData[emKey];
+        }
+    });
+
+    return studentToFilter;
+}
 
 /****************************************************
  * attempts tp re-sync all students who didn't pass. 
@@ -217,31 +241,30 @@ function compareStudents(students, cb, qStudents) {
 
         /* If the student exists in both lists, check for equality */
         if (qIndex > -1) {
-            /* create version to use for equality check. Remove fields created and used by qualtrics only */
-            var filteredQStudent = filterStudent(qStudents[qIndex]);
-            //var filteredQStudent = qStudents[qIndex];
-            delete filteredQStudent.id;
-            delete filteredQStudent.unsubscribed;
-            delete filteredQStudent.responseHistory;
-            delete filteredQStudent.emailHistory;
+            /* create version to use for equality check. Remove Qualtrics-specific and old fields. */
+            var filteredQStudent = equalityFilter(qStudents[qIndex], student),
+                filteredStudent = equalityFilter(student, filteredQStudent); // shouldn't matter if filteredQstudent is used or not..
 
-            /* EQUALITY COMPARISON. THIS IS WHERE A LOT OF PROBLEMS HAVE OCCURED */
-            /* Compares students with all empty fields removed... */
-            if (!deepEqual(filterStudent(student), filteredQStudent)) {
-                // console.log("\n\n Student: ", filterStudent(student));
-                // console.log("\n\nQ Student:", filteredQStudent);
-                student.id = qStudents[qIndex].id;
-                student.action = 'Update';
-                student = filterStudent(student); /* not filtering throws an error when updating student with empty values */
-                toAlter.push(student);
+            /* EQUALITY COMPARISON. */
+            if (!deepEqual(filteredStudent, filteredQStudent)) {
+
+
+                filteredStudent.action = 'Update';
+                // ID is undefined....
+                filteredStudent.id = qStudents[qIndex].id; /* So we know who to update */
+
+                // student = filterStudent(student); /* not filtering throws an error when updating student with empty values */
+
+                toAlter.push(filteredStudent);
                 qStudents[qIndex].checked = true;
             } else {
+                /* students matched, no changes needed */
                 qStudents[qIndex].checked = true;
             }
         } else {
             student.action = 'Add';
             /* Filter out empty values that can't be added! */
-            toAlter.push(filterStudent(student));
+            toAlter.push(addFilter(student));
         }
     });
     /* exists in qualtrics but not in master file */

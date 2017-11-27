@@ -139,10 +139,16 @@ function processResults(err, results) {
         lw.write(err, lw.generateFooter('called at syncInit', getElapsedTime()));
         sendMail(err);
     }
-    
+
     //console.log('\nALL LINKS:\n', results);
 
-    updateHashes(results, function (err) {
+    // FOR TESTING 
+    console.log(chalk.yellow("Updating hashes is disabled"));
+    checkForErrors(results);
+    console.log("\nElapsed Time:", getElapsedTime());
+    lw.generateFooter(null, getElapsedTime(), results.files);
+
+    /*updateHashes(results, function (err) {
         if (err) {
             console.error(chalk.red("Error while updating hashes"), err);
             sendMail(err);
@@ -150,7 +156,7 @@ function processResults(err, results) {
         checkForErrors(results);
         console.log("\nElapsed Time:", getElapsedTime());
         lw.generateFooter(null, getElapsedTime(), results.files);
-    });
+    });*/
 }
 
 /**********************************************
@@ -171,12 +177,13 @@ function init() {
             sendMail(err);
             return;
         }
-        //console.log(chalk.yellow(JSON.stringify(links, null, 3)));
-        
-        /* EACH LIMIT MUST BE REPLACED WITH MAPLIMIT FOR CODE TO RUN PROPERLY!!! */
+
         lw.generateHeader();
         asyncLib.mapLimit(links, 1, hasher, processResults);
     });
 }
 
-timer(init);
+// FOR TESTING
+// timer(init);
+
+init();

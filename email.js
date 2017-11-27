@@ -54,4 +54,4 @@ function prepMail(message) {
    }
 }
 
-module.exports = prepMails;
+module.exports = prepMail;
