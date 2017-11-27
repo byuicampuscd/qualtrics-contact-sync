@@ -128,6 +128,23 @@ function setOptions(student, callback) {
     ss.send(student, option, callback);
 }
 
+/**************************************************
+ * Takes 2 students. adds fields from the reference
+ * that are missing from the first student with the
+ *  value "". For clearing old fields.
+ **************************************************/
+function clearUnusedFields(student, reference) {
+    var keys = Object.keys(student.embeddedData),
+        refKeys = Object.keys(reference.embeddedData);
+
+    refKeys.forEach((refKey) => {
+        if (keys.indexOf(refKey) == -1) {
+            student.embeddedData[refKey] = "";
+        }
+    });
+
+    return student;
+}
 /****************************************************
  * filter out all empty values before adding student
  ***************************************************/
@@ -157,7 +174,7 @@ function addFilter(student) {
  * returns a  filtered copy of the object
  *************************************************/
 function equalityFilter(student, comparisonStudent) {
-    
+
     var studentToFilter = Object.assign({}, student),
         keysToRemove = ['id', 'unsubscribed', 'responseHistory', 'emailHistory', 'language'],
         outerStudentKeys = Object.keys(studentToFilter),
@@ -248,12 +265,13 @@ function compareStudents(students, cb, qStudents) {
             /* EQUALITY COMPARISON. */
             if (!deepEqual(filteredStudent, filteredQStudent)) {
 
+                /* add empty values that have been removed from qualtrics */
+                filteredStudent = clearUnusedFields(filteredStudent, filteredQStudent);
 
                 filteredStudent.action = 'Update';
                 // ID is undefined....
                 filteredStudent.id = qStudents[qIndex].id; /* So we know who to update */
 
-                // student = filterStudent(student); /* not filtering throws an error when updating student with empty values */
 
                 toAlter.push(filteredStudent);
                 qStudents[qIndex].checked = true;
