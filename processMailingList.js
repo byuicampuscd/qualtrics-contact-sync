@@ -5,7 +5,6 @@
 var link;
 
 const deepEqual = require('deep-equal'),
-    objFilter = require('object-filter'),
     bs = require('binarysearch'),
     chalk = require('chalk'),
     StudentSnatcher = require('./studentSnatcher.js'),
