@@ -348,7 +348,7 @@ function formatStudents(students) {
             if (keys[j] === 'UniqueID') {
                 tStudent.externalDataReference = currVal[keys[j]];
             } else {
-                /* first letter of each key ot lower case */
+                /* first letter of each key to lower case */
                 tStudent[keys[j][0].toLowerCase() + keys[j].slice(1)] = currVal[keys[j]];
             }
         }
@@ -356,8 +356,12 @@ function formatStudents(students) {
 
         /* create embeddedData object */
         for (var i = 0; i < emdKeys.length; i++) {
-            /* filter commas out of embeddedData values so the qualtrics api won't throw a fit */
-            tEmbeddedData[emdKeys[i]] = currVal[emdKeys[i]].replace(commaFinder, '');
+            /* replace undefined values with empty string*/
+            if (currVal[emdKeys[i]] == undefined) {
+                currVal[emdKeys[i]] = "";
+            }
+            /* filter commas out of embeddedData values so the qualtrics api won't throw a fit IF*/
+                tEmbeddedData[emdKeys[i]] = currVal[emdKeys[i]].replace(commaFinder, '');
         }
 
         if (emdKeys.length > 0)
