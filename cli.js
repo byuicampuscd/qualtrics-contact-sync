@@ -143,7 +143,7 @@ function processResults(err, results) {
     //console.log('\nALL LINKS:\n', results);
 
     // FOR TESTING
-    /* console.log(chalk.yellow("Updating hashes is disabled"));
+    /*console.log(chalk.yellow("Updating hashes is disabled"));
     checkForErrors(results);
     console.log("\nElapsed Time:", getElapsedTime());
     lw.generateFooter(null, getElapsedTime(), results.files);*/

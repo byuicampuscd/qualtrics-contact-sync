@@ -1,5 +1,5 @@
 {
     "configLocation": "Z:\\config.csv",
-    "logLocation": "test/log.txt",
+    "logLocation": "Z:\\log.txt",
     "filePath": "Z:\\"
 }
