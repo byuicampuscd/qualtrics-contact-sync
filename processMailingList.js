@@ -115,6 +115,11 @@ function setOptions(student, callback) {
     /* create approptriate API call */
     switch (student.action) {
         case 'Add':
+            /* if student is missing a required field*/
+            if (!student.pass) {
+                callback(null, student);
+                return;
+            }
             option = os.add(link.MailingListID, student);
             break;
         case 'Update':
@@ -146,15 +151,23 @@ function clearUnusedFields(student, reference) {
 }
 /****************************************************
  * filter out all empty values before adding student
+ * ensure all required fields are set and set an err if they are not
  ***************************************************/
 function addFilter(student) {
     var keys = Object.keys(student),
-        emKeys = Object.keys(student.embeddedData);
+        emKeys = Object.keys(student.embeddedData),
+        requiredFields = ['LastName', 'FirstName', 'Email', 'ExternalDataRef'];
 
     /* remove empty fields*/
     keys.forEach((key) => {
         if (student[key] === "" || student[key] === undefined) {
-            delete student[key];
+            /* if empty field is required, err, else delete it */
+            if (requiredFields.indexOf(key) > -1) {
+                student.pass = false;
+                student.filterFail = true;
+                student.errorMessage = `${student.externalDataRef} was not added because a required field was missing`;
+            } else
+                delete student[key];
         }
     });
 
@@ -193,7 +206,7 @@ function equalityFilter(student, comparisonStudent) {
 
     /* remove old data fields from Qualtrics. These are empty strings in studentToFilter
      and don't exist in comparisonStudent*/
-    /* needs to check if key exists in keysToRemove as well */
+    /* Also checks if an external field exists inside embeddedData, in case they get saved there accidently */
     emDataKeys.forEach((emKey) => {
         if ((studentToFilter.embeddedData[emKey] === "" && cEmDataKeys.indexOf(emKey) == -1) || keysToRemove.indexOf(emKey)) {
             delete studentToFilter.embeddedData[emKey];
@@ -220,7 +233,10 @@ function retryfailedStudents(err, students) {
     var cb = this,
         generateFileDataBound = generateFileData.bind(cb),
         failedStudents = students.filter(function (student) {
-            if (student.pass == false)
+            if (student.filterFail === true) {
+                delete student.filterFail;
+                return false;
+            } else if (student.pass === false)
                 return student;
         });
 
@@ -267,14 +283,6 @@ function compareStudents(students, cb, qStudents) {
 
             /* EQUALITY COMPARISON. */
             if (!deepEqual(filteredStudent, filteredQStudent)) {
-                // FOR TESTING! 
-                /*var fs = require('fs');
-                var path = require('path');
-                fs.appendFileSync(path.resolve('.', 'lists/qualtrics.txt'), JSON.stringify(filteredQStudent, null, 3));
-                fs.appendFileSync(path.resolve('.', 'lists/list.txt'), JSON.stringify(filteredStudent, null, 3));
-                console.log('diff written');*/
-                
-                
                 /* add empty values that have been removed from qualtrics */
                 filteredStudent = clearUnusedFields(filteredStudent, filteredQStudent);
 
@@ -290,8 +298,8 @@ function compareStudents(students, cb, qStudents) {
                 qStudents[qIndex].checked = true;
             }
         } else {
+            /* should this happen before or after I check for required fields? */
             student.action = 'Add';
-            /* Filter out empty values that can't be added! */
             toAlter.push(addFilter(student));
         }
     });
