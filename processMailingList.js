@@ -177,21 +177,25 @@ function equalityFilter(student, comparisonStudent) {
     var studentToFilter = Object.assign({}, student),
         keysToRemove = ['id', 'unsubscribed', 'responseHistory', 'emailHistory', 'language'],
         outerStudentKeys = Object.keys(studentToFilter),
-        fEmDataKeys = Object.keys(studentToFilter.embeddedData),
-        cEmDataKeys = Object.keys(comparisonStudent.embeddedData);
+        emDataKeys = Object.keys(studentToFilter.embeddedData),
+        cEmDataKeys = Object.keys(comparisonStudent.embeddedData); // embeddedData keys for comparison student
 
     /* remove qualtrics specific keys from studentToFilter */
     outerStudentKeys.forEach((key) => {
         if (keysToRemove.indexOf(key) > -1) {
             /* if key is listed in keysToRemove, delete it */
             delete studentToFilter[key];
+        } else if (!studentToFilter[key]) {
+            /* convert null values to empty string. Fixes comparison issue where students were added with null values */
+            studentToFilter[key] = "";
         }
     });
 
     /* remove old data fields from Qualtrics. These are empty strings in studentToFilter
      and don't exist in comparisonStudent*/
-    fEmDataKeys.forEach((emKey) => {
-        if (studentToFilter.embeddedData[emKey] === "" && cEmDataKeys.indexOf(emKey) == -1) {
+    /* needs to check if key exists in keysToRemove as well */
+    emDataKeys.forEach((emKey) => {
+        if ((studentToFilter.embeddedData[emKey] === "" && cEmDataKeys.indexOf(emKey) == -1) || keysToRemove.indexOf(emKey)) {
             delete studentToFilter.embeddedData[emKey];
         }
     });
@@ -263,7 +267,14 @@ function compareStudents(students, cb, qStudents) {
 
             /* EQUALITY COMPARISON. */
             if (!deepEqual(filteredStudent, filteredQStudent)) {
-
+                // FOR TESTING! 
+                /*var fs = require('fs');
+                var path = require('path');
+                fs.appendFileSync(path.resolve('.', 'lists/qualtrics.txt'), JSON.stringify(filteredQStudent, null, 3));
+                fs.appendFileSync(path.resolve('.', 'lists/list.txt'), JSON.stringify(filteredStudent, null, 3));
+                console.log('diff written');*/
+                
+                
                 /* add empty values that have been removed from qualtrics */
                 filteredStudent = clearUnusedFields(filteredStudent, filteredQStudent);
 
@@ -352,7 +363,6 @@ function formatStudents(students) {
                 tStudent[keys[j][0].toLowerCase() + keys[j].slice(1)] = currVal[keys[j]];
             }
         }
-        var commaFinder = new RegExp(/,/g);
 
         /* create embeddedData object */
         for (var i = 0; i < emdKeys.length; i++) {
@@ -361,7 +371,7 @@ function formatStudents(students) {
                 currVal[emdKeys[i]] = "";
             }
             /* filter commas out of embeddedData values so the qualtrics api won't throw a fit IF*/
-                tEmbeddedData[emdKeys[i]] = currVal[emdKeys[i]].replace(commaFinder, '');
+            tEmbeddedData[emdKeys[i]] = currVal[emdKeys[i]].replace(/,/g, '');
         }
 
         if (emdKeys.length > 0)

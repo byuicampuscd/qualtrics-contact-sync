@@ -5,7 +5,6 @@
 var ss = function () {},
     proto = ss.prototype;
 
-//const
 const settings = require('./settings.json'),
     request = require('request'),
     fs = require('fs'),
@@ -33,10 +32,10 @@ proto.readStudents = function (filePath, callback) {
     fs.readFile(filePath, 'utf8', function (err, contents) {
         if (err) callback(err, contents);
         else {
-            //remove zero width no break space from csv (especially the beginning)
+            /* remove zero width no break space from csv (especially the beginning) */
             var invisibleSpace = new RegExp(String.fromCharCode(65279), 'g');
             contents = contents.replace(invisibleSpace, '');
-            // Excel changes True to TRUE causing unexpected updates
+            /* Excel changes True to TRUE causing unexpected updates */
             contents = contents.replace(/TRUE/g, 'True');
             contents = contents.replace(/FALSE/g, 'False');
             var students = d3.csvParse(contents);
@@ -54,18 +53,24 @@ proto.pullStudents = function (options, callback) {
             callback(err, null, null);
             return;
         } else if (response.statusCode !== 200) {
-            /* Could be throwing a parse error */
-            var errMessage = JSON.parse(body).meta.error.errorMessage;
-            callback("Couldn't retrieve students from Qualtrics\n\tError: " + errMessage, null, null);
+            /* Try is to handle HTML responses */
+            var errMessage = 'Unknown Error. Server responded with HTML';
+            try {
+                errMessage = JSON.parse(body).meta.error.errorMessage;
+            } catch (err) {
+                console.error(chalk.red(err));
+            } finally {
+                callback("Couldn't retrieve students from Qualtrics\n\tError: " + errMessage, null, false);
+            }
             return;
         } else {
+            /* I don't think the server ever responds with HTML on success */
             try {
                 var students = JSON.parse(body);
             } catch (err) {
                 console.error(chalk.red(err));
                 console.log(response.statusCode);
-                // fatal error!
-                callback(err, null, null);
+                callback(err, null, false);
                 return;
             }
             callback(null, students.result.elements, students.result.nextPage);
@@ -80,7 +85,7 @@ proto.send = function (student, option, callback) {
     //    console.log(chalk.magenta('sending student'));
     request(option, function (err, response, body) {
         if (err) {
-            //shouldn't ever throw a file error here...
+            /* shouldn't ever throw a file error here... */
             student.pass = false;
             student.errorMessage = err; // Sometimes throws a parse error
             callback(null, student);
@@ -90,7 +95,7 @@ proto.send = function (student, option, callback) {
         } else {
             student.pass = false;
             try {
-                //on 503 the server returns html which can't be parsed
+                /* on 503 the server returns html which can't be parsed */
                 body = JSON.parse(body);
                 student.errorMessage = body.meta.error.errorMessage;
             } catch (err) {
