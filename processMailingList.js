@@ -2,7 +2,8 @@
 /* eslint no-console:0 */
 'use strict';
 
-var link;
+var link,
+    pullCount = 0;
 
 const deepEqual = require('deep-equal'),
     bs = require('binarysearch'),
@@ -163,7 +164,6 @@ function addFilter(student) {
         if (student[key] === "" || student[key] === undefined) {
             /* if empty field is required, err, else delete it */
             if (requiredFields.indexOf(key) > -1) {
-                // student.pass = false;
                 student.filterFail = true;
                 student.errorMessage = `${student.externalDataReference} was not added because a required field was missing`;
             } else
@@ -327,7 +327,13 @@ function pullStudents(students, cb, qStudents, nextPage) {
     //    console.log(chalk.magenta('pullStudents'));
     if (!qStudents) qStudents = [];
     ss.pullStudents(os.get(link.MailingListID, nextPage), function (err, newStudents, nextPage) {
-        if (err) {
+        /* If err and this is the first time trying to pull students try again */
+        if (err && pullCount < 1) {
+            pullCount++;
+            console.log('Pulling students failed. Attempting to pull students again.');
+            pullStudents(students, cb);
+            return;
+        } else if (err && pullCount >= 1) {
             sendFileError(err, cb);
             return;
         }
