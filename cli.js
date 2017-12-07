@@ -143,12 +143,12 @@ function processResults(err, results) {
     //console.log('\nALL LINKS:\n', results);
 
     // FOR TESTING
-    console.log(chalk.yellow("Updating hashes is disabled"));
+    /*console.log(chalk.yellow("Updating hashes is disabled"));
     checkForErrors(results);
     console.log("\nElapsed Time:", getElapsedTime());
-    lw.generateFooter(null, getElapsedTime(), results.files);
+    lw.generateFooter(null, getElapsedTime(), results.files);*/
 
-    /*updateHashes(results, function (err) {
+    updateHashes(results, function (err) {
         if (err) {
             console.error(chalk.red("Error while updating hashes"), err);
             sendMail(err);
@@ -156,7 +156,7 @@ function processResults(err, results) {
         checkForErrors(results);
         console.log("\nElapsed Time:", getElapsedTime());
         lw.generateFooter(null, getElapsedTime(), results.files);
-    });*/
+    });
 }
 
 /**********************************************
@@ -183,7 +183,7 @@ function init() {
     });
 }
 
-// FOR TESTING
-// timer(init);
+timer(init);
 
- init();
+// FOR TESTING
+// init();
