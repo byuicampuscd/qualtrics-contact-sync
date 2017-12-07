@@ -47,6 +47,8 @@ proto.readStudents = function (filePath, callback) {
 /*********************************************
  * pull existing student list from qualtrics
  *********************************************/
+
+// DO ALL OF THE IF STATEMENTS CAUSE HANGING?
 proto.pullStudents = function (options, callback) {
     request(options, function (err, response, body) {
         if (err) {

@@ -67,7 +67,7 @@ function generateFileData(err, students) {
     };
     /* sort through students and create report based on worked/error attributes */
     students.forEach(function (student) {
-        if (student.pass) {
+        if (student.pass && !student.filterFail) {
             if (student.action == "Add")
                 file.aCount++;
             else if (student.action == "Update")
@@ -116,7 +116,7 @@ function setOptions(student, callback) {
     switch (student.action) {
         case 'Add':
             /* if student is missing a required field*/
-            if (!student.pass) {
+            if (student.filterFail === true) {
                 callback(null, student);
                 return;
             }
@@ -156,16 +156,16 @@ function clearUnusedFields(student, reference) {
 function addFilter(student) {
     var keys = Object.keys(student),
         emKeys = Object.keys(student.embeddedData),
-        requiredFields = ['LastName', 'FirstName', 'Email', 'ExternalDataRef'];
+        requiredFields = ['lastName', 'firstName', 'Email', 'ExternalDataRef'];
 
     /* remove empty fields*/
     keys.forEach((key) => {
         if (student[key] === "" || student[key] === undefined) {
             /* if empty field is required, err, else delete it */
             if (requiredFields.indexOf(key) > -1) {
-                student.pass = false;
+                // student.pass = false;
                 student.filterFail = true;
-                student.errorMessage = `${student.externalDataRef} was not added because a required field was missing`;
+                student.errorMessage = `${student.externalDataReference} was not added because a required field was missing`;
             } else
                 delete student[key];
         }

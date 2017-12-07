@@ -38,7 +38,7 @@ function checkForErrors(results) {
             errsExist = true;
     });
     if (errsExist) {
-        sendMail('There was an error with the Qualtrics Sync Tool. Please refer to the log for more detail');
+        // sendMail('There was an error with the Qualtrics Sync Tool. Please refer to the log for more detail');
     }
 }
 
