@@ -2,6 +2,8 @@
 /* eslint no-console:0 */
 'use strict';
 
+/* link is used to pass vital information from the start to end of this module */
+/* pullCount is used to attempt a 2nd pull request to qualtrics if an err occurs */
 var link,
     pullCount = 0;
 
@@ -164,6 +166,7 @@ function addFilter(student) {
         if (student[key] === "" || student[key] === undefined) {
             /* if empty field is required, err, else delete it */
             if (requiredFields.indexOf(key) > -1) {
+                /* must use something other than student.pass or else it will still attempt to add studen to qualtrics*/
                 student.filterFail = true;
                 student.errorMessage = `${student.externalDataReference} was not added because a required field was missing`;
             } else
@@ -208,7 +211,7 @@ function equalityFilter(student, comparisonStudent) {
      and don't exist in comparisonStudent*/
     /* Also checks if an external field exists inside embeddedData, in case they get saved there accidently */
     emDataKeys.forEach((emKey) => {
-        if ((studentToFilter.embeddedData[emKey] === "" && cEmDataKeys.indexOf(emKey) == -1) || keysToRemove.indexOf(emKey)) {
+        if ((studentToFilter.embeddedData[emKey] === "" && !cEmDataKeys.includes(emKey)) || keysToRemove.includes(emKey)) {
             delete studentToFilter.embeddedData[emKey];
         }
     });
