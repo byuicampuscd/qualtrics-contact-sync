@@ -145,7 +145,7 @@ function clearUnusedFields(student, reference) {
         refKeys = Object.keys(reference.embeddedData);
 
     refKeys.forEach((refKey) => {
-        if (keys.indexOf(refKey) == -1) {
+        if (!keys.includes(refKey)) {
             student.embeddedData[refKey] = "";
         }
     });
@@ -165,7 +165,7 @@ function addFilter(student) {
     keys.forEach((key) => {
         if (student[key] === "" || student[key] === undefined) {
             /* if empty field is required, err, else delete it */
-            if (requiredFields.indexOf(key) > -1) {
+            if (requiredFields.includes(key)) {
                 /* must use something other than student.pass or else it will still attempt to add studen to qualtrics*/
                 student.filterFail = true;
                 student.errorMessage = `${student.externalDataReference} was not added because a required field was missing`;
@@ -198,7 +198,7 @@ function equalityFilter(student, comparisonStudent) {
 
     /* remove qualtrics specific keys from studentToFilter */
     outerStudentKeys.forEach((key) => {
-        if (keysToRemove.indexOf(key) > -1) {
+        if (keysToRemove.includes(key)) {
             /* if key is listed in keysToRemove, delete it */
             delete studentToFilter[key];
         } else if (!studentToFilter[key]) {
