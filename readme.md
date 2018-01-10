@@ -27,4 +27,11 @@ The settings.json file contains the location of the config file, the path to the
 and the location of the log file. This file is included in the repo.
 
 ### Usage ###
-run with the command: ``` node cli ```. 
+Run with the command: ``` node cli ```.
+Test using test.js
+
+### Qualtrics API notes ###
+This would've been a lot easier if it weren't for the undocumented quirks of the Qualtrics API. I will record as many as I notice here. They are subject to change at any time without warning.
+* EmbeddedData values can not be deleted via API once created. They can only be set to an empty string. Setting them to null o rundefined throws a server err
+* Adding someone to a mailing list when they are missing a 'required field' (anything outside of embeddedData) is allowed. HOWEVER you will not be able to update them until all required fields are filled.
+* This tool causes a lot of 503 errors. I've written the tool to accomodate for that and run basically any failed API call twice. For the most part this works really well

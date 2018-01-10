@@ -2,7 +2,7 @@
 /*eslint no-console:0*/
 
 const asyncLib = require('async'),
-    fs = require('fs'),
+    // fs = require('fs'),
     chalk = require('chalk'),
     studentSnatcher = require('../studentSnatcher.js'),
     processMailingList = require('../processMailingList.js'),
@@ -10,14 +10,15 @@ const asyncLib = require('async'),
     os = new optionSnatcher(),
     ss = new studentSnatcher();
 
-function verifier(err, csvList) {
+function verifier(err) {
     if (err) {
         console.log(chalk.red(err));
         return;
     }
+    console.log(chalk.blue('verifier done'));
 
-    asyncLib.map(csvList, (students, cb) => {
-        /* Pull students from sandbox */
+    /*asyncLib.map(csvList, (students, cb) => {
+         Pull students from sandbox 
         ss.pullStudents(os.get(students.link.MailingListID), (err, qStudents) => {
             if (err) {
                 cb(err);
@@ -38,7 +39,7 @@ function verifier(err, csvList) {
             }
             console.log(chalk.green('log written'))
         });
-    });
+    });*/
 }
 
 
@@ -63,9 +64,20 @@ function init() {
         function starter(link, cb) {
             console.log(chalk.blue(`${link.link.csv}`));
 
-            processMailingList(link, cb);
+            // processMailingList(link, cb);
+            processMailingList(link, (err, list) => {
+                ss.pullStudents(os.get(list.link.MailingListID), (err, qStudents) => {
+                    if (err) {
+                        cb(err);
+                        return;
+                    }
+                    console.log(qStudents);
+
+                    cb(null);
+                });
+            });
         }
-        asyncLib.mapLimit(wrapperLinks, 1, starter, verifier);
+        asyncLib.mapSeries(wrapperLinks, starter, verifier);
     });
 }
 

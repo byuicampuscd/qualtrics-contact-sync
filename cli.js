@@ -11,7 +11,6 @@
 'use strict';
 
 const settings = require('./settings'),
-    configPath = settings.configLocation,
     fs = require('fs'),
     d3 = require('d3-dsv'),
     studentSnatcher = require('./studentSnatcher.js'),
@@ -117,7 +116,7 @@ function updateHashes(results, cb) {
     }
 
     var toWrite = d3.csvFormat(toUpdate);
-    fs.writeFile(configPath, toWrite, function (err) {
+    fs.writeFile(settings.configLocation, toWrite, function (err) {
         if (err) cb(err);
         else {
             console.log(chalk.green("New hashes saved!"));
