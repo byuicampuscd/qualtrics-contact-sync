@@ -10,12 +10,17 @@ const asyncLib = require('async'),
     os = new optionSnatcher(),
     ss = new studentSnatcher();
 
-function verifier(err) {
+function verifier(err, list) {
     if (err) {
         console.log(chalk.red(err));
         return;
     }
-    console.log(chalk.blue('verifier done'));
+
+    console.log('List:', list);
+    
+    
+    // console.log(chalk.blue('verifier done'));
+    console.log(chalk.blue('Done'));
 
     /*asyncLib.map(csvList, (students, cb) => {
          Pull students from sandbox 
@@ -58,22 +63,22 @@ function init() {
             return {
                 file: false,
                 link: link
-            }
+            };
         });
 
         function starter(link, cb) {
             console.log(chalk.blue(`${link.link.csv}`));
 
-            // processMailingList(link, cb);
+            /* Call process mailing list */
             processMailingList(link, (err, list) => {
                 ss.pullStudents(os.get(list.link.MailingListID), (err, qStudents) => {
                     if (err) {
-                        cb(err);
+                        cb(err, list);
                         return;
                     }
-                    console.log(qStudents);
+                    // console.log('Qualtrics Students:', qStudents);
 
-                    cb(null);
+                    cb(null, list);
                 });
             });
         }

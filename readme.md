@@ -10,8 +10,8 @@ total elapsed time, which hashes matched (if any), as well as the amount of addi
 It also includes any non-fatal and fatal errors that occured.
 
 ### Setup ###
-The repo does not incluse a required auth.json file with the following values:
-```
+The repo includes a required auth.json.example file. The values must be filled in and the .example removed from the filename for the authorization to work.
+``` js
   "token": "Qualtrics API token",
   "username": "usernameOfSenderAccount",
   "password": "passwordOfSenderAccount",
@@ -27,8 +27,11 @@ The settings.json file contains the location of the config file, the path to the
 and the location of the log file. This file is included in the repo.
 
 ### Usage ###
-Run with the command: ``` node cli ```.
-Test using test.js
+Run with the command: 
+``` js
+ node cli 
+ ```
+Test using test.js located in the test directory.
 
 ### Qualtrics API notes ###
 This would've been a lot easier if it weren't for the undocumented quirks of the Qualtrics API. I will record as many as I notice here. They are subject to change at any time without warning.
