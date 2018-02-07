@@ -18,7 +18,7 @@ function formatLink(link, cb) {
     var wrappedLink = {
         link: link,
         file: false
-    }
+    };
     //console.log('\nformattedLink:\n', wrappedLink);
     if (wrappedLink.link.matchingHashes === true) {
         cb(null, wrappedLink);

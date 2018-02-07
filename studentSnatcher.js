@@ -23,7 +23,7 @@ proto.readConfig = function (cb) {
             cb(null, links);
         }
     });
-}
+};
 
 /*********************
  * read a csv file
@@ -42,7 +42,7 @@ proto.readStudents = function (filePath, callback) {
             callback(null, students);
         }
     });
-}
+};
 
 /*********************************************
  * pull existing student list from qualtrics
@@ -62,7 +62,7 @@ proto.pullStudents = function (options, callback) {
             } catch (err) {
                 console.error(chalk.red(err));
             } finally {
-                callback("Couldn't retrieve students from Qualtrics\n\tError: " + errMessage, null, false);
+                callback('Couldn\'t retrieve students from Qualtrics\n\tError: ' + errMessage, null, false);
             }
             return;
         } else {
@@ -78,7 +78,7 @@ proto.pullStudents = function (options, callback) {
             callback(null, students.result.elements, students.result.nextPage);
         }
     });
-}
+};
 
 /********************************************************
  * send a POST, PUT, or DELETE request to qualtrics API
@@ -109,5 +109,5 @@ proto.send = function (student, option, callback) {
             callback(null, student);
         }
     });
-}
+};
 module.exports = ss;

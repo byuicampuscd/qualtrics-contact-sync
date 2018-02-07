@@ -50,7 +50,7 @@ function getElapsedTime() {
     var seconds = (end - startTime) / 1000,
         minutes = 0,
         hours = 0,
-        elapsedTime = "";
+        elapsedTime = '';
     //calculate minutes
     if (seconds >= 60) {
         minutes = Math.floor(seconds / 60);
@@ -71,7 +71,7 @@ function getElapsedTime() {
     if (hours < 10)
         hours = '0' + hours;
 
-    elapsedTime += hours + ":" + minutes + ":" + seconds;
+    elapsedTime += hours + ':' + minutes + ':' + seconds;
     return elapsedTime;
 }
 
@@ -119,7 +119,7 @@ function updateHashes(results, cb) {
     fs.writeFile(settings.configLocation, toWrite, function (err) {
         if (err) cb(err);
         else {
-            console.log(chalk.green("New hashes saved!"));
+            console.log(chalk.green('New hashes saved!'));
             lw.writeSync('\rHashes were updated', cb);
         }
     });
@@ -131,8 +131,8 @@ function updateHashes(results, cb) {
  *****************************************/
 function processResults(err, results) {
     if (err) {
-        console.error("A fatal error occured:", chalk.red(err));
-        if (typeof results === "object")
+        console.error('A fatal error occured:', chalk.red(err));
+        if (typeof results === 'object')
             JSON.stringify(results);
         //console.log(chalk.yellow(results));
         lw.write(err, lw.generateFooter('called at syncInit', getElapsedTime()));
@@ -149,11 +149,11 @@ function processResults(err, results) {
 
     updateHashes(results, function (err) {
         if (err) {
-            console.error(chalk.red("Error while updating hashes"), err);
+            console.error(chalk.red('Error while updating hashes'), err);
             sendMail(err);
         }
         checkForErrors(results);
-        console.log("\nElapsed Time:", getElapsedTime());
+        console.log('\nElapsed Time:', getElapsedTime());
         lw.generateFooter(null, getElapsedTime(), results.files);
     });
 }
@@ -164,7 +164,7 @@ function processResults(err, results) {
 function init() {
     startTime = new Date();
 
-    console.log("Started at:", startTime);
+    console.log('Started at:', startTime);
 
     ss.readConfig(function (err, links) {
         if (err) {

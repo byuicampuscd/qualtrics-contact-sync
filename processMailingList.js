@@ -71,9 +71,9 @@ function generateFileData(err, students) {
     /* sort through students and create report based on worked/error attributes */
     students.forEach(function (student) {
         if (student.pass && !student.filterFail) {
-            if (student.action == "Add")
+            if (student.action == 'Add')
                 file.aCount++;
-            else if (student.action == "Update")
+            else if (student.action == 'Update')
                 file.uCount++;
             else
                 file.dCount++;
@@ -83,15 +83,15 @@ function generateFileData(err, students) {
 
     /* generate report of completed additions/updates/deletions */
     if (file.aCount > 0)
-        console.log(chalk.green("Students successfully added: " + file.aCount));
+        console.log(chalk.green('Students successfully added: ' + file.aCount));
     if (file.uCount > 0)
-        console.log(chalk.green("Students successfully updated: " + file.uCount));
+        console.log(chalk.green('Students successfully updated: ' + file.uCount));
     if (file.dCount > 0)
-        console.log(chalk.green("Students successfully deleted: " + file.dCount));
+        console.log(chalk.green('Students successfully deleted: ' + file.dCount));
 
     file.studentErrors.forEach(function (student) {
-        console.log(chalk.red("Failed to " +
-            student.action + " student: ") + student.externalDataReference, chalk.red(student.errorMessage));
+        console.log(chalk.red('Failed to ' +
+            student.action + ' student: ') + student.externalDataReference, chalk.red(student.errorMessage));
     });
     if (file.studentErrors.length)
         file.passed = false;
@@ -114,23 +114,23 @@ function generateFileData(err, students) {
  ************************************************/
 function setOptions(student, callback) {
     // console.log(chalk.magenta('setOptions'));
-    var option = "";
+    var option = '';
     /* create approptriate API call */
     switch (student.action) {
-        case 'Add':
-            /* if student is missing a required field*/
-            if (student.filterFail === true) {
-                callback(null, student);
-                return;
-            }
-            option = os.add(link.MailingListID, student);
-            break;
-        case 'Update':
-            option = os.update(link.MailingListID, student);
-            break;
-        case 'Delete':
-            option = os.delete(link.MailingListID, student.id);
-            break;
+    case 'Add':
+        /* if student is missing a required field*/
+        if (student.filterFail === true) {
+            callback(null, student);
+            return;
+        }
+        option = os.add(link.MailingListID, student);
+        break;
+    case 'Update':
+        option = os.update(link.MailingListID, student);
+        break;
+    case 'Delete':
+        option = os.delete(link.MailingListID, student.id);
+        break;
     }
     ss.send(student, option, callback);
 }
@@ -146,7 +146,7 @@ function clearUnusedFields(student, reference) {
 
     refKeys.forEach((refKey) => {
         if (!keys.includes(refKey)) {
-            student.embeddedData[refKey] = "";
+            student.embeddedData[refKey] = '';
         }
     });
 
@@ -163,7 +163,7 @@ function addFilter(student) {
 
     /* remove empty fields*/
     keys.forEach((key) => {
-        if (student[key] === "" || student[key] === undefined) {
+        if (student[key] === '' || student[key] === undefined) {
             /* if empty field is required, err, else delete it */
             if (requiredFields.includes(key)) {
                 /* must use something other than student.pass or else it will still attempt to add studen to qualtrics*/
@@ -176,7 +176,7 @@ function addFilter(student) {
 
     /* remove empty embeddedData fields*/
     emKeys.forEach((emKey) => {
-        if (student.embeddedData[emKey] === "" || student.embeddedData[emKey] === undefined) {
+        if (student.embeddedData[emKey] === '' || student.embeddedData[emKey] === undefined) {
             delete student.embeddedData[emKey];
         }
     });
@@ -203,7 +203,7 @@ function equalityFilter(student, comparisonStudent) {
             delete studentToFilter[key];
         } else if (!studentToFilter[key]) {
             /* convert null values to empty string. Fixes comparison issue where students were added with null values */
-            studentToFilter[key] = "";
+            studentToFilter[key] = '';
         }
     });
 
@@ -211,7 +211,7 @@ function equalityFilter(student, comparisonStudent) {
      and don't exist in comparisonStudent*/
     /* Also checks if an external field exists inside embeddedData, in case they get saved there accidently */
     emDataKeys.forEach((emKey) => {
-        if ((studentToFilter.embeddedData[emKey] === "" && !cEmDataKeys.includes(emKey)) || keysToRemove.includes(emKey)) {
+        if ((studentToFilter.embeddedData[emKey] === '' && !cEmDataKeys.includes(emKey)) || keysToRemove.includes(emKey)) {
             delete studentToFilter.embeddedData[emKey];
         }
     });
@@ -385,7 +385,7 @@ function formatStudents(students) {
         for (var i = 0; i < emdKeys.length; i++) {
             /* replace undefined values with empty string*/
             if (currVal[emdKeys[i]] == undefined) {
-                currVal[emdKeys[i]] = "";
+                currVal[emdKeys[i]] = '';
             }
             /* filter commas out of embeddedData values so the qualtrics api won't throw a fit IF*/
             tEmbeddedData[emdKeys[i]] = currVal[emdKeys[i]].replace(/,/g, '');

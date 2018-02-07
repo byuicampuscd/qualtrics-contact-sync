@@ -49,7 +49,7 @@ proto.writeSync = function (string, cb) {
     fs.appendFileSync(settings.logLocation, string);
     if (cb != undefined)
         cb();
-}
+};
 
 /***************************************
  * generate the footer as a string
@@ -72,7 +72,7 @@ proto.generateFooter = function (message, elapsedTime, files) {
     footer += '\r\n-------------------------------------------------------------------------------------------------------------------------------------\r\n\r\n\r\n\r\n';
     console.log(chalk.green('The log Has been updated'));
     proto.writeSync(footer);
-}
+};
 
 /*********************************************************
  * generate the status of an individual csv as a string
@@ -91,10 +91,10 @@ proto.generateFile = function (wrapper) {
         if (file.fileError != undefined) {
             text += '\r\n\t' + file.fileError + '\r\n';
         } else {
-            text += fws("Changes to be Made: " + file.toAlterAmount, 30);
-            text += fws("Added: " + file.aCount, 15);
-            text += fws("Updated: " + file.uCount, 17);
-            text += fws("Deleted: " + file.dCount, 17);
+            text += fws('Changes to be Made: ' + file.toAlterAmount, 30);
+            text += fws('Added: ' + file.aCount, 15);
+            text += fws('Updated: ' + file.uCount, 17);
+            text += fws('Deleted: ' + file.dCount, 17);
             text += '\r\n';
             if (file.studentErrors.length > 0) {
                 file.studentErrors.forEach(function (error) {
@@ -112,7 +112,7 @@ proto.generateFile = function (wrapper) {
     }
 
     proto.writeSync(text);
-}
+};
 
 /***************************************
  * generate the header as a string
@@ -126,6 +126,6 @@ proto.generateHeader = function (configError) {
         head += configError + '\r\n';
     }
     proto.writeSync(head);
-}
+};
 
 module.exports = lw;
