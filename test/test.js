@@ -2,7 +2,7 @@
 /*eslint no-console:0*/
 
 const asyncLib = require('async'),
-    // fs = require('fs'),
+    fs = require('fs'),
     chalk = require('chalk'),
     studentSnatcher = require('../studentSnatcher.js'),
     processMailingList = require('../processMailingList.js'),
@@ -18,6 +18,19 @@ function verifier(err, list) {
 
     console.log('List:', list);
     
+    asyncLib.eachSeries(list, (csv, cb) => {
+        var reportTitle = csv.link.csv.replace('.csv', 'Report') + '.json';
+        fs.appendFile(`./reports/${reportTitle}`, JSON.stringify(csv.file, null, 2), err => {
+            if (err) {
+                console.error(err);
+            } else {
+                console.log(chalk.green(`${reportTitle} successfully written`));
+            }
+            cb(null);
+        });
+    }, (err) => {
+        if(err) console.error(err);
+    });
     
     // console.log(chalk.blue('verifier done'));
     console.log(chalk.blue('Done'));

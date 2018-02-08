@@ -61,9 +61,9 @@ function generateFileData(err, students) {
     var file = {
         fileName: link.csv,
         toAlterAmount: students.length,
-        aCount: 0,
-        uCount: 0,
-        dCount: 0,
+        studentsAdded: [],
+        studentsUpdated: [],
+        studentsDeleted: [],
         passed: true,
         studentErrors: [],
         fileError: null
@@ -72,22 +72,22 @@ function generateFileData(err, students) {
     students.forEach(function (student) {
         if (student.pass && !student.filterFail) {
             if (student.action == 'Add')
-                file.aCount++;
+                file.studentsAdded.push(student);
             else if (student.action == 'Update')
-                file.uCount++;
+                file.studentsUpdated.push(student);
             else
-                file.dCount++;
+                file.studentsDeleted.push(student);
         } else
             file.studentErrors.push(student);
     });
 
     /* generate report of completed additions/updates/deletions */
-    if (file.aCount > 0)
-        console.log(chalk.green('Students successfully added: ' + file.aCount));
-    if (file.uCount > 0)
-        console.log(chalk.green('Students successfully updated: ' + file.uCount));
-    if (file.dCount > 0)
-        console.log(chalk.green('Students successfully deleted: ' + file.dCount));
+    if (file.studentsAdded.length > 0)
+        console.log(chalk.green('Students successfully added: ' + file.studentsAdded.length));
+    if (file.studentsUpdated.length > 0)
+        console.log(chalk.green('Students successfully updated: ' + file.studentsUpdated.length));
+    if (file.studentsDeleted.length > 0)
+        console.log(chalk.green('Students successfully deleted: ' + file.studentsDeleted.length));
 
     file.studentErrors.forEach(function (student) {
         console.log(chalk.red('Failed to ' +

@@ -1,0 +1,5 @@
+{
+    "configLocation": "./config.csv",
+    "logLocation": "./reports/",
+    "filePath": "./"
+}

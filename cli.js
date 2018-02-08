@@ -141,12 +141,20 @@ function processResults(err, results) {
 
     // console.log('\nALL LINKS:\n', results);
 
-    // FOR TESTING
-    /*console.log(chalk.yellow("Updating hashes is disabled"));
+    // DISABLE FOR PRODUCTION
+    /* console.log(chalk.yellow('Updating hashes is disabled'));
     checkForErrors(results);
-    console.log("\nElapsed Time:", getElapsedTime());
-    lw.generateFooter(null, getElapsedTime(), results.files);*/
-
+    console.log('\nElapsed Time:', getElapsedTime());
+    lw.generateFooter(null, getElapsedTime(), results.files);
+    asyncLib.each(results, lw.writeCsvReports, err => {
+        if (err) {
+            console.error(err);
+            return;
+        }
+    }); */
+    
+    
+    // FOR TESTING - ENABLE FOR PRODUCTION
     updateHashes(results, function (err) {
         if (err) {
             console.error(chalk.red('Error while updating hashes'), err);
@@ -155,6 +163,12 @@ function processResults(err, results) {
         checkForErrors(results);
         console.log('\nElapsed Time:', getElapsedTime());
         lw.generateFooter(null, getElapsedTime(), results.files);
+        asyncLib.each(results, lw.writeCsvReports, err => {
+            if (err) {
+                console.error(err);
+                return;
+            }
+        });
     });
 }
 
@@ -184,5 +198,5 @@ function init() {
 
 timer(init);
 
-// FOR TESTING
+// ENABLE FOR TESTING
 // init();
