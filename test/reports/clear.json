@@ -1,0 +1,72 @@
+
+---------------------------------------------------------------
+Thu Feb 08 2018     09:45:17 GMT-0700 (Mountain Standard Time)
+---------------------------------------------------------------
+{
+  "fileName": "clear.csv",
+  "toAlterAmount": 3,
+  "studentsAdded": [],
+  "studentsUpdated": [],
+  "studentsDeleted": [
+    {
+      "id": "MLRP_aXCxksdiVNwT2hn",
+      "firstName": "Angie",
+      "lastName": "Larry",
+      "email": "garfield@byui.edu",
+      "externalDataReference": "a_garciapaz",
+      "embeddedData": {
+        "age": "23",
+        "gender": "female",
+        "country": "russia",
+        "color": "red"
+      },
+      "language": null,
+      "unsubscribed": false,
+      "responseHistory": [],
+      "emailHistory": [],
+      "action": "Delete",
+      "pass": true
+    },
+    {
+      "id": "MLRP_9QZkHueaE4SfLet",
+      "firstName": "Angie",
+      "lastName": "Larry",
+      "email": "garfield@byui.edu",
+      "externalDataReference": "b_garciapaz",
+      "embeddedData": {
+        "age": "23",
+        "gender": "female",
+        "country": "russia",
+        "color": "red"
+      },
+      "language": null,
+      "unsubscribed": false,
+      "responseHistory": [],
+      "emailHistory": [],
+      "action": "Delete",
+      "pass": true
+    },
+    {
+      "id": "MLRP_0cAQwWntr31J1gV",
+      "firstName": "Angie",
+      "lastName": "Larry",
+      "email": "garfield@byui.edu",
+      "externalDataReference": "c_garciapaz",
+      "embeddedData": {
+        "age": "23",
+        "gender": "female",
+        "country": "russia",
+        "color": "red"
+      },
+      "language": null,
+      "unsubscribed": false,
+      "responseHistory": [],
+      "emailHistory": [],
+      "action": "Delete",
+      "pass": true
+    }
+  ],
+  "passed": true,
+  "studentErrors": [],
+  "fileError": null
+}

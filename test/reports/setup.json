@@ -1,0 +1,57 @@
+
+---------------------------------------------------------------
+Thu Feb 08 2018     09:45:17 GMT-0700 (Mountain Standard Time)
+---------------------------------------------------------------
+{
+  "fileName": "setup.csv",
+  "toAlterAmount": 3,
+  "studentsAdded": [
+    {
+      "externalDataReference": "a_garciapaz",
+      "firstName": "Angie",
+      "lastName": "Larry",
+      "email": "garfield@byui.edu",
+      "embeddedData": {
+        "age": "23",
+        "gender": "female",
+        "country": "russia",
+        "color": "red"
+      },
+      "action": "Add",
+      "pass": true
+    },
+    {
+      "externalDataReference": "b_garciapaz",
+      "firstName": "Angie",
+      "lastName": "Larry",
+      "email": "garfield@byui.edu",
+      "embeddedData": {
+        "age": "23",
+        "gender": "female",
+        "country": "russia",
+        "color": "red"
+      },
+      "action": "Add",
+      "pass": true
+    },
+    {
+      "externalDataReference": "c_garciapaz",
+      "firstName": "Angie",
+      "lastName": "Larry",
+      "email": "garfield@byui.edu",
+      "embeddedData": {
+        "age": "23",
+        "gender": "female",
+        "country": "russia",
+        "color": "red"
+      },
+      "action": "Add",
+      "pass": true
+    }
+  ],
+  "studentsUpdated": [],
+  "studentsDeleted": [],
+  "passed": true,
+  "studentErrors": [],
+  "fileError": null
+}
