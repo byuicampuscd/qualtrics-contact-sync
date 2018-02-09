@@ -35,11 +35,11 @@ The Tool requires the following files:
 * config.csv
 
 ### Settings.json
-The settings file allows the user to set the location & title of the config file & log file. the filePath property tells the tool in which directory to look fo rthe individual csv files.
+The settings file allows the user to set the location & title of the config file. FilePath & logPath which directory contains the individual csv & log files.
 ```js
 {
     "configLocation": "./test/config.csv",
-    "logLocation": "./test/reports/log.txt",
+    "logPath": "./test/reports/",
     "filePath": "./test/"
 }
 ```
@@ -131,3 +131,11 @@ Here are instructions on how to set up the development server:
 ### Unit Tests
 - Explain each of your unit tests and their inputs.
 - Provide all inputs used in testing so developers can use the same tests (or add on to them). For example, attach a CSV for each test case.****
+
+
+### Qualtrics API notes ###
+This would've been a lot easier if it weren't for the undocumented quirks of the Qualtrics API. I will record as many as I notice here. They are subject to change at any time without warning.
+* EmbeddedData values can not be deleted via API once created. They can only be set to an empty string. Setting them to null or undefined throws a server err
+* Adding someone to a mailing list when they are missing a 'required field' (anything outside of embeddedData) is allowed. HOWEVER you will not be able to update them until all required fields are filled.
+* Adding embeddedData values with commas in them cause the API to truncate the value after the comma. I don't recall if the comma is included or truncated as well
+* This tool causes a lot of 503 errors. I've written the tool to accomodate for that and run basically any failed API call twice. For the most part this works really well

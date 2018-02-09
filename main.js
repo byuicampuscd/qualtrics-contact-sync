@@ -43,8 +43,13 @@ function readCsvFile(csvFile, waterfallCb) {
             waterfallCb(readErr);
             return;
         }
+        /* remove zero width no break space from csv (especially the beginning) */
+        var invisibleSpace = new RegExp(String.fromCharCode(65279), 'g');
+        fileContents = fileContents.toString().replace(invisibleSpace, '');
+
         /* save parsed file to csvFile object */
-        csvFile.csvContacts.concat(d3.csvParse(fileContents.toString())); // = d3.csvParse(fileContents.toString());
+        csvFile.csvContacts.concat(d3.csvParse(fileContents));
+        
         waterfallCb(null, csvFile);
     });
 }
@@ -112,18 +117,8 @@ function start() {
     });
 }
 
-/* 2. read config file */
-
-/* 3. asyncEachSeries */
-/* a. hash file */
-/* b. compare hash */
-/* c. filter out matching hashes*/
-/* add matching hash to report */
-/* d. process mailing list logic. Pull, compare, & update */
-
-
 /****************
-     * START HERE
-     ****************/
+ * START HERE
+ ****************/
 // timer(start);
 start();
