@@ -7,7 +7,7 @@ const d3 = require('d3-dsv');
 const chalk = require('chalk');
 // const timer = require('repeat-timer');
 const settings = require('./settings.json');
-const generateReport = require('./generateReport.js');
+const log = require('./generateReport.js');
 const hashFunctions = require('./hash.js');
 const syncFunctions = require('./sync.js');
 const sendEmail = require('./email.js');
@@ -19,7 +19,7 @@ var startDate = new Date();
 function readCsvFile(csvFile, waterfallCb) {
     /* read the file!! */
     fs.readFile(`${settings.filePath}${csvFile.csv}`, (readErr, fileContents) => {
-        if(readErr) {
+        if (readErr) {
             waterfallCb(readErr);
             return;
         }
@@ -39,8 +39,8 @@ function runCSV(csvFile, eachCallback) {
     ],
     (waterfallErr, updatedCsvFile) => {
         if (waterfallErr) {
-            /* KILLS ALL csvFILES TO PASS TO CB */
-            generateReport.writeErr(waterfallErr, () => {
+            /* KILLS ALL csvFILES IF PASSED TO CB */
+            log.writeErr(waterfallErr, () => {
                 eachCallback(null, updatedCsvFile);
             });
             return;
@@ -55,21 +55,15 @@ function processFiles(csvFiles) {
     /* outermost loop. Returns here when all mailing lists have been processed */
     asyncLib.mapSeries(csvFiles, runCSV, (err, processedCsvFiles) => {
         if (err) {
-            generateReport.writeErr(err, writeErr => {
-                if (writeErr) {
-                    console.error(chalk.red('Unable to write err to log'));
-                }
-                generateReport.writeFooter(null, writeErr => {
-                    if (writeErr) {
-                        console.error(chalk.red(writeErr));
-                    }
-                    sendEmail('Fake Email Message');
-                    return;
-                });
+            log.writeFatalErr(err, null, writeErr => {
+                if (writeErr) console.error(chalk.red(writeErr));
+                sendEmail('Fake Email Message');
+                return;
             });
         }
         // console.log(JSON.stringify(processedCsvFiles, null, 2));
-        generateReport.writeFooter();
+        console.log(`CSV files processed: ${processedCsvFiles.length}`);
+        log.writeFooter(null, null);
         console.log(chalk.blue('Done'));
     });
 }
@@ -81,12 +75,10 @@ function readConfigFile() {
     fs.readFile(settings.configLocation, (readErr, configData) => {
         if (readErr) {
             /* because it's a fatal error */
-            // ADD ERR HANDLING TO CALLBACKS!
-            generateReport.writeErr(readErr, () => {
-                generateReport.writeFooter(startDate, () => {
-                    sendEmail('Fake Email Message');
-                    return;
-                });
+            log.writeFatalErr(readErr, null, writeErr => {
+                if (writeErr) console.error(chalk.red(writeErr));
+                sendEmail('Fake Email Message');
+                return;
             });
         }
         /* format results into the appropriate format */
@@ -106,10 +98,8 @@ function readConfigFile() {
 
 /* 1. generate header */
 function start() {
-    generateReport.writeHeader(startDate, writeErr => {
-        if (writeErr) {
-            console.error(chalk.red(writeErr));
-        }
+    log.writeHeader(startDate, writeErr => {
+        if (writeErr) console.error(chalk.red(writeErr));
         readConfigFile();
     });
 }
