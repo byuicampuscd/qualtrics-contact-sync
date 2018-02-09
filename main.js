@@ -13,7 +13,27 @@ const syncFunctions = require('./sync.js');
 const sendEmail = require('./email.js');
 
 
-var startDate = new Date();
+var startTime = new Date();
+
+
+
+function onComplete(err, processedCsvFiles) {
+    if (err) {
+        log.writeFatalErr(err, startTime, writeErr => {
+            if (writeErr) console.error(chalk.red(writeErr));
+            sendEmail('Fake Email Message');
+            return;
+        });
+    }
+    console.log(`CSV files processed: ${processedCsvFiles.length}`);
+    // use a waterfall if the list of functions gets any larger than updating hashes & writing the log
+
+    hash.updateHash(processedCsvFiles, writeErr => {
+        if (writeErr) console.error(chalk.red(writeErr));
+        log.writeFooter(startTime, null);
+        console.log(chalk.blue('Done'));
+    });
+}
 
 
 function readCsvFile(csvFile, waterfallCb) {
@@ -31,10 +51,12 @@ function readCsvFile(csvFile, waterfallCb) {
 
 
 function runCSV(csvFile, eachCallback) {
+    console.log(chalk.blue(csvFile.config.csv));
+
     asyncLib.waterfall([
         asyncLib.constant(csvFile),
         readCsvFile,
-        hash,
+        hash.checkHash,
         ...syncFunctions,
     ],
     (waterfallErr, updatedCsvFile) => {
@@ -49,33 +71,18 @@ function runCSV(csvFile, eachCallback) {
     });
 }
 
-
 /* loop through each row then generate reports */
-function processFiles(csvFiles) {
+function loopFiles(csvFiles) {
     /* outermost loop. Returns here when all mailing lists have been processed */
-    asyncLib.mapSeries(csvFiles, runCSV, (err, processedCsvFiles) => {
-        if (err) {
-            log.writeFatalErr(err, null, writeErr => {
-                if (writeErr) console.error(chalk.red(writeErr));
-                sendEmail('Fake Email Message');
-                return;
-            });
-        }
-        // console.log(JSON.stringify(processedCsvFiles, null, 2));
-        console.log(`CSV files processed: ${processedCsvFiles.length}`);
-        log.writeFooter(null, null);
-        console.log(chalk.blue('Done'));
-    });
+    asyncLib.mapSeries(csvFiles, runCSV, onComplete);
 }
-
-
 
 /* read config file */
 function readConfigFile() {
     fs.readFile(settings.configLocation, (readErr, configData) => {
         if (readErr) {
             /* because it's a fatal error */
-            log.writeFatalErr(readErr, null, writeErr => {
+            log.writeFatalErr(readErr, startTime, writeErr => {
                 if (writeErr) console.error(chalk.red(writeErr));
                 sendEmail('Fake Email Message');
                 return;
@@ -91,14 +98,14 @@ function readConfigFile() {
                 };
             });
 
-        processFiles(csvFiles);
+        loopFiles(csvFiles);
     });
 }
 
 
 /* 1. generate header */
 function start() {
-    log.writeHeader(startDate, writeErr => {
+    log.writeHeader(startTime, writeErr => {
         if (writeErr) console.error(chalk.red(writeErr));
         readConfigFile();
     });
@@ -115,7 +122,7 @@ function start() {
 
 
 /****************
- * START HERE
- ****************/
+     * START HERE
+     ****************/
 // timer(start);
 start();

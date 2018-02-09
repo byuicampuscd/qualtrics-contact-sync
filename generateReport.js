@@ -2,6 +2,7 @@
 
 // const fs = require('fs');
 // const fws = require('fixed-width-string);
+const moment = require('moment');
 const chalk = require('chalk');
 
 function error(err, cb) {
@@ -20,7 +21,9 @@ function file(csvFile) {
     console.log('Write File called');
 }
 
-function footer(elapsedTime, cb) {
+function footer(startTime, cb) {
+    var elapsedTime = getElapsedTime(startTime);
+    console.log(`Elapsed Time: ${elapsedTime}`);
     console.log('Write Footer called');
 
     if(cb) cb();
@@ -29,15 +32,28 @@ function footer(elapsedTime, cb) {
 
 /* HELPERS */
 
-function fatalError(err, elapsedTime, finalCb) {
+function fatalError(err, startTime, finalCb) {
     error(err, (writeErr) => {
         if(writeErr) {
             console.error(chalk.red('Error writing fatal error. No attempt to write footer was made.'));
             finalCb(writeErr);
             return;
         }
-        footer(elapsedTime, finalCb);
+        footer(startTime, finalCb);
     });
+}
+
+function getElapsedTime(startTime) {
+    startTime = moment(startTime);
+
+    var endTime = moment(),
+        hours = endTime.diff(startTime, 'hours'),
+        minutes = endTime.diff(startTime, 'minutes'),
+        seconds = endTime.diff(startTime, 'seconds');
+
+
+    
+    return `${hours}:${minutes}:${seconds}`;
 }
 
 module.exports = {
