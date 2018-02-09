@@ -44,7 +44,7 @@ function readCsvFile(csvFile, waterfallCb) {
             return;
         }
         /* save parsed file to csvFile object */
-        csvFile.contacts = d3.csvParse(fileContents.toString());
+        csvFile.csvContacts.concat(d3.csvParse(fileContents.toString())); // = d3.csvParse(fileContents.toString());
         waterfallCb(null, csvFile);
     });
 }
@@ -93,7 +93,8 @@ function readConfigFile() {
             .map(file => {
                 return {
                     config: file,
-                    fileData: {},
+                    csvContacts: [],
+                    qualtricsContacts: [],
                     report: {}
                 };
             });

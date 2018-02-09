@@ -12,7 +12,7 @@ const chalk = require('chalk');
 
 
 function checkHash (csvFile, waterfallCb) {
-    var hash = stringHash(JSON.stringify(csvFile.contacts));
+    var hash = stringHash(JSON.stringify(csvFile.csvContacts));
 
     if (csvFile.config.hash === hash) {
         console.log(chalk.green('Hashed Matched'));

@@ -303,11 +303,13 @@ function compareStudents(students, cb, qStudents) {
         } else {
             /* should this happen before or after I check for required fields? */
             student.action = 'Add';
+            /* students to be added don't exist in qStudents array, don't need the checked property */
             toAlter.push(addFilter(student));
         }
     });
     /* exists in qualtrics but not in master file */
     qStudents.forEach(function (student) {
+        /* see if checked is undefined */
         if (!student.checked) {
             student.action = 'Delete';
             toAlter.push(student);
@@ -357,8 +359,8 @@ function pullStudents(students, cb, qStudents, nextPage) {
  * qualtrics api format
  *************************************************/
 function formatStudents(students) {
-    // console.log(chalk.magenta('formatting Students'));
-    /* create keys for embeddedData object */
+
+    // USE AN ARRAY OF KEYS. LOOP ONCE
     var emdKeys = Object.keys(students[0]).filter(function (key) {
         return key != 'Email' && key != 'UniqueID' && key != 'FirstName' && key != 'LastName';
     });
@@ -371,11 +373,13 @@ function formatStudents(students) {
         var tStudent = {},
             tEmbeddedData = {};
         /* format keys and create tempStudent object */
+        // USE A FOREACH
         for (var j = 0; j < keys.length; j++) {
             /* UniqueID must be converted to externalDataReference */
             if (keys[j] === 'UniqueID') {
                 tStudent.externalDataReference = currVal[keys[j]];
             } else {
+                // ALL LOWER CASE!
                 /* first letter of each key to lower case */
                 tStudent[keys[j][0].toLowerCase() + keys[j].slice(1)] = currVal[keys[j]];
             }
@@ -387,7 +391,7 @@ function formatStudents(students) {
             if (currVal[emdKeys[i]] == undefined) {
                 currVal[emdKeys[i]] = '';
             }
-            /* filter commas out of embeddedData values so the qualtrics api won't throw a fit IF*/
+            /* filter commas out of embeddedData values so the qualtrics api won't throw a fit */
             tEmbeddedData[emdKeys[i]] = currVal[emdKeys[i]].replace(/,/g, '');
         }
 
@@ -420,6 +424,7 @@ function init(wrapper, cb) {
             return student.UniqueID && student.UniqueID !== '';
         });
 
+        //  COMPARE FLAT OBJECTS??
         /* format csv student object to match qualtrics API format */
         if (students.length) {
             students = formatStudents(students);

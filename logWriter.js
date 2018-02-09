@@ -46,7 +46,7 @@ function getChangesMade(files) {
  * MUST by synchronous or the log won't write in the correct order
  **********************************************************/
 proto.writeSync = function (string, cb) {
-    fs.appendFileSync(settings.logLocation, string);
+    fs.appendFileSync(`${settings.logLocation}log.txt`, string);
     if (cb != undefined)
         cb();
 };
