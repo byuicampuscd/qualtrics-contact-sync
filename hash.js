@@ -1,7 +1,9 @@
+/* eslint no-console:1 */
 /* description here! */
 
 const stringHash = require('string-hash');
-// const generateReport = require('./generateReport.js');
+const log = require('./generateReport.js');
+const chalk = require('chalk');
 
 module.exports = (csvFile, waterfallCb) => {
     var hash = stringHash(JSON.stringify(csvFile.contacts));
@@ -9,15 +11,13 @@ module.exports = (csvFile, waterfallCb) => {
 
     if (csvFile.config.hash === hash) {
         csvFile.report.matchingHash = true;
-        console.log('i need to write to the report here!');
+        log.writeFile(csvFile, writeErr => {
+            if(writeErr) console.error(chalk.red(writeErr));
+            waterfallCb(null, csvFile);
+        });
     } else {
         csvFile.report.matchingHash = false;
         csvFile.config.hash = hash;
+        waterfallCb(null, csvFile);
     }
-    waterfallCb(null, csvFile);
 };
-
-/* module.exports = [
-    createHash,
-    compareHash,
-]; */

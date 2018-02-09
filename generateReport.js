@@ -16,13 +16,13 @@ function header(date, cb) {
     cb(null);
 }
 
-function file() {
+function file(csvFile) {
     console.log('Write File called');
 }
 
 function footer(elapsedTime, cb) {
     console.log('Write Footer called');
-    
+
     if(cb) cb();
 }
 

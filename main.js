@@ -8,7 +8,7 @@ const chalk = require('chalk');
 // const timer = require('repeat-timer');
 const settings = require('./settings.json');
 const log = require('./generateReport.js');
-const hashFunctions = require('./hash.js');
+const hash = require('./hash.js');
 const syncFunctions = require('./sync.js');
 const sendEmail = require('./email.js');
 
@@ -18,7 +18,7 @@ var startDate = new Date();
 
 function readCsvFile(csvFile, waterfallCb) {
     /* read the file!! */
-    fs.readFile(`${settings.filePath}${csvFile.csv}`, (readErr, fileContents) => {
+    fs.readFile(`${settings.filePath}${csvFile.config.csv}`, (readErr, fileContents) => {
         if (readErr) {
             waterfallCb(readErr);
             return;
@@ -34,7 +34,7 @@ function runCSV(csvFile, eachCallback) {
     asyncLib.waterfall([
         asyncLib.constant(csvFile),
         readCsvFile,
-        hashFunctions,
+        hash,
         ...syncFunctions,
     ],
     (waterfallErr, updatedCsvFile) => {
@@ -87,7 +87,7 @@ function readConfigFile() {
                 return {
                     config: file,
                     fileData: {},
-                    results: {}
+                    report: {}
                 };
             });
 
