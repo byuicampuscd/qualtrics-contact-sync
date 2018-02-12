@@ -37,7 +37,6 @@ function onComplete(err, processedCsvFiles) {
 
 
 function readCsvFile(csvFile, waterfallCb) {
-    /* read the file!! */
     fs.readFile(`${settings.filePath}${csvFile.config.csv}`, (readErr, fileContents) => {
         if (readErr) {
             waterfallCb(readErr);
@@ -48,8 +47,8 @@ function readCsvFile(csvFile, waterfallCb) {
         fileContents = fileContents.toString().replace(invisibleSpace, '');
 
         /* save parsed file to csvFile object */
-        csvFile.csvContacts.concat(d3.csvParse(fileContents));
-        
+        csvFile.csvContacts = csvFile.csvContacts.concat(d3.csvParse(fileContents));
+
         waterfallCb(null, csvFile);
     });
 }
