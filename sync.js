@@ -10,15 +10,16 @@ const asyncLib = require('async');
  ********************************************/
 function sortContacts(csvFile, waterfallCb) {
     console.log('Sort Contacts called');
-    
+
     waterfallCb(null, csvFile);
 }
 
 
-/*********************************************
- * get students from qualtrics API
- * 
- *********************************************/
+/*****************************************************
+ * get students from qualtrics API. Calls Qualtrics.js
+ * getAllContacts function. wrapped in an asyncRetryable 
+ * in the waterfall to make a second attempt if needed
+ *****************************************************/
 function pullContacts(csvFile, waterfallCb) {
     qualtrics.getContacts(csvFile, (getErr, contacts) => {
         if(getErr) {
@@ -71,7 +72,12 @@ function formatCsvContacts(csvFile, waterfallCb) {
 
 
 module.exports = [
-    formatCsvContacts,
-    asyncLib.retryable(2, pullContacts),
-    sortContacts,
+    formatCsvContacts,                    // make them look like qualtrics contacts
+    asyncLib.retryable(2, pullContacts),  // make 2 attempts at pullContacts()
+    sortContacts,                         // sort by externalReferenceId
 ];
+
+// format csv
+// pull qualtrics
+// sort all contacts
+// comparison

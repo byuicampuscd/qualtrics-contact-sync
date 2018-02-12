@@ -23,8 +23,10 @@ function getAllContacts(csvFile, waterfallCb, data = []) {
             waterfallCb(err);
         } else if (response.statusCode !== 200) {
             waterfallCb(new Error(`Status Code: ${response.statusCode}`));
+        } else if (response.headers['content-type'] != 'application/json') {
+            waterfallCb(new Error(`Content Type: ${response.headers['content-type']}`));
         } else {
-            // JSON.parse LIABLE TO BREAK
+            /* checking for content-type should ensure that a json response was sent */
             body = JSON.parse(body);
             data = data.concat(body.result.elements);
 
