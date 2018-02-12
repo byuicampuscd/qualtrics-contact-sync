@@ -5,11 +5,35 @@ const asyncLib = require('async');
 
 /* Handles the comparison of contacts in the tool */
 
+function compareContacts(csvFile, waterfallCb) {
+    if (csvFile.report.matchingHash === true) {
+        waterfallCb(null, csvFile);
+        return;
+    }
+    console.log('compareContacts called');
+    
+    // ENSURE KEYS ARE NOT CASE SENSITIVE ON COMPARE
+    // HOW DOES API LIKE BOOL VALUES IN EMBEDDED DATA??
+    
+    waterfallCb(null, csvFile);
+}
+
+
+
 /*********************************************
- * IDK if this should be a helper or not...
+ * Call sortList() helper for both CSV lists
  ********************************************/
 function sortContacts(csvFile, waterfallCb) {
     console.log('Sort Contacts called');
+
+    if (csvFile.report.matchingHash === true) {
+        waterfallCb(null, csvFile);
+        return;
+    }
+
+    /* Sort both lists by externalDataRef for binary search */
+    csvFile.csvContacts.sort(sortList);
+    csvFile.qualtricsContacts.sort(sortList);
 
     waterfallCb(null, csvFile);
 }
@@ -21,8 +45,13 @@ function sortContacts(csvFile, waterfallCb) {
  * in the waterfall to make a second attempt if needed
  *****************************************************/
 function pullContacts(csvFile, waterfallCb) {
+    if (csvFile.report.matchingHash === true) {
+        waterfallCb(null, csvFile);
+        return;
+    }
+
     qualtrics.getContacts(csvFile, (getErr, contacts) => {
-        if(getErr) {
+        if (getErr) {
             /* fatal err if students cannot be pulled */
             waterfallCb(getErr, csvFile);
             return;
@@ -36,9 +65,14 @@ function pullContacts(csvFile, waterfallCb) {
 /********************************************************
  * Removes contacts that don't have a uniqueId property
  * Formats the remaining contacts to fit Qualtrics API
-********************************************************/
+ ********************************************************/
 function formatCsvContacts(csvFile, waterfallCb) {
-    var requiredKeys = ['Email', 'UniqueID', 'FirstName', 'LastName'],
+    if (csvFile.report.matchingHash === true) {
+        waterfallCb(null, csvFile);
+        return;
+    }
+
+    var requiredKeys = ['Email', 'FirstName', 'LastName'],
         tempContact = {};
 
     csvFile.csvContacts = csvFile.csvContacts.reduce((contactList, contact) => {
@@ -48,11 +82,13 @@ function formatCsvContacts(csvFile, waterfallCb) {
                 embeddedData: {}
             };
 
-            /* save property to correct location */
+            /* save property to correct location. Replace UniqueID with externalDataReference */
             Object.keys(contact).forEach(key => {
-                if (requiredKeys.includes(key)) {
+                if (key === 'UniqueID') {
+                    tempContact.externalDataReference = contact[key];
+                } else if (requiredKeys.includes(key)) {
                     tempContact[key] = contact[key];
-                } else {
+                }  else {
                     tempContact.embeddedData[key] = contact[key];
                 }
             });
@@ -61,7 +97,7 @@ function formatCsvContacts(csvFile, waterfallCb) {
             if (tempContact.embeddedData.length == 0) {
                 delete tempContact.embeddedData;
             }
-            
+
             contactList.push(tempContact);
         }
         return contactList;
@@ -70,14 +106,26 @@ function formatCsvContacts(csvFile, waterfallCb) {
     waterfallCb(null, csvFile);
 }
 
+/***********************************************************
+ *                 HELPER FUNCTIONS 
+ **********************************************************/
+
+/********************************************
+  * sort any list by externalDataRef property
+  ********************************************/
+function sortList(a, b) {
+    if (a.externalDataReference < b.externalDataReference) return -1;
+    if (a.externalDataReference > b.externalDataReference) return 1;
+    return 0;
+}
+
+/***********************************************************
+ *                END HELPER FUNCTIONS 
+ **********************************************************/
 
 module.exports = [
-    formatCsvContacts,                    // make them look like qualtrics contacts
-    asyncLib.retryable(2, pullContacts),  // make 2 attempts at pullContacts()
-    sortContacts,                         // sort by externalReferenceId
+    formatCsvContacts, // make them look like qualtrics contacts
+    asyncLib.retryable(2, pullContacts), // make 2 attempts at pullContacts()
+    sortContacts, // sort by externalReferenceId
+    compareContacts,
 ];
-
-// format csv
-// pull qualtrics
-// sort all contacts
-// comparison
