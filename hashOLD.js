@@ -7,7 +7,7 @@ const logWriter = require('./logWriter.js'),
     createHash = require('string-hash'),
     chalk = require('chalk'),
     settings = require('./settings.json'),
-    processMailingList = require('./processMailingList.js'),
+    processMailingList = require('./processMailingListOLD.js'),
     lw = new logWriter();
 
 /********************************

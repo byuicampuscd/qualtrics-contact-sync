@@ -1,6 +1,7 @@
 /* eslint no-console:1 */
 
 const qualtrics = require('./qualtrics.js');
+const asyncLib = require('async');
 
 /* Handles the comparison of contacts in the tool */
 
@@ -9,6 +10,7 @@ const qualtrics = require('./qualtrics.js');
  ********************************************/
 function sortContacts(csvFile, waterfallCb) {
     console.log('Sort Contacts called');
+    
     waterfallCb(null, csvFile);
 }
 
@@ -70,6 +72,6 @@ function formatCsvContacts(csvFile, waterfallCb) {
 
 module.exports = [
     formatCsvContacts,
-    pullContacts,
+    asyncLib.retryable(2, pullContacts),
     sortContacts,
 ];

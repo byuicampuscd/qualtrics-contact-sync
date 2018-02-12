@@ -6,7 +6,7 @@
  * In addition it updated the config file with the new hashes */
 
 const stringHash = require('string-hash');
-const log = require('./generateReport.js');
+const log = require('./writeReport.js');
 const chalk = require('chalk');
 
 

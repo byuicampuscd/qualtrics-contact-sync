@@ -3,42 +3,20 @@ const auth = require('./auth.json');
 
 // USE PROCESS.ENV INSTEAD OF AUTH.JSON
 
-function get(url, cb, data = []) {
-    /* base URL */
-    request({
-        method: 'GET',
-        url: url,
-        headers: {
-            'x-api-token': auth.token
-        }
-    }, (err, response, body) => {
-        if (err) {
-            cb(err);
-        } else if (response.statusCode !== 200) {
-            cb(new Error(`Status Code: ${response.statusCode}`));
-        } else {
-            // LIABLE TO BREAK
-            body = JSON.parse(body);
-            data = data.concat(body.result.elements);
 
-            /* paginate if needed */
-            if (body.result.nextPage === null) {
-                cb(null, data);
-            } else {
-                get(body.result.nextPage, cb, data);
-            }
-
-        }
-    });
-}
-
+/***************************************************
+ * Sends all API requests. Takes a requestObj &
+ * a callback
+ **************************************************/
 function makeRequest(reqObj, cb) {
     request(reqObj, cb);
 }
 
-
-
-
+/**********************************************
+ * Gets all contacts from the given csvFile.
+ * Calls makeRequest() with paginate() as a callback.
+ * Returns an array of contacts to the CB.
+ ***********************************************/
 function getAllContacts(csvFile, waterfallCb, data = []) {
     function paginate(err, response, body) {
         if (err) {
@@ -46,7 +24,7 @@ function getAllContacts(csvFile, waterfallCb, data = []) {
         } else if (response.statusCode !== 200) {
             waterfallCb(new Error(`Status Code: ${response.statusCode}`));
         } else {
-            // LIABLE TO BREAK
+            // JSON.parse LIABLE TO BREAK
             body = JSON.parse(body);
             data = data.concat(body.result.elements);
 
@@ -60,7 +38,7 @@ function getAllContacts(csvFile, waterfallCb, data = []) {
 
         }
     }
-
+    /* initial request object */
     var requestObj = {
         method: 'GET',
         url: `https://byui.az1.qualtrics.com/API/v3/mailinglists/${csvFile.config.MailingListID}/contacts`,
@@ -68,10 +46,8 @@ function getAllContacts(csvFile, waterfallCb, data = []) {
             'x-api-token': auth.token
         }
     };
-
+    /* make initial request */
     makeRequest(requestObj, paginate);
-
-    // get(url, cb);
 }
 
 

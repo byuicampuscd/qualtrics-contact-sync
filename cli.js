@@ -14,9 +14,9 @@ const settings = require('./settings'),
     fs = require('fs'),
     d3 = require('d3-dsv'),
     studentSnatcher = require('./studentSnatcher.js'),
-    hasher = require('./hash.js'),
+    hasher = require('./hashOLD.js'),
     logWriter = require('./logWriter.js'),
-    sendMail = require('./email.js'),
+    sendMail = require('./emailOLD.js'),
     timer = require('repeat-timer'),
     chalk = require('chalk'),
     asyncLib = require('async'),
@@ -37,7 +37,7 @@ function checkForErrors(results) {
             errsExist = true;
     });
     if (errsExist) {
-        sendMail('There was an error with the Qualtrics Sync Tool. Please refer to the log for more detail');
+        // sendMail('There was an error with the Qualtrics Sync Tool. Please refer to the log for more detail');
     }
 }
 
@@ -142,12 +142,13 @@ function processResults(err, results) {
     // console.log('\nALL LINKS:\n', results);
 
     // FOR TESTING
-    /*console.log(chalk.yellow("Updating hashes is disabled"));
+    console.log(chalk.yellow('Updating hashes is disabled'));
     checkForErrors(results);
-    console.log("\nElapsed Time:", getElapsedTime());
-    lw.generateFooter(null, getElapsedTime(), results.files);*/
-
-    updateHashes(results, function (err) {
+    console.log('\nElapsed Time:', getElapsedTime());
+    lw.generateFooter(null, getElapsedTime(), results.files);
+    
+    // FOR PRODUCTION
+    /* updateHashes(results, function (err) {
         if (err) {
             console.error(chalk.red('Error while updating hashes'), err);
             sendMail(err);
@@ -155,7 +156,7 @@ function processResults(err, results) {
         checkForErrors(results);
         console.log('\nElapsed Time:', getElapsedTime());
         lw.generateFooter(null, getElapsedTime(), results.files);
-    });
+    }); */
 }
 
 /**********************************************
@@ -173,7 +174,7 @@ function init() {
             var elapsedTime = getElapsedTime();
             lw.generateHeader(err);
             lw.generateFooter(null, elapsedTime);
-            sendMail(err);
+            // sendMail(err);
             return;
         }
 
@@ -182,7 +183,8 @@ function init() {
     });
 }
 
-timer(init);
+// FOR PRODUCTION
+// timer(init);
 
 // FOR TESTING
-// init();
+init();
