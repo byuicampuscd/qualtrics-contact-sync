@@ -1,7 +1,9 @@
 /* eslint no-console:1 */
 
-const qualtrics = require('./qualtrics.js');
 const asyncLib = require('async');
+const binarySearch = require('binary-search');
+const chalk = require('chalk');
+const qualtrics = require('./qualtrics.js');
 
 /* Handles the comparison of contacts in the tool */
 
@@ -10,11 +12,65 @@ function compareContacts(csvFile, waterfallCb) {
         waterfallCb(null, csvFile);
         return;
     }
-    console.log('compareContacts called');
-    
+    // console.log('compareContacts called');
+    console.log(chalk.magenta('Comparing Contacts'));
+
+
+    /* Loop through csvStudents */
+    csvFile.csvContacts.forEach(contact => {
+        /* binary search -> find contacts with matching externalDataReferences*/
+        var qIndex = binarySearch(csvFile.qualtricsContacts, contact, sortList);
+
+        if (qIndex == -1) {
+            /* if there is no match */
+            csvFile.report.toAdd.push(contact);
+        } else {
+            /* determine if the contact needs to be updated */
+            /* save a copy of the qualtrics Contact for quick reference */
+            var qContact = csvFile.qualtricsContacts[qIndex];
+
+            /* remove qContact from master list to determine which contacts need to be deleted */
+            csvFile.qualtricsContacts.splice(qIndex, 1);
+
+            /* equality comparison */
+            var cKeys = Object.keys(contact),
+                qKeys = Object.keys(qContact),
+                keysToIgnore = ['language', 'unsubscribed', 'responseHistory', 'emailHistory'],
+                equal = true;
+
+            /* check if csvContact is equal to qualtricsContact */
+            /* Loop through cKeys first -> cleaner logic with the same chance of finding a diff */
+            equal = cKeys.every(cKey => {
+                /* check if key exists in both contacts && check that values are the same */
+                if (qKeys.includes(cKey) && contact[cKey] === qContact[cKey]) {
+                    // DOESN'T CHECK EMBEDDEDDATA OBJECT AT ALL!
+                    return true;
+                } else {
+                    return false;
+                }
+            });
+
+            /* If equal then run the other comparison. */
+            if (equal) {
+            } 
+            
+            if(!equal) {
+                csvFile.report.toUpdate.push(contact);
+            }
+        }
+    });
+
+
+
     // ENSURE KEYS ARE NOT CASE SENSITIVE ON COMPARE
-    // HOW DOES API LIKE BOOL VALUES IN EMBEDDED DATA??
-    
+    // HOW DOES API LIKE BOOL VALUES IN EMBEDDED DATA?? (do they become strings?)
+    // missing required fields (for add). no influence over equality comparison
+
+    // capitalization -> compare keys in lowercase
+    // qualtrics generated fields -> array of keys to ignore
+    // empty strings -> same as normal comparison
+    // required fields in embeddedData -> if exists in qualtrics only && value is ''
+
     waterfallCb(null, csvFile);
 }
 
@@ -65,6 +121,7 @@ function pullContacts(csvFile, waterfallCb) {
 /********************************************************
  * Removes contacts that don't have a uniqueId property
  * Formats the remaining contacts to fit Qualtrics API
+ * removes commas & replaces UniqueID with externalDataRef
  ********************************************************/
 function formatCsvContacts(csvFile, waterfallCb) {
     if (csvFile.report.matchingHash === true) {
@@ -87,8 +144,10 @@ function formatCsvContacts(csvFile, waterfallCb) {
                 if (key === 'UniqueID') {
                     tempContact.externalDataReference = contact[key];
                 } else if (requiredKeys.includes(key)) {
-                    tempContact[key] = contact[key];
-                }  else {
+                    /* make the first character lower case. For equality comparison 
+                    & compliance to qualtrics format */
+                    tempContact[key.charAt(0).toLowerCase()] = contact[key];
+                } else {
                     /* remove commas from embeddedData so Qualtrics won't truncate the value */
                     tempContact.embeddedData[key] = contact[key].replace(/,/g, '');
                 }
@@ -112,8 +171,8 @@ function formatCsvContacts(csvFile, waterfallCb) {
  **********************************************************/
 
 /********************************************
-  * sort any list by externalDataRef property
-  ********************************************/
+ * sort any list by externalDataRef property
+ ********************************************/
 function sortList(a, b) {
     if (a.externalDataReference < b.externalDataReference) return -1;
     if (a.externalDataReference > b.externalDataReference) return 1;
