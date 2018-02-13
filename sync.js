@@ -5,6 +5,10 @@ const binarySearch = require('binary-search');
 const chalk = require('chalk');
 const qualtrics = require('./qualtrics.js');
 
+/* qualtrics generated keys that the csv will not have */
+const keysToIgnore = ['language', 'unsubscribed', 'responseHistory', 'emailHistory'];
+
+
 /* Handles the comparison of contacts in the tool */
 
 function compareContacts(csvFile, waterfallCb) {
@@ -14,7 +18,6 @@ function compareContacts(csvFile, waterfallCb) {
     }
     // console.log('compareContacts called');
     console.log(chalk.magenta('Comparing Contacts'));
-
 
     /* Loop through csvStudents */
     csvFile.csvContacts.forEach(contact => {
@@ -35,7 +38,6 @@ function compareContacts(csvFile, waterfallCb) {
             /* equality comparison */
             var cKeys = Object.keys(contact),
                 qKeys = Object.keys(qContact),
-                keysToIgnore = ['language', 'unsubscribed', 'responseHistory', 'emailHistory'],
                 equal = true;
 
             /* check if csvContact is equal to qualtricsContact */
