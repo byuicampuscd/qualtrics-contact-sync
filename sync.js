@@ -89,7 +89,8 @@ function formatCsvContacts(csvFile, waterfallCb) {
                 } else if (requiredKeys.includes(key)) {
                     tempContact[key] = contact[key];
                 }  else {
-                    tempContact.embeddedData[key] = contact[key];
+                    /* remove commas from embeddedData so Qualtrics won't truncate the value */
+                    tempContact.embeddedData[key] = contact[key].replace(/,/g, '');
                 }
             });
 
