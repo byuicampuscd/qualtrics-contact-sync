@@ -6,7 +6,31 @@ const chalk = require('chalk');
 const qualtrics = require('./qualtrics.js');
 
 /* qualtrics generated keys that the csv will not have */
-const keysToIgnore = ['language', 'unsubscribed', 'responseHistory', 'emailHistory'];
+const keysToIgnore = ['language', 'unsubscribed', 'responseHistory', 'emailHistory', 'id'];
+
+
+function addContacts(csvFile, waterfallCb) {
+    
+    
+    waterfallCb(null, csvFile);
+}
+
+
+/*****************************************************
+ * a pretty little report at the half-way point
+ ****************************************************/
+function report(csvFile, waterfallCb) {
+    var addCount = csvFile.report.toAdd.length,
+        updateCount = csvFile.report.toUpdate.length,
+        deleteCount = csvFile.report.toDelete.length;
+    
+    console.log(`Operations to perform: ${addCount + updateCount + deleteCount}`);
+    console.log(`toAdd: ${addCount}`);
+    console.log(`toUpdate: ${updateCount}`);
+    console.log(`toDelete: ${deleteCount}`);
+
+    waterfallCb(null, csvFile);
+}
 
 
 /**********************************************************
@@ -47,7 +71,6 @@ function compareContacts(csvFile, waterfallCb) {
  * Call sortList() helper for both CSV lists
  ********************************************/
 function sortContacts(csvFile, waterfallCb) {
-    console.log('Sort Contacts called');
 
     if (csvFile.report.matchingHash === true) {
         waterfallCb(null, csvFile);
@@ -73,6 +96,7 @@ function pullContacts(csvFile, waterfallCb) {
         return;
     }
 
+    console.log(chalk.magenta('Pulling contacts from Qualtrics'));
     qualtrics.getContacts(csvFile, (getErr, contacts) => {
         if (getErr) {
             /* fatal err if students cannot be pulled */
@@ -113,14 +137,14 @@ function formatCsvContacts(csvFile, waterfallCb) {
                 } else if (requiredKeys.includes(key)) {
                     /* make the first character lower case. For equality comparison 
                     & compliance to qualtrics format */
-                    tempContact[key.charAt(0).toLowerCase()] = contact[key];
+                    tempContact[key.charAt(0).toLowerCase() + key.slice(1)] = contact[key];
                 } else {
                     /* remove commas from embeddedData so Qualtrics won't truncate the value */
                     tempContact.embeddedData[key] = contact[key].replace(/,/g, '');
                 }
             });
 
-            /* delete empty data if it's empty */
+            /* delete embedded data if it's empty */
             if (tempContact.embeddedData.length == 0) {
                 delete tempContact.embeddedData;
             }
@@ -148,30 +172,31 @@ function formatCsvContacts(csvFile, waterfallCb) {
 // required fields in embeddedData -> if exists in qualtrics only && value is ''
 
 
-/***********************************************
- *
- ***********************************************/
+/*******************************************************
+ * Equality comparison between two contacts. 
+ *******************************************************/
 function equalityComparison(csvFile, contact, qContact) {
 
-    /**** equality comparison ****/
     /* OUTER OBJECT */
-    /* filter out keys with empty values */
+    /* Filter out keys with empty values */
     var cKeys = Object.keys(contact).filter(key => {
-            return contact[key != ''];
+            return contact[key] != '' && key != 'embeddedData';
         }),
-        /*  filter out qualtrics specific keys */
+        /* Filter out qualtrics specific keys */
         qKeys = Object.keys(qContact).filter(key => {
-            return !keysToIgnore.includes(key);
+            return !keysToIgnore.includes(key) && key != 'embeddedData';
         }),
         equal = true;
 
-    /* Compare outer object - only runs once because we know which properties are in the object*/
+    /* Compare outer object - only runs once because we know the keys are the same */
     equal = cKeys.every(cKey => {
         return qKeys.includes(cKey) && contact[cKey] === qContact[cKey];
     });
 
 
     /* EMBEDDED DATA */
+    /* Must loop through the keys of both objects or it won't catch keys which need to be deleted (cleared) */
+
     /* Compare contact to qContact */
     if (equal) {
         equal = checkEmbeddedData(contact, qContact);
@@ -183,19 +208,24 @@ function equalityComparison(csvFile, contact, qContact) {
 
     /* if any of the checks found inequalities -> update contact */
     if (!equal) {
+        /* save id to contact so it can be updated */
+        contact.id = qContact.id;
         csvFile.report.toUpdate.push(contact);
     }
 }
 
-/***********************************************
- *
- ***********************************************/
+/**************************************************
+ * Logic for comparing embeddedData. Returns true
+ * if the contact's embeddedData object is the same
+ **************************************************/
 function checkEmbeddedData(contact1, contact2) {
-    var emKeys1 = Object.keys(contact1),
-        emKeys2 = Object.keys(contact2);
+    var emKeys1 = Object.keys(contact1.embeddedData),
+        emKeys2 = Object.keys(contact2.embeddedData);
 
     return emKeys1.every(key => {
-        return ((emKeys2.includes(key) && contact1[key] === contact2[key]) || (!emKeys2.includes(key) && contact1[key] === ''));
+        /* TRUE IF (key exists in both contacts & value is the same) OR (key exists only on current contact but value is '') */
+        return ((emKeys2.includes(key) && contact1.embeddedData[key] === contact2.embeddedData[key]) 
+        || (!emKeys2.includes(key) && contact1.embeddedData[key] === ''));
     });
 }
 
@@ -208,16 +238,6 @@ function sortList(a, b) {
     return 0;
 }
 
-
-function test(csvFile, waterfallCb) {
-    console.log(`toAdd: ${csvFile.report.toAdd.length}`);
-    console.log(`toUpdate: ${csvFile.report.toUpdate.length}`);
-    console.log(`toDelete: ${csvFile.report.toDelete.length}`);
-
-    waterfallCb(null, csvFile);
-}
-
-
 /***********************************************************
  *                END HELPER FUNCTIONS 
  **********************************************************/
@@ -227,5 +247,6 @@ module.exports = [
     asyncLib.retryable(2, pullContacts), // make 2 attempts at pullContacts()
     sortContacts, // sort by externalReferenceId
     compareContacts,
-    test,
+    report,
+    addContacts,
 ];

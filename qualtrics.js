@@ -1,5 +1,8 @@
+/* eslint no-console:1 */
+
 const request = require('request');
 const auth = require('./auth.json');
+const chalk = require('chalk');
 
 // USE PROCESS.ENV INSTEAD OF AUTH.JSON
 
@@ -30,8 +33,15 @@ function getAllContacts(csvFile, waterfallCb, data = []) {
             body = JSON.parse(body);
             data = data.concat(body.result.elements);
 
+            /* Write to only one line in the console */
+            process.stdout.clearLine();
+            process.stdout.cursorTo(0);
+            process.stdout.write(chalk.magenta(`Contacts retrieved: ${data.length}`));
+
             /* paginate if needed */
             if (body.result.nextPage === null) {
+                /* new line when we're done */
+                process.stdout.write('\n');
                 waterfallCb(null, data);
             } else {
                 requestObj.url = body.result.nextPage;

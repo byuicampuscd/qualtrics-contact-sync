@@ -102,7 +102,8 @@ function readConfigFile() {
                     report: {
                         toAdd: [],
                         toUpdate: [],
-                        toDelete: []
+                        toDelete: [],
+                        failed: []
                     }
                 };
             });
