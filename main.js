@@ -99,7 +99,11 @@ function readConfigFile() {
                     config: file,
                     csvContacts: [],
                     qualtricsContacts: [],
-                    report: {}
+                    report: {
+                        toAdd: [],
+                        toUpdate: [],
+                        toDelete: []
+                    }
                 };
             });
 

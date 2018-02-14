@@ -1,7 +1,7 @@
 /* eslint no-console:1 */
 
 const asyncLib = require('async');
-const binarySearch = require('binary-search');
+const binarySearch = require('binarysearch');
 const chalk = require('chalk');
 const qualtrics = require('./qualtrics.js');
 
@@ -9,14 +9,17 @@ const qualtrics = require('./qualtrics.js');
 const keysToIgnore = ['language', 'unsubscribed', 'responseHistory', 'emailHistory'];
 
 
-/* Handles the comparison of contacts in the tool */
-
+/**********************************************************
+ * Determines which contacts need to be added, 
+ * updated, deleted, and left unchanged.
+ * Calls equalityComparison to determine if existing
+ * contacts have changed
+ *********************************************************/
 function compareContacts(csvFile, waterfallCb) {
     if (csvFile.report.matchingHash === true) {
         waterfallCb(null, csvFile);
         return;
     }
-    // console.log('compareContacts called');
     console.log(chalk.magenta('Comparing Contacts'));
 
     /* Loop through csvStudents */
@@ -28,54 +31,16 @@ function compareContacts(csvFile, waterfallCb) {
             /* if there is no match */
             csvFile.report.toAdd.push(contact);
         } else {
-            /* determine if the contact needs to be updated */
-            /* save a copy of the qualtrics Contact for quick reference */
-            var qContact = csvFile.qualtricsContacts[qIndex];
-
+            equalityComparison(csvFile, contact, csvFile.qualtricsContacts[qIndex]);
             /* remove qContact from master list to determine which contacts need to be deleted */
             csvFile.qualtricsContacts.splice(qIndex, 1);
-
-            /* equality comparison */
-            var cKeys = Object.keys(contact),
-                qKeys = Object.keys(qContact),
-                equal = true;
-
-            /* check if csvContact is equal to qualtricsContact */
-            /* Loop through cKeys first -> cleaner logic with the same chance of finding a diff */
-            equal = cKeys.every(cKey => {
-                /* check if key exists in both contacts && check that values are the same */
-                if (qKeys.includes(cKey) && contact[cKey] === qContact[cKey]) {
-                    // DOESN'T CHECK EMBEDDEDDATA OBJECT AT ALL!
-                    return true;
-                } else {
-                    return false;
-                }
-            });
-
-            /* If equal then run the other comparison. */
-            if (equal) {
-            } 
-            
-            if(!equal) {
-                csvFile.report.toUpdate.push(contact);
-            }
         }
     });
-
-
-
-    // ENSURE KEYS ARE NOT CASE SENSITIVE ON COMPARE
-    // HOW DOES API LIKE BOOL VALUES IN EMBEDDED DATA?? (do they become strings?)
-    // missing required fields (for add). no influence over equality comparison
-
-    // capitalization -> compare keys in lowercase
-    // qualtrics generated fields -> array of keys to ignore
-    // empty strings -> same as normal comparison
-    // required fields in embeddedData -> if exists in qualtrics only && value is ''
+    /* whatever didn't have a match in the binary search gets deleted */
+    csvFile.report.toDelete = [...csvFile.qualtricsContacts];
 
     waterfallCb(null, csvFile);
 }
-
 
 
 /*********************************************
@@ -172,6 +137,68 @@ function formatCsvContacts(csvFile, waterfallCb) {
  *                 HELPER FUNCTIONS 
  **********************************************************/
 
+
+// ENSURE KEYS ARE NOT CASE SENSITIVE ON COMPARE
+// HOW DOES API LIKE BOOL VALUES IN EMBEDDED DATA?? (do they become strings?)
+// missing required fields (for add). no influence over equality comparison
+
+// capitalization -> compare keys in lowercase
+// qualtrics generated fields -> array of keys to ignore
+// empty strings -> same as normal comparison
+// required fields in embeddedData -> if exists in qualtrics only && value is ''
+
+
+/***********************************************
+ *
+ ***********************************************/
+function equalityComparison(csvFile, contact, qContact) {
+
+    /**** equality comparison ****/
+    /* OUTER OBJECT */
+    /* filter out keys with empty values */
+    var cKeys = Object.keys(contact).filter(key => {
+            return contact[key != ''];
+        }),
+        /*  filter out qualtrics specific keys */
+        qKeys = Object.keys(qContact).filter(key => {
+            return !keysToIgnore.includes(key);
+        }),
+        equal = true;
+
+    /* Compare outer object - only runs once because we know which properties are in the object*/
+    equal = cKeys.every(cKey => {
+        return qKeys.includes(cKey) && contact[cKey] === qContact[cKey];
+    });
+
+
+    /* EMBEDDED DATA */
+    /* Compare contact to qContact */
+    if (equal) {
+        equal = checkEmbeddedData(contact, qContact);
+    }
+    /* Compare qContact to contact */
+    if (equal) {
+        equal = checkEmbeddedData(qContact, contact);
+    }
+
+    /* if any of the checks found inequalities -> update contact */
+    if (!equal) {
+        csvFile.report.toUpdate.push(contact);
+    }
+}
+
+/***********************************************
+ *
+ ***********************************************/
+function checkEmbeddedData(contact1, contact2) {
+    var emKeys1 = Object.keys(contact1),
+        emKeys2 = Object.keys(contact2);
+
+    return emKeys1.every(key => {
+        return ((emKeys2.includes(key) && contact1[key] === contact2[key]) || (!emKeys2.includes(key) && contact1[key] === ''));
+    });
+}
+
 /********************************************
  * sort any list by externalDataRef property
  ********************************************/
@@ -180,6 +207,16 @@ function sortList(a, b) {
     if (a.externalDataReference > b.externalDataReference) return 1;
     return 0;
 }
+
+
+function test(csvFile, waterfallCb) {
+    console.log(`toAdd: ${csvFile.report.toAdd.length}`);
+    console.log(`toUpdate: ${csvFile.report.toUpdate.length}`);
+    console.log(`toDelete: ${csvFile.report.toDelete.length}`);
+
+    waterfallCb(null, csvFile);
+}
+
 
 /***********************************************************
  *                END HELPER FUNCTIONS 
@@ -190,4 +227,5 @@ module.exports = [
     asyncLib.retryable(2, pullContacts), // make 2 attempts at pullContacts()
     sortContacts, // sort by externalReferenceId
     compareContacts,
+    test,
 ];
