@@ -20,14 +20,14 @@ function makeRequest(reqObj, cb) {
  * Calls makeRequest() with paginate() as a callback.
  * Returns an array of contacts to the CB.
  ***********************************************/
-function getAllContacts(csvFile, waterfallCb, data = []) {
+function getAll(csvFile, cb, data = []) {
     function paginate(err, response, body) {
         if (err) {
-            waterfallCb(err);
+            cb(err);
         } else if (response.statusCode !== 200) {
-            waterfallCb(new Error(`Status Code: ${response.statusCode}`));
+            cb(new Error(`Status Code: ${response.statusCode}`));
         } else if (response.headers['content-type'] != 'application/json') {
-            waterfallCb(new Error(`Content Type: ${response.headers['content-type']}`));
+            cb(new Error(`Content Type: ${response.headers['content-type']}`));
         } else {
             /* checking for content-type should ensure that a json response was sent */
             body = JSON.parse(body);
@@ -42,7 +42,7 @@ function getAllContacts(csvFile, waterfallCb, data = []) {
             if (body.result.nextPage === null) {
                 /* new line when we're done */
                 process.stdout.write('\n');
-                waterfallCb(null, data);
+                cb(null, data);
             } else {
                 requestObj.url = body.result.nextPage;
                 makeRequest(requestObj, paginate, data);
@@ -62,7 +62,43 @@ function getAllContacts(csvFile, waterfallCb, data = []) {
     makeRequest(requestObj, paginate);
 }
 
+function addContact(csvFile, contact, cb) {
+    var requestObj = {
+        method: 'POST',
+        url: `https://byui.az1.qualtrics.com/API/v3/mailinglists/${csvFile.config.MailingListID}/contacts/${contact.id}`,
+        body: JSON.stringify(contact),
+        headers: {
+            'x-api-token': auth.token
+        }
+    };
+    
+    makeRequest(requestObj, cb);
+}
+
+function updateContact(csvFile, contact, cb) {
+    // pull ID off of the contact!
+    var requestObj = {
+    method: 'PUT',
+    url: `https://byui.az1.qualtrics.com/API/v3/mailinglists/${csvFile.config.MailingListID}/contacts`,
+    body: JSON.stringify(contact),
+    headers: {
+        'x-api-token': auth.token
+    }
+}
+
+function deleteContact(csvFile, contact, cb) {
+    // pull ID off of the contact!
+    var requestObj = {
+        method: 'DELETE',
+        url: `https://byui.az1.qualtrics.com/API/v3/mailinglists/${csvFile.config.MailingListID}/contacts/${contact.id}`,
+        headers: {
+            'x-api-token': auth.token
+        }
+}
 
 module.exports = {
-    getContacts: getAllContacts,
+    getContacts: getAll,
+    addContact: addContact,
+    updateContact: updateContact,
+    deleteContact, deleteContact
 };

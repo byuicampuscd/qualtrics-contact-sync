@@ -8,10 +8,44 @@ const qualtrics = require('./qualtrics.js');
 /* qualtrics generated keys that the csv will not have */
 const keysToIgnore = ['language', 'unsubscribed', 'responseHistory', 'emailHistory', 'id'];
 
-
+/************************************************
+ * Add new contacts to the current mailing list
+ ***********************************************/
 function addContacts(csvFile, waterfallCb) {
+    function addFilter(contact, addCb) {
+        /* convert externalDataReference to externalDataRef */
+        contact.externalDataRef = contact.externalDataReference;
+        delete contact.externalDataReference;
+
+        /* Check for missing required fields */
+        var hasRequiredFields = Object.keys(contact).every(key => {
+            return contact[key] === '';
+        });
+        
+        /* Don't add contacts missing required fields */
+        if (!hasRequiredFields) {
+            csvFile.report.failed.push(contact);
+            csvFile.csvContacts.splice(csvFile.csvContacts.indexOf(contact), 1);
+            addCb(null);
+            return;
+        }
+        
+        /* Remove embeddedData propterties with empty string values (else api will throw err) */
+        Object.keys(contact.embeddedData).forEach(key => {
+            if (contact.embeddedData[key] === '') {
+                delete contact.embeddedData[key] === '';
+            }
+        });
     
-    
+        asyncLib.retry(2, qualtrics.addContact, (err, response) => {
+
+        });
+    }
+    /* loop through contacts 5 at a time, filter * add contacts as needed */
+    asyncLib.eachLimit(csvFile.toAdd, 5, addFilter, (err) => {
+
+    });
+
     waterfallCb(null, csvFile);
 }
 
@@ -23,8 +57,8 @@ function report(csvFile, waterfallCb) {
     var addCount = csvFile.report.toAdd.length,
         updateCount = csvFile.report.toUpdate.length,
         deleteCount = csvFile.report.toDelete.length;
-    
-    console.log(`Operations to perform: ${addCount + updateCount + deleteCount}`);
+
+    console.log(`Changes to Make: ${addCount + updateCount + deleteCount}`);
     console.log(`toAdd: ${addCount}`);
     console.log(`toUpdate: ${updateCount}`);
     console.log(`toDelete: ${deleteCount}`);
@@ -224,8 +258,8 @@ function checkEmbeddedData(contact1, contact2) {
 
     return emKeys1.every(key => {
         /* TRUE IF (key exists in both contacts & value is the same) OR (key exists only on current contact but value is '') */
-        return ((emKeys2.includes(key) && contact1.embeddedData[key] === contact2.embeddedData[key]) 
-        || (!emKeys2.includes(key) && contact1.embeddedData[key] === ''));
+        return ((emKeys2.includes(key) && contact1.embeddedData[key] === contact2.embeddedData[key]) ||
+            (!emKeys2.includes(key) && contact1.embeddedData[key] === ''));
     });
 }
 
