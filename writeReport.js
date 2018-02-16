@@ -17,8 +17,10 @@ function header(date, cb) {
     cb(null);
 }
 
-function file(csvFile) {
+function file(csvFile, cb) {
     console.log('Write File called');
+    
+    cb(null);
 }
 
 function footer(startTime, cb) {

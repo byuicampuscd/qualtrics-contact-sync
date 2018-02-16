@@ -6,16 +6,17 @@
  * In addition it updated the config file with the new hashes */
 
 const stringHash = require('string-hash');
-const log = require('./writeReport.js');
 const chalk = require('chalk');
+const fs = require('fs');
+const log = require('./writeReport.js');
 
 
 
-function checkHash (csvFile, waterfallCb) {
+function checkHash(csvFile, waterfallCb) {
     var hash = stringHash(JSON.stringify(csvFile.csvContacts));
 
-    if (csvFile.config.hash === hash) {
-        console.log(chalk.green('Hashed Matched'));
+    if (csvFile.config.hash == hash) {
+        console.log(chalk.green('Hashes Matched'));
         csvFile.report.matchingHash = true;
         log.writeFile(csvFile, writeErr => {
             if (writeErr) console.error(chalk.red(writeErr));
@@ -23,7 +24,7 @@ function checkHash (csvFile, waterfallCb) {
         });
     } else {
         csvFile.report.matchingHash = false;
-        csvFile.config.hash = hash;
+        csvFile.report.newHash = hash;
         waterfallCb(null, csvFile);
     }
 }
@@ -33,7 +34,21 @@ function checkHash (csvFile, waterfallCb) {
 function updateHash(csvFiles, cb) {
     console.log('updateHash called');
 
-    cb();
+    // console.log(JSON.stringify(csvFiles, null, 2));
+
+    // csvFile.report.matchingHash
+    var config = csvFiles.map(csvFile => {
+        if (!csvFile.report.matchingHash && csvFile.report.failed.length == 0) {
+            csvFile.config.hash = csvFile.report.newHash;
+        }
+        
+        return csvFile.config;
+
+    });
+    // map csvFiles returning an array of config objs
+    // parse & write returned array
+
+    cb(null);
 }
 
 

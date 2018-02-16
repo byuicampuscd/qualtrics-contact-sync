@@ -39,7 +39,7 @@ function onComplete(err, processedCsvFiles) {
 function readCsvFile(csvFile, waterfallCb) {
     fs.readFile(`${settings.filePath}${csvFile.config.csv}`, (readErr, fileContents) => {
         if (readErr) {
-            // for some reason there is no stack wneh fs returns the Err
+            /* for some reason there is no stack wneh fs returns the Err */
             Error.captureStackTrace(readErr);
             waterfallCb(readErr);
             return;
@@ -57,7 +57,7 @@ function readCsvFile(csvFile, waterfallCb) {
 
 
 function runCSV(csvFile, eachCallback) {
-    console.log(chalk.blue(`\n\n${csvFile.config.csv}`));
+    console.log(chalk.blue(csvFile.config.csv));
 
     asyncLib.waterfall([
         asyncLib.constant(csvFile),
@@ -67,7 +67,7 @@ function runCSV(csvFile, eachCallback) {
     ],
     (waterfallErr, updatedCsvFile) => {
         if (waterfallErr) {
-            /* KILLS ALL csvFILES IF PASSED TO CB */
+            /* Kills all csvFiles if passed to cb */
             log.writeErr(waterfallErr, () => {
                 eachCallback(null, updatedCsvFile);
             });

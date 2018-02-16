@@ -1,4 +1,4 @@
-/* eslint no-console:1 */
+/* eslint no-console:0 */
 
 const asyncLib = require('async');
 const binarySearch = require('binarysearch');
@@ -15,6 +15,11 @@ const keysToIgnore = ['language', 'unsubscribed', 'responseHistory', 'emailHisto
  * Good Luck!
  *************************************************/
 function makeApiCalls(csvFile, waterfallCb) {
+    if (csvFile.report.matchingHash === true) {
+        waterfallCb(null, csvFile);
+        return;
+    }
+
     const apiActions = [{
         name: 'Add',
         apiCall: qualtrics.addContact,
@@ -57,6 +62,7 @@ function makeApiCalls(csvFile, waterfallCb) {
             asyncLib.retry(2, makeCall, (err) => {
                 if (err) {
                     /* if contact failed, record it & move on */
+                    contact.err = err;
                     contactFailed(csvFile, contact, action.name);
                 }
                 eachCb(null);
@@ -84,6 +90,11 @@ function makeApiCalls(csvFile, waterfallCb) {
  * Removes contacts who are missing required fields
  ****************************************************/
 function addPrep(csvFile, waterfallCb) {
+    if (csvFile.report.matchingHash === true) {
+        waterfallCb(null, csvFile);
+        return;
+    }
+
     csvFile.report.toAdd = csvFile.report.toAdd.filter(contact => {
         /* convert externalDataReference to externalDataRef */
         contact.externalDataRef = contact.externalDataReference;
@@ -97,6 +108,7 @@ function addPrep(csvFile, waterfallCb) {
         /* Don't add contacts missing required fields */
         if (!hasRequiredFields) {
             contact.action = 'Add';
+            contact.err = new Error('Contact missing required field');
             csvFile.report.failed.push(contact);
             return false;
         }
@@ -118,6 +130,11 @@ function addPrep(csvFile, waterfallCb) {
  * a pretty little report at the half-way point
  ****************************************************/
 function report(csvFile, waterfallCb) {
+    if (csvFile.report.matchingHash === true) {
+        waterfallCb(null, csvFile);
+        return;
+    }
+
     var addCount = csvFile.report.toAdd.length,
         updateCount = csvFile.report.toUpdate.length,
         deleteCount = csvFile.report.toDelete.length;
@@ -169,7 +186,6 @@ function compareContacts(csvFile, waterfallCb) {
  * Call sortList() helper for both CSV lists
  ********************************************/
 function sortContacts(csvFile, waterfallCb) {
-
     if (csvFile.report.matchingHash === true) {
         waterfallCb(null, csvFile);
         return;
