@@ -15,7 +15,7 @@ const settings = require('./settings.json'),
  * read the configuration file
  ********************************/
 proto.readConfig = function (cb) {
-    fs.readFile(settings.configLocation, function (err, contents) {
+    fs.readFile(settings.configFile, function (err, contents) {
         if (err) cb(err, contents);
         else {
             contents = contents.toString();

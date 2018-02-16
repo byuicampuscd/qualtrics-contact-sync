@@ -13,6 +13,7 @@ const keysToIgnore = ['language', 'unsubscribed', 'responseHistory', 'emailHisto
  ***********************************************/
 function addContacts(csvFile, waterfallCb) {
     /* loop through contacts 5 at a time, filter * add contacts as needed */
+    // asyncLib.eachSeries(csvFile.report.toAdd, addFilter, (err) => {
     asyncLib.eachLimit(csvFile.report.toAdd, 5, addFilter, (err) => {
         if (err) {
             /* This Err means no one was added */

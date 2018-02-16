@@ -13,6 +13,7 @@ const chalk = require('chalk');
  **************************************************/
 function makeRequest(reqObj, cb) {
     request(reqObj, cb);
+    // request(reqObj.url, reqObj, cb);
 }
 
 /**********************************************
@@ -65,9 +66,10 @@ function getAll(csvFile, cb, data = []) {
 function addContact(csvFile, contact, cb) {
     var requestObj = {
         method: 'POST',
-        url: `https://byui.az1.qualtrics.com/API/v3/mailinglists/${csvFile.config.MailingListID}/contacts/${contact.id}`,
+        url: `https://byui.az1.qualtrics.com/API/v3/mailinglists/${csvFile.config.MailingListID}/contacts`,
         body: JSON.stringify(contact),
         headers: {
+            'content-type': 'application/json',
             'x-api-token': auth.token
         }
     };
@@ -75,13 +77,15 @@ function addContact(csvFile, contact, cb) {
     makeRequest(requestObj, (err, response, body) => {
         if (err) {
             cb(err);
+            return;
         } else if (response.statusCode !== 200) {
             cb(new Error(`Status Code ${response.statusCode}`));
+            return;
         } else if (response.headers['content-type'] != 'application/json') {
             cb(new Error(`Content Type: ${response.headers['content-type']}`));
-        } else {
-            cb(null, JSON.parse(body));
+            return;
         }
+        cb(null, JSON.parse(body));
     });
 }
 
