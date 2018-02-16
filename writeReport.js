@@ -44,6 +44,7 @@ function fatalError(err, startTime, finalCb) {
 }
 
 function getElapsedTime(startTime) {
+    // THIS FUNCTION NEEDS HELP...
     startTime = moment(startTime);
 
     var endTime = moment(),

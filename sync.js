@@ -1,7 +1,3 @@
-import {
-    callbackify
-} from 'util';
-
 /* eslint no-console:1 */
 
 const asyncLib = require('async');
@@ -11,15 +7,18 @@ const qualtrics = require('./qualtrics.js');
 
 /* qualtrics generated keys that the csv will not have */
 const keysToIgnore = ['language', 'unsubscribed', 'responseHistory', 'emailHistory', 'id'];
-/* Makes API call function modular */
 
 
 
+/**************************************************
+ * Abstraction of add, update, & delete api calls
+ * Good Luck!
+ *************************************************/
 function makeApiCalls(csvFile, waterfallCb) {
     const apiActions = [{
-        name: 'Delete',
-        apiCall: qualtrics.deleteContact,
-        location: csvFile.report.toDelete,
+        name: 'Add',
+        apiCall: qualtrics.addContact,
+        location: csvFile.report.toAdd,
     },
     {
         name: 'Update',
@@ -27,13 +26,13 @@ function makeApiCalls(csvFile, waterfallCb) {
         location: csvFile.report.toUpdate,
     },
     {
-        name: 'Add',
-        apiCall: qualtrics.addContact,
-        location: csvFile.report.toAdd,
+        name: 'Delete',
+        apiCall: qualtrics.deleteContact,
+        location: csvFile.report.toDelete,
     }
     ];
 
-    /* loop through each action (add, update, delete) */
+    /* loop through each action type (add, update, delete) */
     asyncLib.eachSeries(apiActions, runAction, (err) => {
         if (err) {
             waterfallCb(err, csvFile);
@@ -42,33 +41,33 @@ function makeApiCalls(csvFile, waterfallCb) {
         waterfallCb(null, csvFile);
     });
 
-
-    /* loop through contacts in an action */
+    /* loop through all contacts in an action */
     function runAction(action, seriesCb) {
         asyncLib.eachLimit(action.location, 5, wrapRetry, (err) => {
             if (err) {
                 seriesCb(err);
                 return;
             }
+            console.log(`${action.name} - Completed: ${action.location.length}`);
             seriesCb(null);
         });
 
-
-        /* wrap the call in an asyncRetry */
+        /* wrap the call in an asyncRetry. In case of a 500 server err (happens often) */
         function wrapRetry(contact, eachCb) {
             asyncLib.retry(2, makeCall, (err) => {
                 if (err) {
-                    eachCb(err);
-                    return;
+                    /* if contact failed, record it & move on */
+                    contactFailed(csvFile, contact, action.name);
                 }
                 eachCb(null);
             });
 
-            /* Make the call, passing all required params to qualtrics.js */
+            /* Allows csvFile & contact to be passed to qualtrics.js while still using asyncRetry */
             function makeCall(retryCb) {
                 action.apiCall(csvFile, contact, (err, response) => {
                     if (err) {
-                        contactFailed(csvFile, contact, action.name);
+                        /* pass err to retry so it can try again */
+                        retryCb(err);
                     }
                     retryCb(null);
                 });
@@ -77,6 +76,13 @@ function makeApiCalls(csvFile, waterfallCb) {
     }
 }
 
+/****************************************************
+ * Performs necessary tweaking of the contact objects
+ * before adding them to qualtrics.
+ * Changes externalDataReference to externalDataRef
+ * Removes keys with empty string values
+ * Removes contacts who are missing required fields
+ ****************************************************/
 function addPrep(csvFile, waterfallCb) {
     csvFile.report.toAdd = csvFile.report.toAdd.filter(contact => {
         /* convert externalDataReference to externalDataRef */
@@ -88,7 +94,7 @@ function addPrep(csvFile, waterfallCb) {
             return contact[key] !== '';
         });
 
-            /* Don't add contacts missing required fields */
+        /* Don't add contacts missing required fields */
         if (!hasRequiredFields) {
             contact.action = 'Add';
             csvFile.report.failed.push(contact);
@@ -105,110 +111,6 @@ function addPrep(csvFile, waterfallCb) {
         return true;
     });
     waterfallCb(null, csvFile);
-}
-
-
-function deleteContacts(csvFile, waterfallCb) {
-    function deleteContact(contact, deleteCb) {
-        asyncLib.retry(2, (retryCb) => {
-            qualtrics.deleteContact(csvFile, contact, retryCb);
-        }, (err, response) => {
-            if (err) {
-                contactFailed(csvFile, contact, 'Delete');
-            }
-            deleteCb(null);
-        });
-    }
-
-    asyncLib.eachLimit(csvFile.report.toDelete, 5, deleteContact, (err) => {
-        if (err) {
-            /* no err should reach this point */
-            waterfallCb(err, csvFile);
-            return;
-        }
-        console.log(`Contacts Deleted: ${csvFile.report.toDelete.length}`);
-        waterfallCb(null, csvFile);
-    });
-}
-
-
-function updateContacts(csvFile, waterfallCb) {
-    function updateContact(contact, updateCb) {
-        asyncLib.retry(2, (retryCb) => {
-            qualtrics.updateContact(csvFile, contact, retryCb);
-        }, (err, response) => {
-            if (err) {
-                contactFailed(csvFile, contact, 'Update');
-            }
-            updateCb(null);
-        });
-    }
-    asyncLib.eachLimit(csvFile.report.toUpdate, 5, updateContact, (err) => {
-        if (err) {
-            /* no err should reach this point */
-            waterfallCb(err, csvFile);
-            return;
-        }
-        console.log(`Contacts Updated: ${csvFile.report.toUpdate.length}`);
-        waterfallCb(null, csvFile);
-    });
-}
-
-
-/************************************************
- * Add new contacts to the current mailing list
- ***********************************************/
-function addContacts(csvFile, waterfallCb) {
-    /* loop through contacts 5 at a time, filter * add contacts as needed */
-    asyncLib.eachLimit(csvFile.report.toAdd, 5, addFilter, (err) => {
-        if (err) {
-            /* no err should reach this point */
-            waterfallCb(err, csvFile);
-            return;
-        }
-        console.log(`Contacts Added: ${csvFile.report.toAdd.length}`);
-        waterfallCb(null, csvFile);
-    });
-
-
-    function addFilter(contact, addCb) {
-        /* convert externalDataReference to externalDataRef */
-        contact.externalDataRef = contact.externalDataReference;
-        delete contact.externalDataReference;
-
-        /* Check for missing required fields */
-        var hasRequiredFields = Object.keys(contact).every(key => {
-            return contact[key] !== '';
-        });
-
-        /* Don't add contacts missing required fields */
-        if (!hasRequiredFields) {
-            contactFailed(csvFile, contact, 'Add');
-            addCb(null);
-            return;
-        }
-
-        /* Remove embeddedData propterties with empty string values (else api will throw err) */
-        Object.keys(contact.embeddedData).forEach(key => {
-            if (contact.embeddedData[key] === '') {
-                delete contact.embeddedData[key] === '';
-            }
-        });
-
-        /* now that the contact has been filtered, add them! */
-        asyncLib.retry(2, addContact, (err, response) => {
-            if (err) {
-                contactFailed(csvFile, contact, 'Add');
-            }
-            addCb(null);
-        });
-
-        /* This is an intermediate between async retry & qualtrics.addContact
-         * it allows us to pass additional required paraeters into qualtrics.addContact */
-        function addContact(retryCb) {
-            qualtrics.addContact(csvFile, contact, retryCb);
-        }
-    }
 }
 
 
@@ -344,7 +246,6 @@ function formatCsvContacts(csvFile, waterfallCb) {
             if (tempContact.embeddedData.length == 0) {
                 delete tempContact.embeddedData;
             }
-
             contactList.push(tempContact);
         }
         return contactList;
@@ -453,14 +354,11 @@ function contactFailed(csvFile, contact, action) {
  **********************************************************/
 
 module.exports = [
-    formatCsvContacts, // make them look like qualtrics contacts
-    asyncLib.retryable(2, pullContacts), // make 2 attempts at pullContacts()
-    sortContacts, // sort by externalReferenceId
+    formatCsvContacts, /* make them look like qualtrics contacts */
+    asyncLib.retryable(2, pullContacts), /* make 2 attempts at pullContacts() */
+    sortContacts, /* sort by externalReferenceId */
     compareContacts,
     report,
-    addPrep, // filters & prepares the contacts who need to be added
+    addPrep, /* filters & prepares the contacts who need to be added */
     makeApiCalls,
-    // addContacts,
-    // updateContacts,
-    // deleteContacts,
 ];
