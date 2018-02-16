@@ -8,6 +8,30 @@ const qualtrics = require('./qualtrics.js');
 /* qualtrics generated keys that the csv will not have */
 const keysToIgnore = ['language', 'unsubscribed', 'responseHistory', 'emailHistory', 'id'];
 
+function deleteContacts(csvFile, waterfallCb) {
+    function deleteContact(contact, deleteCb) {
+        asyncLib.retry(2, (retryCb) => {
+            qualtrics.deleteContact(csvFile, contact, retryCb);
+        }, (err, response) => {
+            if(err) {
+                contactFailed(csvFile, contact, 'Delete');
+            }
+            deleteCb(null);
+        });
+    }
+
+    asyncLib.eachLimit(csvFile.report.toDelete, 5, deleteContact, (err) => {
+        if (err) {
+            /* no err should reach this point */
+            waterfallCb(err, csvFile);
+            return;
+        }
+        console.log(`Contacts Deleted: ${csvFile.report.toDelete.length}`);
+        waterfallCb(null, csvFile);
+    });
+}
+
+
 function updateContacts(csvFile, waterfallCb) {
     function updateContact(contact, updateCb) {
         asyncLib.retry(2, (retryCb) => {
@@ -98,8 +122,8 @@ function report(csvFile, waterfallCb) {
 
     console.log(`Changes to Make: ${addCount + updateCount + deleteCount}`);
     /* console.log(`toAdd: ${addCount}`);
-    console.log(`toUpdate: ${updateCount}`); */
-    console.log(`toDelete: ${deleteCount}`);
+    console.log(`toUpdate: ${updateCount}`);
+    console.log(`toDelete: ${deleteCount}`); */
 
     waterfallCb(null, csvFile);
 }
@@ -336,5 +360,5 @@ module.exports = [
     report,
     addContacts,
     updateContacts,
-    // deleteContacts,
+    deleteContacts,
 ];

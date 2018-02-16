@@ -25,7 +25,7 @@ function onComplete(err, processedCsvFiles) {
             return;
         });
     }
-    console.log(`CSV files processed: ${processedCsvFiles.length}`);
+    console.log(`\n\nCSV files processed: ${processedCsvFiles.length}`);
     // use a waterfall if the list of functions gets any larger than updating hashes & writing the log
 
     hash.updateHash(processedCsvFiles, writeErr => {
@@ -57,7 +57,7 @@ function readCsvFile(csvFile, waterfallCb) {
 
 
 function runCSV(csvFile, eachCallback) {
-    console.log(chalk.blue(csvFile.config.csv));
+    console.log(chalk.blue(`\n\n${csvFile.config.csv}`));
 
     asyncLib.waterfall([
         asyncLib.constant(csvFile),
