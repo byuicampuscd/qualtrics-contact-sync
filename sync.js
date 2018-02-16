@@ -8,16 +8,41 @@ const qualtrics = require('./qualtrics.js');
 /* qualtrics generated keys that the csv will not have */
 const keysToIgnore = ['language', 'unsubscribed', 'responseHistory', 'emailHistory', 'id'];
 
+function updateContacts(csvFile, waterfallCb) {
+    function updateContact(contact, updateCb) {
+        asyncLib.retry(2, (retryCb) => {
+            qualtrics.updateContact(csvFile, contact, retryCb);
+        }, (err, response) => {
+            if(err) {
+                contactFailed(csvFile, contact, 'Update');
+            }
+            updateCb(null);
+        });
+    }
+    asyncLib.eachLimit(csvFile.report.toUpdate, 5, updateContact, (err) => {
+        if(err) {
+            /* no err should reach this point */
+            waterfallCb(err, csvFile);
+            return;
+        }
+        console.log(`Contacts Updated: ${csvFile.report.toUpdate.length}`);
+        waterfallCb(null, csvFile);
+    });
+}
+
+
 /************************************************
  * Add new contacts to the current mailing list
  ***********************************************/
 function addContacts(csvFile, waterfallCb) {
     /* loop through contacts 5 at a time, filter * add contacts as needed */
-    // asyncLib.eachSeries(csvFile.report.toAdd, addFilter, (err) => {
     asyncLib.eachLimit(csvFile.report.toAdd, 5, addFilter, (err) => {
         if (err) {
-            /* This Err means no one was added */
+            /* no err should reach this point */
+            waterfallCb(err, csvFile);
+            return;
         }
+        console.log(`Contacts Added: ${csvFile.report.toAdd.length}`);
         waterfallCb(null, csvFile);
     });
 
@@ -72,8 +97,8 @@ function report(csvFile, waterfallCb) {
         deleteCount = csvFile.report.toDelete.length;
 
     console.log(`Changes to Make: ${addCount + updateCount + deleteCount}`);
-    console.log(`toAdd: ${addCount}`);
-    console.log(`toUpdate: ${updateCount}`);
+    /* console.log(`toAdd: ${addCount}`);
+    console.log(`toUpdate: ${updateCount}`); */
     console.log(`toDelete: ${deleteCount}`);
 
     waterfallCb(null, csvFile);
@@ -310,4 +335,6 @@ module.exports = [
     compareContacts,
     report,
     addContacts,
+    updateContacts,
+    // deleteContacts,
 ];
