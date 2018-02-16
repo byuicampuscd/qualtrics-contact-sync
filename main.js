@@ -39,6 +39,8 @@ function onComplete(err, processedCsvFiles) {
 function readCsvFile(csvFile, waterfallCb) {
     fs.readFile(`${settings.filePath}${csvFile.config.csv}`, (readErr, fileContents) => {
         if (readErr) {
+            // for some reason there is no stack wneh fs returns the Err
+            Error.captureStackTrace(readErr);
             waterfallCb(readErr);
             return;
         }
@@ -83,7 +85,7 @@ function loopFiles(csvFiles) {
 
 /* read config file */
 function readConfigFile() {
-    fs.readFile(settings.configLocation, (readErr, configData) => {
+    fs.readFile(settings.configFile, (readErr, configData) => {
         if (readErr) {
             /* because it's a fatal error */
             log.writeFatalErr(readErr, startTime, writeErr => {

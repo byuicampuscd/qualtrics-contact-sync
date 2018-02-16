@@ -71,19 +71,32 @@ function addContact(csvFile, contact, cb) {
             'x-api-token': auth.token
         }
     };
-    
-    makeRequest(requestObj, cb);
+
+    makeRequest(requestObj, (err, response, body) => {
+        if (err) {
+            cb(err);
+        } else if (response.statusCode !== 200) {
+            cb(new Error(`Status Code ${response.statusCode}`));
+        } else if (response.headers['content-type'] != 'application/json') {
+            cb(new Error(`Content Type: ${response.headers['content-type']}`));
+        } else {
+            cb(null, JSON.parse(body));
+        }
+    });
 }
 
 function updateContact(csvFile, contact, cb) {
     // pull ID off of the contact!
     var requestObj = {
-    method: 'PUT',
-    url: `https://byui.az1.qualtrics.com/API/v3/mailinglists/${csvFile.config.MailingListID}/contacts`,
-    body: JSON.stringify(contact),
-    headers: {
-        'x-api-token': auth.token
-    }
+        method: 'PUT',
+        url: `https://byui.az1.qualtrics.com/API/v3/mailinglists/${csvFile.config.MailingListID}/contacts`,
+        body: JSON.stringify(contact),
+        headers: {
+            'x-api-token': auth.token
+        }
+    };
+
+    makeRequest(requestObj, cb);
 }
 
 function deleteContact(csvFile, contact, cb) {
@@ -94,11 +107,14 @@ function deleteContact(csvFile, contact, cb) {
         headers: {
             'x-api-token': auth.token
         }
+    };
+
+    makeRequest(requestObj, cb);
 }
 
 module.exports = {
     getContacts: getAll,
     addContact: addContact,
     updateContact: updateContact,
-    deleteContact, deleteContact
+    deleteContact: deleteContact
 };

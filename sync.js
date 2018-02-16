@@ -12,6 +12,15 @@ const keysToIgnore = ['language', 'unsubscribed', 'responseHistory', 'emailHisto
  * Add new contacts to the current mailing list
  ***********************************************/
 function addContacts(csvFile, waterfallCb) {
+    /* loop through contacts 5 at a time, filter * add contacts as needed */
+    asyncLib.eachLimit(csvFile.report.toAdd, 5, addFilter, (err) => {
+        if (err) {
+            /* This Err means no one was added */
+        }
+        waterfallCb(null, csvFile);
+    });
+
+
     function addFilter(contact, addCb) {
         /* convert externalDataReference to externalDataRef */
         contact.externalDataRef = contact.externalDataReference;
@@ -19,34 +28,37 @@ function addContacts(csvFile, waterfallCb) {
 
         /* Check for missing required fields */
         var hasRequiredFields = Object.keys(contact).every(key => {
-            return contact[key] === '';
+            return contact[key] !== '';
         });
-        
+
         /* Don't add contacts missing required fields */
         if (!hasRequiredFields) {
-            csvFile.report.failed.push(contact);
-            csvFile.csvContacts.splice(csvFile.csvContacts.indexOf(contact), 1);
+            contactFailed(csvFile, contact, 'Add');
             addCb(null);
             return;
         }
-        
+
         /* Remove embeddedData propterties with empty string values (else api will throw err) */
         Object.keys(contact.embeddedData).forEach(key => {
             if (contact.embeddedData[key] === '') {
                 delete contact.embeddedData[key] === '';
             }
         });
-    
-        asyncLib.retry(2, qualtrics.addContact, (err, response) => {
 
+        /* now that the contact has been filtered, add them! */
+        asyncLib.retry(2, addContact, (err, response) => {
+            if (err) {
+                contactFailed(csvFile, contact, 'Add');
+            }
+            addCb(null);
         });
+
+        /* This is an intermediate between async retry & qualtrics.addContact
+         * it allows us to pass additional required paraeters into qualtrics.addContact */
+        function addContact(retryCb) {
+            qualtrics.addContact(csvFile, contact, retryCb);
+        }
     }
-    /* loop through contacts 5 at a time, filter * add contacts as needed */
-    asyncLib.eachLimit(csvFile.toAdd, 5, addFilter, (err) => {
-
-    });
-
-    waterfallCb(null, csvFile);
 }
 
 
@@ -270,6 +282,20 @@ function sortList(a, b) {
     if (a.externalDataReference < b.externalDataReference) return -1;
     if (a.externalDataReference > b.externalDataReference) return 1;
     return 0;
+}
+
+/*********************************************
+ * Remove contact from appropriate action list 
+ * & add to failed contact list
+ *********************************************/
+function contactFailed(csvFile, contact, action) {
+    /* save action so we know what they were suppsed to do */
+    contact.action = action;
+
+    /* add them to the list of failed students */
+    csvFile.report.failed.push(contact);
+    /* remove them from the successful students */
+    csvFile.report[`to${action}`].splice(csvFile.csvContacts.indexOf(contact), 1);
 }
 
 /***********************************************************

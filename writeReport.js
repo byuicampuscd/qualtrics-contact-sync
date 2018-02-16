@@ -6,7 +6,7 @@ const moment = require('moment');
 const chalk = require('chalk');
 
 function error(err, cb) {
-    console.error(chalk.red(err));
+    console.error(chalk.red(err.stack));
     console.log('Write Error called');
 
     cb(null);
