@@ -30,6 +30,7 @@ function onComplete(err, processedCsvFiles) {
 
     hash.updateHash(processedCsvFiles, writeErr => {
         if (writeErr) console.error(chalk.red(writeErr));
+        console.log(chalk.green('Hashes Updated'));
         log.writeFooter(startTime, null);
         console.log(chalk.blue('Done'));
     });

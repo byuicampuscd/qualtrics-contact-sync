@@ -8,7 +8,9 @@
 const stringHash = require('string-hash');
 const chalk = require('chalk');
 const fs = require('fs');
+const d3 = require('d3-dsv');
 const log = require('./writeReport.js');
+const settings = require('./settings.json');
 
 
 
@@ -34,21 +36,22 @@ function checkHash(csvFile, waterfallCb) {
 function updateHash(csvFiles, cb) {
     console.log('updateHash called');
 
-    // console.log(JSON.stringify(csvFiles, null, 2));
-
-    // csvFile.report.matchingHash
     var config = csvFiles.map(csvFile => {
         if (!csvFile.report.matchingHash && csvFile.report.failed.length == 0) {
             csvFile.config.hash = csvFile.report.newHash;
         }
-        
         return csvFile.config;
-
     });
-    // map csvFiles returning an array of config objs
-    // parse & write returned array
 
-    cb(null);
+    config = d3.csvFormat((config));
+
+    fs.writeFile(settings.configFile, config, writeErr => {
+        if(writeErr) {
+            cb(writeErr);
+            return;
+        }
+        cb();
+    });
 }
 
 
