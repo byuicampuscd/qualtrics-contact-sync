@@ -84,10 +84,11 @@ proto.generateFile = function (wrapper) {
         link = wrapper.link,
         fileName = '';
 
+    fileName = link.csv.replace(/^QualtricsSync-/, '');
+    text += '\r\n' + fws(fileName, 30);
+
     // if file was synced
     if (file != false) {
-        fileName = file.fileName.replace(/^QualtricsSync-/, '');
-        text += '\r\n' + fws(fileName, 30);
         if (file.fileError != undefined) {
             text += '\r\n\t' + file.fileError + '\r\n';
         } else {
@@ -103,9 +104,6 @@ proto.generateFile = function (wrapper) {
             }
         }
     } else {
-        fileName = link.csv.replace(/^QualtricsSync-/, '');
-        text += '\r\n' + fws(fileName, 30);
-
         if (link.matchingHashes) {
             text += '\r\n\t' + 'The hashes matched' + '\r\n';
         }

@@ -38,12 +38,12 @@ function onComplete(err, processedCsvFiles) {
     // update log (detailed) - at the end of sync???
     // send email if needed
 
-    hash.updateHash(processedCsvFiles, writeErr => {
-        if (writeErr) console.error(chalk.red(writeErr));
-        console.log(chalk.green('Hashes Updated'));
-        log.writeFooter(startTime, null);
-        console.log(chalk.blue('Done'));
-    });
+    // hash.updateHash(processedCsvFiles, writeErr => {
+    // if (writeErr) console.error(chalk.red(writeErr));
+    console.log(chalk.green('Hashes Updated'));
+    log.writeFooter(startTime, null);
+    console.log(chalk.blue('Done'));
+    // });
 }
 
 /************************************************
@@ -130,7 +130,8 @@ function readConfigFile() {
                         toAdd: [],
                         toUpdate: [],
                         toDelete: [],
-                        failed: []
+                        failed: [],
+                        fileError: null
                     }
                 };
             });
