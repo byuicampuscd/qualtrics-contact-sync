@@ -16,7 +16,11 @@ const sendEmail = require('./email.js');
 var startTime = new Date();
 
 
-
+/********************************************
+ * Runs when all csv files have been synced.
+ * Updates hashes, finishes the log file, &
+ * sends an email if needed.
+ *******************************************/
 function onComplete(err, processedCsvFiles) {
     if (err) {
         log.writeFatalErr(err, startTime, writeErr => {
@@ -28,6 +32,12 @@ function onComplete(err, processedCsvFiles) {
     console.log(`\n\nCSV files processed: ${processedCsvFiles.length}`);
     // use a waterfall if the list of functions gets any larger than updating hashes & writing the log
 
+    // things to do:
+    // update hash
+    // updateLog (main)
+    // update log (detailed)
+    // send email if needed
+
     hash.updateHash(processedCsvFiles, writeErr => {
         if (writeErr) console.error(chalk.red(writeErr));
         console.log(chalk.green('Hashes Updated'));
@@ -36,7 +46,11 @@ function onComplete(err, processedCsvFiles) {
     });
 }
 
-
+/************************************************
+ * Reads a csvFile. Removes zero width no break 
+ * space character where present. This character 
+ * is frequently found in the csv's
+ ************************************************/
 function readCsvFile(csvFile, waterfallCb) {
     fs.readFile(`${settings.filePath}${csvFile.config.csv}`, (readErr, fileContents) => {
         if (readErr) {
@@ -56,15 +70,17 @@ function readCsvFile(csvFile, waterfallCb) {
     });
 }
 
-
+/*********************************************
+ * Runs all actions on a single mailing list.
+ ********************************************/
 function runCSV(csvFile, eachCallback) {
     console.log(chalk.blue(csvFile.config.csv));
 
     asyncLib.waterfall([
-        asyncLib.constant(csvFile),
-        readCsvFile,
-        hash.checkHash,
-        ...syncFunctions,
+        asyncLib.constant(csvFile), // pass csvFile into the first function
+        readCsvFile, // read the csvFile
+        hash.checkHash, // compare hashes
+        ...syncFunctions, // sync contacts if hashes didn't match
     ],
     (waterfallErr, updatedCsvFile) => {
         if (waterfallErr) {
@@ -78,13 +94,19 @@ function runCSV(csvFile, eachCallback) {
     });
 }
 
-/* loop through each row then generate reports */
+/***********************************************
+ * loop through each csv on the config file
+ **********************************************/
 function loopFiles(csvFiles) {
-    /* outermost loop. Returns here when all mailing lists have been processed */
+    /* outermost loop. Returns to onComplete when all
+     mailing lists have been processed */
     asyncLib.mapSeries(csvFiles, runCSV, onComplete);
 }
 
-/* read config file */
+/*****************************************************
+ * Read & parse config file (create csvFiles object)
+ * Config file path determined by settings.json
+ ***************************************************/
 function readConfigFile() {
     fs.readFile(settings.configFile, (readErr, configData) => {
         if (readErr) {
@@ -116,7 +138,10 @@ function readConfigFile() {
 }
 
 
-/* 1. generate header */
+/********************************
+ * Generate header on log file
+ * call readConfigFile
+ *******************************/
 function start() {
     log.writeHeader(startTime, writeErr => {
         if (writeErr) console.error(chalk.red(writeErr));

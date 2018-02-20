@@ -140,5 +140,4 @@ This would've been a lot easier if it weren't for the undocumented quirks of the
 * Adding embeddedData values with commas in them cause the API to truncate the value after the comma. I don't recall if the comma is included or truncated as well
 * This tool causes a lot of 503 errors. I've written the tool to accomodate for that and run basically any failed API call twice. For the most part this works really well
 * When adding a new contact, `externalDataReference` must be renamed `externalDataRef`. In addition, embeddedData properites with empty string values must be removed.
-
-HOW DOES API HANDLE BOOL VALUES IN EMBEDDED DATA??
+* Boolean values are stored as strings, so TRUE and true will not be evaluated as equal. This can happen if someone opens & saves the csv in excel.
