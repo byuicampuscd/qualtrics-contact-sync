@@ -89,8 +89,11 @@ function runCSV(csvFile, eachCallback) {
             /* Kills all csvFiles if passed to cb */
             /* save err to file csvFile obj for reporting  */
             updatedCsvFile.report.fileError = waterfallErr;
-            /* call writeFile to record file level errs (they won't make it to the waterfall... unless the err was in writing the log) */
-            log.writeFile(waterfallErr, () => {
+            console.error(chalk.red(waterfallErr));
+            
+            /* call writeFile to record file level errs 
+            (these 2 don't pass errs to the cb so that this line isn't called if the waterfall ended on writing logs) */
+            log.writeFile(csvFile, () => {
                 eachCallback(null, updatedCsvFile);
             });
             return;

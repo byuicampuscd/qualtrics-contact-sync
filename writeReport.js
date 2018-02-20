@@ -28,6 +28,7 @@ function header(date, cb) {
 
 /*******************************************
  * Writes file-specific data to the report
+ * DOES NOT pass errs to the cb
  ******************************************/
 function file(csvFile, cb) {
     /* remove QualtricsSync- from csvTitle */
@@ -56,16 +57,17 @@ function file(csvFile, cb) {
     /* Append to log */
     fs.appendFile(logPath, text, writeErr => {
         if (writeErr) {
-            cb(writeErr, csvFile);
-            return;
+            /* Don't pass to cb */
+            console.error(chalk.red(writeErr));
         }
         cb(null, csvFile);
     });
 }
 
-/*******************************************
- * Writes a single error to the main report
- *******************************************/
+/********************************************************
+ * Writes a single error to the main report.
+ * DOES NOT handle errors that occur while syncing a csv
+ ********************************************************/
 function error(err, cb) {
     console.error(chalk.red(err.stack));
     console.log('Write Error called');
@@ -104,7 +106,8 @@ function footer(startTime, csvFiles, cb) {
 
 /***************************************************************
  * Writes a log using the name of a single csv file containing
- * info on all contacts who were added/deleted/updated 
+ * info on all contacts who were added/deleted/updated
+ * DOES NOT pass errs to the callback
  **************************************************************/
 function detailedFile(csvFile, cb) {
     console.log('Write detailed file called');
