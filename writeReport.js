@@ -69,12 +69,14 @@ function file(csvFile, cb) {
  * DOES NOT handle errors that occur while syncing a csv
  ********************************************************/
 function error(err, cb) {
-    console.error(chalk.red(err.stack));
     console.log('Write Error called');
 
-    // WHAT DOES THIS LOOK LIKE?
-
-    cb(null);
+    fs.appendFile(logPath, err, writeErr => {
+        if(writeErr) 
+            cb(writeErr);
+        else
+            cb(null);
+    });
 }
 
 /**************************************

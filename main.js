@@ -90,9 +90,9 @@ function runCSV(csvFile, eachCallback) {
             /* save err to file csvFile obj for reporting  */
             updatedCsvFile.report.fileError = waterfallErr;
             console.error(chalk.red(waterfallErr));
-            
+
             /* call writeFile to record file level errs 
-            (these 2 don't pass errs to the cb so that this line isn't called if the waterfall ended on writing logs) */
+            (writeFile & writeDetailedFile don't pass errs to the cb so that this line isn't called if the waterfall ended on writing logs) */
             log.writeFile(csvFile, () => {
                 eachCallback(null, updatedCsvFile);
             });
@@ -118,12 +118,13 @@ function loopFiles(csvFiles) {
 function readConfigFile() {
     fs.readFile(settings.configFile, (readErr, configData) => {
         if (readErr) {
-            /* because it's a fatal error */
-            log.writeFatalErr(readErr, startTime, writeErr => {
+            console.error(chalk.red(readErr));
+            log.writeFatalErr(readErr, startTime, null, writeErr => {
                 if (writeErr) console.error(chalk.red(writeErr));
                 sendEmail('Fake Email Message');
                 return;
             });
+            return;
         }
         /* format results into the appropriate format */
         var csvFiles = d3.csvParse(configData.toString())

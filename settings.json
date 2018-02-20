@@ -1,5 +1,5 @@
 {
-    "configFile": "./test/config.csv",
+    "configFile": "./test/confi.csv",
     "logPath": "./test/reports/",
     "filePath": "./test/"
 }
