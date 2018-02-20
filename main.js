@@ -35,7 +35,7 @@ function onComplete(err, processedCsvFiles) {
     // things to do:
     // update hash
     // updateLog (main)
-    // update log (detailed)
+    // update log (detailed) - at the end of sync???
     // send email if needed
 
     hash.updateHash(processedCsvFiles, writeErr => {
@@ -81,6 +81,8 @@ function runCSV(csvFile, eachCallback) {
         readCsvFile, // read the csvFile
         hash.checkHash, // compare hashes
         ...syncFunctions, // sync contacts if hashes didn't match
+        log.writeFile, // write the results of a single file to the log
+        log.writeDetailedFile // write the specific changes made to a file
     ],
     (waterfallErr, updatedCsvFile) => {
         if (waterfallErr) {
