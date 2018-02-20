@@ -7,8 +7,8 @@ const chalk = require('chalk');
 const settings = require('./settings.json');
 
 
-var lineBreak = '\r\n-------------------------------------------------------------------------------------------------------------------------------\r\n';
-
+const lineBreak = '\r\n-------------------------------------------------------------------------------------------------------------------------------\r\n';
+const logPath = `${settings.logPath}log.txt`;
 /***************************************
  * Writes the header of the main report
  ***************************************/
@@ -17,7 +17,7 @@ function header(date, cb) {
     var head = `${lineBreak}${fws(date.toDateString(), 20) + date.toTimeString()}${lineBreak}`;
 
 
-    fs.appendFile(`${settings.logPath}log.txt`, head, writeErr => {
+    fs.appendFile(logPath, head, writeErr => {
         if (writeErr) {
             cb(writeErr);
             return;
@@ -30,8 +30,6 @@ function header(date, cb) {
  * Writes file-specific data to the report
  ******************************************/
 function file(csvFile, cb) {
-    console.log('Write File called');
-
     /* remove QualtricsSync- from csvTitle */
     var text = `\r\n${fws(csvFile.config.csv.replace(/^QualtricsSync-/, ''), 30)}`;
 
@@ -56,8 +54,8 @@ function file(csvFile, cb) {
     }
 
     /* Append to log */
-    fs.appendFile(`${settings.logPath}log.txt`, text, writeErr => {
-        if(writeErr) {
+    fs.appendFile(logPath, text, writeErr => {
+        if (writeErr) {
             cb(writeErr, csvFile);
             return;
         }
@@ -72,6 +70,8 @@ function error(err, cb) {
     console.error(chalk.red(err.stack));
     console.log('Write Error called');
 
+    // WHAT DOES THIS LOOK LIKE?
+
     cb(null);
 }
 
@@ -79,12 +79,27 @@ function error(err, cb) {
  * Writes the footer to the main report
  * Uses a callback if one is given
  **************************************/
-function footer(startTime, cb) {
-    var elapsedTime = getElapsedTime(startTime);
-    console.log(`Elapsed Time: ${elapsedTime}`);
-    console.log('Write Footer called');
+function footer(startTime, csvFiles, cb) {
+    var elapsedTime = getElapsedTime(startTime),
+        footer = '\r\n\r\n';
 
-    if (cb) cb();
+    footer += fws(`Elapsed Time: ${elapsedTime}`, 32);
+    /* add number of files altered if csvFiles is passed in */
+    if (csvFiles) {
+        footer += fws(`Files Successfully Synced: ${getFilesSynced(csvFiles)}`, 36);
+    }
+    footer += lineBreak;
+    
+    fs.appendFile(logPath, footer, writeErr => {
+        console.log(`Elapsed Time: ${elapsedTime}`);
+        if (writeErr && cb) {
+            cb(writeErr);
+        } else if (writeErr && !cb) {
+            console.error(chalk.red(writeErr));
+        } else if (cb) {
+            cb(null);
+        }
+    });
 }
 
 /***************************************************************
@@ -102,14 +117,14 @@ function detailedFile(csvFile, cb) {
 /**************************************
  * calls error() & footer()
  **************************************/
-function fatalError(err, startTime, finalCb) {
+function fatalError(err, startTime, csvFiles, finalCb) {
     error(err, (writeErr) => {
         if (writeErr) {
             console.error(chalk.red('Error writing fatal error. No attempt to write footer was made.'));
             finalCb(writeErr);
             return;
         }
-        footer(startTime, finalCb);
+        footer(startTime, csvFiles, finalCb);
     });
 }
 
@@ -130,6 +145,19 @@ function getElapsedTime(startTime) {
     return `${hours}:${minutes}:${seconds}`;
 }
 
+/*******************************
+ * returns the number of files that 
+ * synced without any errors
+ *******************************/
+function getFilesSynced(csvFiles) {
+    var totalFiles = 0;
+    csvFiles.forEach(function (csvFile) {
+        if (!csvFile.report.fileError) {
+            totalFiles++;
+        }
+    });
+    return totalFiles;
+}
 
 module.exports = {
     writeHeader: header,

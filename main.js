@@ -23,7 +23,7 @@ var startTime = new Date();
  *******************************************/
 function onComplete(err, processedCsvFiles) {
     if (err) {
-        log.writeFatalErr(err, startTime, writeErr => {
+        log.writeFatalErr(err, startTime, processedCsvFiles, writeErr => {
             if (writeErr) console.error(chalk.red(writeErr));
             sendEmail('Fake Email Message');
             return;
@@ -41,7 +41,7 @@ function onComplete(err, processedCsvFiles) {
     // hash.updateHash(processedCsvFiles, writeErr => {
     // if (writeErr) console.error(chalk.red(writeErr));
     console.log(chalk.green('Hashes Updated'));
-    log.writeFooter(startTime, null);
+    log.writeFooter(startTime, processedCsvFiles, null);
     console.log(chalk.blue('Done'));
     // });
 }
@@ -56,7 +56,7 @@ function readCsvFile(csvFile, waterfallCb) {
         if (readErr) {
             /* for some reason there is no stack wneh fs returns the Err */
             Error.captureStackTrace(readErr);
-            waterfallCb(readErr);
+            waterfallCb(readErr, csvFile);
             return;
         }
         /* remove zero width no break space from csv (especially the beginning) */
@@ -81,13 +81,16 @@ function runCSV(csvFile, eachCallback) {
         readCsvFile, // read the csvFile
         hash.checkHash, // compare hashes
         ...syncFunctions, // sync contacts if hashes didn't match
-        log.writeFile, // write the results of a single file to the log
+        log.writeFile, // write the results of a single file to the log CANNOT LIVE IN THIS WATERFALL!! - MUST RUN FOR ALL FILES!
         log.writeDetailedFile // write the specific changes made to a file
     ],
     (waterfallErr, updatedCsvFile) => {
         if (waterfallErr) {
             /* Kills all csvFiles if passed to cb */
-            log.writeErr(waterfallErr, () => {
+            /* save err to file csvFile obj for reporting  */
+            updatedCsvFile.report.fileError = waterfallErr;
+            /* call writeFile to record file level errs (they won't make it to the waterfall... unless the err was in writing the log) */
+            log.writeFile(waterfallErr, () => {
                 eachCallback(null, updatedCsvFile);
             });
             return;
