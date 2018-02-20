@@ -81,7 +81,7 @@ function runCSV(csvFile, eachCallback) {
         readCsvFile, // read the csvFile
         hash.checkHash, // compare hashes
         ...syncFunctions, // sync contacts if hashes didn't match
-        log.writeFile, // write the results of a single file to the log CANNOT LIVE IN THIS WATERFALL!! - MUST RUN FOR ALL FILES!
+        log.writeFile, // write the results of a single file to the log -> MUST RUN EVEN IF WATERFALL FAILES (hence writeFile in waterfallCb)
         log.writeDetailedFile // write the specific changes made to a file
     ],
     (waterfallErr, updatedCsvFile) => {

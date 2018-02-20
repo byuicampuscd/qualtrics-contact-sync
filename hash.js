@@ -14,6 +14,11 @@ const settings = require('./settings.json');
 
 
 
+/************************************************************************
+ * Hashes a JSON stringified copy of the csvFile & compares it to the 
+ * saved hash.
+ * Adds csvFile.report.matchingHash & csvFile.report.newHash to csvFile
+ ***********************************************************************/
 function checkHash(csvFile, waterfallCb) {
     var hash = stringHash(JSON.stringify(csvFile.csvContacts));
 
@@ -31,18 +36,22 @@ function checkHash(csvFile, waterfallCb) {
     }
 }
 
-/* updating the log file should live here too!! */
-
+/********************************************************
+ * Loops through processedCsvFiles & writes a new Config
+ * file with updated hashes.
+ * Only updates hashes if the csv synced without any errs
+ *********************************************************/
 function updateHash(csvFiles, cb) {
     console.log('updateHash called');
-
     var config = csvFiles.map(csvFile => {
-        if (!csvFile.report.matchingHash && csvFile.report.failed.length == 0) {
+        /* If the hases matched & no errs occured (fatal or non-fatal) */
+        if (!csvFile.report.matchingHash && (csvFile.report.failed.length == 0 && csvFile.report.fileError == null)) {
+            /* replace old hash with the new hash */
             csvFile.config.hash = csvFile.report.newHash;
         }
+        /* Else keep the old hash */
         return csvFile.config;
     });
-
     config = d3.csvFormat((config));
 
     fs.writeFile(settings.configFile, config, writeErr => {
