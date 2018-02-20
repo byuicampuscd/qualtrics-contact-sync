@@ -21,28 +21,38 @@ var startTime = new Date();
  * Updates hashes, finishes the log file, &
  * sends an email if needed.
  *******************************************/
-function onComplete(err, processedCsvFiles) {
+function onComplete(err, syncedCsvFiles) {
     if (err) {
-        log.writeFatalErr(err, startTime, processedCsvFiles, writeErr => {
+        log.writeFatalErr(err, startTime, syncedCsvFiles, writeErr => {
             if (writeErr) console.error(chalk.red(writeErr));
             sendEmail('Fake Email Message');
             return;
         });
     }
-    console.log(`\n\nCSV files processed: ${processedCsvFiles.length}`);
-    // use a waterfall if the list of functions gets any larger than updating hashes & writing the log
+    console.log(`\n\nCSV files processed: ${syncedCsvFiles.length}`);
+    
+    // Does it make sense to use a waterfall
+    /* asyncLib.waterfall([
+        asyncLib.constant(syncedCsvFiles),
+        hash.updateHash,
+        asyncLib.constant(startTime, syncedCsvFiles),
+        log.writeFooter,
+        sendEmail,
+    ], (waterfallErr, reportedCsvFile) => {
+        if(waterfallErr) {
+            console.error(chalk.red(waterfallErr));
+        }
+        console.log(chalk.blue('Done'));
+    }); */
 
     // things to do:
     // update hash
-    // updateLog (main)
-    // update log (detailed) - at the end of sync???
+    // writeFooter (main)
     // send email if needed
 
     // hash.updateHash(processedCsvFiles, writeErr => {
     // if (writeErr) console.error(chalk.red(writeErr));
-    console.log(chalk.green('Hashes Updated'));
-    log.writeFooter(startTime, processedCsvFiles, null);
-    console.log(chalk.blue('Done'));
+    // log.writeFooter(startTime, syncedCsvFiles, null);
     // });
 }
 

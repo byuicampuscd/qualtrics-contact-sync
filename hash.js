@@ -37,13 +37,13 @@ function checkHash(csvFile, waterfallCb) {
 }
 
 /********************************************************
- * Loops through processedCsvFiles & writes a new Config
+ * Loops through syncedCsvFiles & writes a new Config
  * file with updated hashes.
  * Only updates hashes if the csv synced without any errs
  *********************************************************/
-function updateHash(csvFiles, cb) {
+function updateHash(syncedCsvFiles, waterfallCb) {
     console.log('updateHash called');
-    var config = csvFiles.map(csvFile => {
+    var config = syncedCsvFiles.map(csvFile => {
         /* If the hases matched & no errs occured (fatal or non-fatal) */
         if (!csvFile.report.matchingHash && (csvFile.report.failed.length == 0 && csvFile.report.fileError == null)) {
             /* replace old hash with the new hash */
@@ -55,11 +55,13 @@ function updateHash(csvFiles, cb) {
     config = d3.csvFormat((config));
 
     fs.writeFile(settings.configFile, config, writeErr => {
-        if(writeErr) {
-            cb(writeErr);
-            return;
+        if (writeErr) {
+            console.error(chalk.red(writeErr));
+        } else {
+            console.log(chalk.green('Hashes Updated'));
         }
-        cb();
+
+        waterfallCb(null, syncedCsvFiles);
     });
 }
 
