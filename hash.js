@@ -1,4 +1,4 @@
-/* eslint no-console:1 */
+/* eslint no-console:0 */
 
 /* This module exports a single function which requires a csvFile object.
  * The module hashes the JSON stringified contents of the csv and compares 
@@ -44,16 +44,16 @@ function checkHash(csvFile, waterfallCb) {
 function updateHash(syncedCsvFiles) {
     return new Promise((resolve, reject) => {
         var config = syncedCsvFiles.map(csvFile => {
-            /* If the hases matched & no errs occured (fatal or non-fatal) */
+        /* If the hases matched & no errs occured (fatal or non-fatal) */
             if (!csvFile.report.matchingHash && (csvFile.report.failed.length == 0 && csvFile.report.fileError == null)) {
-                /* replace old hash with the new hash */
+            /* replace old hash with the new hash */
                 csvFile.config.hash = csvFile.report.newHash;
             }
             /* Else keep the old hash */
             return csvFile.config;
         });
         config = d3.csvFormat((config));
-        
+
         fs.writeFile(settings.configFile, config, writeErr => {
             if (writeErr) {
                 console.error(chalk.red(writeErr));

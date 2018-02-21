@@ -41,20 +41,6 @@ function onComplete(err, syncedCsvFiles) {
     }
     console.log(`\n\nCSV files processed: ${syncedCsvFiles.length}`);
 
-    // Does it make sense to use a waterfall
-    /* asyncLib.waterfall([
-        asyncLib.constant(syncedCsvFiles),
-        hash.updateHash,
-        asyncLib.constant(startTime, syncedCsvFiles),
-        log.writeFooter,
-        sendEmail,
-    ], (waterfallErr, reportedCsvFile) => {
-        if(waterfallErr) {
-            console.error(chalk.red(waterfallErr));
-        }
-        console.log(chalk.blue('Done'));
-    }); */
-
     hash.updateHash(syncedCsvFiles)
         .then((syncedCsvFiles) => {
             /* write the footer */
