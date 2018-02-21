@@ -38,30 +38,31 @@ function checkHash(csvFile, waterfallCb) {
 
 /********************************************************
  * Loops through syncedCsvFiles & writes a new Config
- * file with updated hashes.
+ * file with updated hashes. USES PROMISES
  * Only updates hashes if the csv synced without any errs
  *********************************************************/
-function updateHash(syncedCsvFiles, waterfallCb) {
-    console.log('updateHash called');
-    var config = syncedCsvFiles.map(csvFile => {
-        /* If the hases matched & no errs occured (fatal or non-fatal) */
-        if (!csvFile.report.matchingHash && (csvFile.report.failed.length == 0 && csvFile.report.fileError == null)) {
-            /* replace old hash with the new hash */
-            csvFile.config.hash = csvFile.report.newHash;
-        }
-        /* Else keep the old hash */
-        return csvFile.config;
-    });
-    config = d3.csvFormat((config));
-
-    fs.writeFile(settings.configFile, config, writeErr => {
-        if (writeErr) {
-            console.error(chalk.red(writeErr));
-        } else {
+function updateHash(syncedCsvFiles) {
+    return new Promise((resolve, reject) => {
+        var config = syncedCsvFiles.map(csvFile => {
+            /* If the hases matched & no errs occured (fatal or non-fatal) */
+            if (!csvFile.report.matchingHash && (csvFile.report.failed.length == 0 && csvFile.report.fileError == null)) {
+                /* replace old hash with the new hash */
+                csvFile.config.hash = csvFile.report.newHash;
+            }
+            /* Else keep the old hash */
+            return csvFile.config;
+        });
+        config = d3.csvFormat((config));
+        
+        fs.writeFile(settings.configFile, config, writeErr => {
+            if (writeErr) {
+                console.error(chalk.red(writeErr));
+                reject(writeErr);
+                return;
+            }
             console.log(chalk.green('Hashes Updated'));
-        }
-
-        waterfallCb(null, syncedCsvFiles);
+            resolve(syncedCsvFiles);
+        });
     });
 }
 

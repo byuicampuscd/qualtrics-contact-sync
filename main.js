@@ -15,6 +15,15 @@ const sendEmail = require('./email.js');
 
 var startTime = new Date();
 
+function checkForErrs(syncedCsvFiles) {
+    var sendEmail = syncedCsvFiles.some(csvFile => {
+        return csvFile.report.failed.length > 0 || csvFile.report.fileError;
+    });
+
+    if(sendEmail) {
+        sendEmail();
+    }
+}
 
 /********************************************
  * Runs when all csv files have been synced.
@@ -22,6 +31,7 @@ var startTime = new Date();
  * sends an email if needed.
  *******************************************/
 function onComplete(err, syncedCsvFiles) {
+    var emailSent = false;
     if (err) {
         log.writeFatalErr(err, startTime, syncedCsvFiles, writeErr => {
             if (writeErr) console.error(chalk.red(writeErr));
@@ -30,7 +40,7 @@ function onComplete(err, syncedCsvFiles) {
         });
     }
     console.log(`\n\nCSV files processed: ${syncedCsvFiles.length}`);
-    
+
     // Does it make sense to use a waterfall
     /* asyncLib.waterfall([
         asyncLib.constant(syncedCsvFiles),
@@ -45,15 +55,30 @@ function onComplete(err, syncedCsvFiles) {
         console.log(chalk.blue('Done'));
     }); */
 
-    // things to do:
-    // update hash
-    // writeFooter (main)
-    // send email if needed
+    hash.updateHash(syncedCsvFiles)
+        .then((syncedCsvFiles) => {
+            /* write the footer */
+            return new Promise((resolve, reject) => {
+                log.writeFooter(startTime, syncedCsvFiles, writeErr => {
+                    if (writeErr) reject(writeErr, syncedCsvFiles);
+                    else resolve(syncedCsvFiles);
+                    // reject(new Error('fake err'), syncedCsvFiles);
+                });
+            });
+        })
+        .catch((err, syncedCsvFiles) => {
+            console.log(chalk.red(err));
+            emailSent = true;
+            sendEmail();
+            Promise.resolve(syncedCsvFiles);
+        })
+        .then((csvFiles) => {
+            if(!emailSent) {
+                checkForErrs(csvFiles);
+            }
 
-    // hash.updateHash(processedCsvFiles, writeErr => {
-    // if (writeErr) console.error(chalk.red(writeErr));
-    // log.writeFooter(startTime, syncedCsvFiles, null);
-    // });
+            console.log(chalk.blue('Done'));
+        });
 }
 
 /************************************************
@@ -102,7 +127,7 @@ function runCSV(csvFile, eachCallback) {
             console.error(chalk.red(waterfallErr));
 
             /* call writeFile to record file level errs 
-            (writeFile & writeDetailedFile don't pass errs to the cb so that this line isn't called if the waterfall ended on writing logs) */
+                    (writeFile & writeDetailedFile don't pass errs to the cb so that this line isn't called if the waterfall ended on writing logs) */
             log.writeFile(csvFile, () => {
                 eachCallback(null, updatedCsvFile);
             });

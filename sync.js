@@ -274,17 +274,6 @@ function formatCsvContacts(csvFile, waterfallCb) {
  *                 HELPER FUNCTIONS 
  **********************************************************/
 
-
-// ENSURE KEYS ARE NOT CASE SENSITIVE ON COMPARE
-// HOW DOES API LIKE BOOL VALUES IN EMBEDDED DATA?? (do they become strings?)
-// missing required fields (for add). no influence over equality comparison
-
-// capitalization -> compare keys in lowercase
-// qualtrics generated fields -> array of keys to ignore
-// empty strings -> same as normal comparison
-// required fields in embeddedData -> if exists in qualtrics only && value is ''
-
-
 /*******************************************************
  * Equality comparison between two contacts. 
  *******************************************************/
@@ -376,5 +365,5 @@ module.exports = [
     compareContacts,
     report,
     addPrep, /* filters & prepares the contacts who need to be added */
-    // makeApiCalls,
+    makeApiCalls,
 ];
