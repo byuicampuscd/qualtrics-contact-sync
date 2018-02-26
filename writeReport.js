@@ -109,10 +109,22 @@ function footer(startTime, csvFiles, cb) {
  * info on all contacts who were added/deleted/updated
  * DOES NOT pass errs to the callback
  **************************************************************/
-function detailedFile(csvFile, cb) {
-    console.log('Write detailed file called');
+function detailedFile(csvFile, date, cb) {
+    var text = `${lineBreak}${fws(date.toDateString(), 20) + date.toTimeString()}${lineBreak}`;
+    text += `To Add:\r\n${JSON.stringify(csvFile.report.toAdd, null, 3)}\r\n`;
+    text += `To Update:\r\n${JSON.stringify(csvFile.report.toUpdate, null, 3)}\r\n`;
+    text += `To Delete:\r\n${JSON.stringify(csvFile.report.toDelete, null, 3)}\r\n`;
+    text += `Failed:\r\n${JSON.stringify(csvFile.report.failed, null, 3)}`;
+    text += lineBreak;
 
-    cb(null, csvFile);
+
+    var fileName = `${settings.logPath}${csvFile.config.csv.replace('.csv', '.txt')}`;
+    fs.appendFile(fileName, text, writeErr => {
+        if (writeErr) {
+            console.error(chalk.red(writeErr));
+        }
+        cb(null, csvFile);
+    });
 }
 
 /* HELPERS */

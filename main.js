@@ -14,13 +14,15 @@ const sendEmail = require('./email.js');
 
 
 var startTime = new Date();
+var emailSent = false;
+
 
 function checkForErrs(syncedCsvFiles) {
     var sendEmail = syncedCsvFiles.some(csvFile => {
         return csvFile.report.failed.length > 0 || csvFile.report.fileError;
     });
 
-    if(sendEmail) {
+    if (sendEmail && !emailSent) {
         sendEmail();
     }
 }
@@ -31,17 +33,19 @@ function checkForErrs(syncedCsvFiles) {
  * sends an email if needed.
  *******************************************/
 function onComplete(err, syncedCsvFiles) {
-    var emailSent = false;
     if (err) {
         log.writeFatalErr(err, startTime, syncedCsvFiles, writeErr => {
-            if (writeErr) console.error(chalk.red(writeErr));
-            sendEmail('Fake Email Message');
+            if (writeErr) {
+                if (!emailSent) sendEmail();
+                console.error(chalk.red(writeErr));
+            }
             return;
         });
     }
     console.log(`\n\nCSV files processed: ${syncedCsvFiles.length}`);
 
-    hash.updateHash(syncedCsvFiles)
+    // hash.updateHash(syncedCsvFiles)
+    Promise.resolve(syncedCsvFiles) // USE WHEN UPDATING HASH IS DISABLED
         .then((syncedCsvFiles) => {
             /* write the footer */
             return new Promise((resolve, reject) => {
@@ -59,7 +63,7 @@ function onComplete(err, syncedCsvFiles) {
             Promise.resolve(syncedCsvFiles);
         })
         .then((csvFiles) => {
-            if(!emailSent) {
+            if (!emailSent) {
                 checkForErrs(csvFiles);
             }
 
@@ -103,6 +107,7 @@ function runCSV(csvFile, eachCallback) {
         hash.checkHash, // compare hashes
         ...syncFunctions, // sync contacts if hashes didn't match
         log.writeFile, // write the results of a single file to the log -> MUST RUN EVEN IF WATERFALL FAILES (hence writeFile in waterfallCb)
+        asyncLib.constant(csvFile, startTime),
         log.writeDetailedFile // write the specific changes made to a file
     ],
     (waterfallErr, updatedCsvFile) => {
@@ -113,7 +118,7 @@ function runCSV(csvFile, eachCallback) {
             console.error(chalk.red(waterfallErr));
 
             /* call writeFile to record file level errs 
-                    (writeFile & writeDetailedFile don't pass errs to the cb so that this line isn't called if the waterfall ended on writing logs) */
+                        (writeFile & writeDetailedFile don't pass errs to the cb so that this line isn't called if the waterfall ended on writing logs) */
             log.writeFile(csvFile, () => {
                 eachCallback(null, updatedCsvFile);
             });
@@ -142,7 +147,7 @@ function readConfigFile() {
             console.error(chalk.red(readErr));
             log.writeFatalErr(readErr, startTime, null, writeErr => {
                 if (writeErr) console.error(chalk.red(writeErr));
-                sendEmail('Fake Email Message');
+                sendEmail();
                 return;
             });
             return;
