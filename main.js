@@ -3,9 +3,8 @@
 const asyncLib = require('async');
 const fs = require('fs');
 const d3 = require('d3-dsv');
-// const path = require('path');
 const chalk = require('chalk');
-// const timer = require('repeat-timer');
+const timer = require('repeat-timer');
 const settings = require('./settings.json');
 const log = require('./writeReport.js');
 const hash = require('./hash.js');
@@ -14,7 +13,8 @@ const sendEmail = require('./email.js');
 
 
 var startTime;
-var emailSent = false;
+// var emailSent = false;
+var emailSent = true; // set to true to disable emails
 
 
 function checkForErrs(syncedCsvFiles) {
@@ -51,7 +51,7 @@ function onComplete(err, syncedCsvFiles) {
         })
         .then((syncedCsvFiles) => {
             /* write the footer */
-            return new Promise((resolve, reject) => {
+            return new Promise((resolve) => {
                 log.writeFooter(startTime, syncedCsvFiles, resolve(syncedCsvFiles));
             });
         })
@@ -94,7 +94,7 @@ function readCsvFile(csvFile, waterfallCb) {
  * Runs all actions on a single mailing list.
  ********************************************/
 function runCSV(csvFile, eachCallback) {
-    console.log(chalk.blue(csvFile.config.csv));
+    console.log(chalk.blue(`\n${csvFile.config.csv}`));
 
     asyncLib.waterfall([
         asyncLib.constant(csvFile), // pass csvFile into the first function
@@ -162,7 +162,6 @@ function readConfigFile() {
         loopFiles(csvFiles);
     });
 }
-
 
 /********************************
  * Generate header on log file

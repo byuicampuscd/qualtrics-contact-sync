@@ -1,4 +1,4 @@
-/* eslint no-console:1 */
+/* eslint no-console:0 */
 
 const fs = require('fs');
 const fws = require('fixed-width-string');
@@ -181,10 +181,10 @@ function getElapsedTime(startTime) {
     return elapsedTime;
 }
 
-/*******************************
+/***********************************
  * returns the number of files that 
  * synced without any errors
- *******************************/
+ ***********************************/
 function getFilesSynced(csvFiles) {
     var totalFiles = 0;
     csvFiles.forEach(function (csvFile) {
@@ -195,9 +195,9 @@ function getFilesSynced(csvFiles) {
     return totalFiles;
 }
 
-/************************************
- * 
- ***********************************/
+/*************************************************
+ * Handles any errs that may occur in this module
+ *************************************************/
 function fsErr(err) {
     console.error(chalk.red(err));
 }

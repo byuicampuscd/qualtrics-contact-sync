@@ -4,7 +4,6 @@
 This module was built at the request of Aaron Ball. It was requested that we build a tool that would automate the synchronization of csv lists on the iDrive with mailing lists in Qualtrics. The tool uses a configuration file to know which lists to sync, and generates lists of changes made each day. It saves a hash of each file daily allowing the tool to quickly determine if no changes were made to the file. It emails a specified user whenever an error occurs to alert them.
 
 
-
 ## How to Install
 
 This module is not meant to be used as a dependency. Installing globally has not been tested, and this may break the tool.
@@ -16,13 +15,11 @@ npm install -g qualtrics-contact-sync
 ```
 
 
-
 ## How to Run
 
 To start the tool, type this in the console:
 
 ```node main```
-
 
 
 ## Inputs
@@ -33,6 +30,7 @@ The Tool requires the following files:
 * settings.json 
 * auth.json
 * config.csv
+
 
 ### Settings.json
 The settings file allows the user to set the location & title of the config file. FilePath & logPath which directory contains the individual csv & log files.
@@ -65,6 +63,7 @@ The tool has the following outputs:
 * One Detailed log per csv file containing each altered contact (.JSON)
 * A generic email if an error occured informing the recipient to check the log files
 
+
 ### Generic Log
 | Date | Timestamp ||||
 |---------------|-----------------------|----------|------------|------------|
@@ -72,24 +71,41 @@ The tool has the following outputs:
 | FileName2.csv | Changes to be Made: 17 | Added: 10 | Updated: 2 | Deleted: 5 |
 | ElapsedTime |
 
+
 ### Detailed Log
-This will be a JSON file. The exact object is subject to change and will be updated upon completion.
+This will be a TXT file containing JSON data. The exact object is subject to change and will be updated upon completion.
 ```js
 {
-
+"To Add": [],
+"To Update": [],
+"To Delete": [
+   {
+      "id": "MLRP_manymuchnumbers",
+      "firstName": "Larry",
+      "lastName": "Biglot",
+      "email": "someone@somewhere.com",
+      "externalDataReference": "unique_id",
+      "embeddedData": {
+         "age": "47",
+         "gender": "male",
+         "country": "russia"
+      },
+      "language": null,
+      "unsubscribed": false,
+      "responseHistory": [],
+      "emailHistory": []
+   }
+]
 }
 ```
 
 
-
 ## Requirements
-
 **List all of the business requirements for the project. What are the expectations for the project? What does it need to be able to do? Example:**
 
 - Must accurately synchronize mailing lists with Qualtrics contact lists via API.
 - Must run daily with minimal human interaction.
 - Must keep accurate logs to allow quick and accurate debugging
-
 
 
 # TODO (everything below)

@@ -70,7 +70,7 @@ function makeApiCalls(csvFile, waterfallCb) {
 
             /* Allows csvFile & contact to be passed to qualtrics.js while still using asyncRetry */
             function makeCall(retryCb) {
-                action.apiCall(csvFile, contact, (err, response) => {
+                action.apiCall(csvFile, contact, (err) => {
                     if (err) {
                         /* pass err to retry so it can try again */
                         retryCb(err);
@@ -296,6 +296,9 @@ function equalityComparison(csvFile, contact, qContact) {
     });
 
 
+    // DOESN'T DELETE EMBEDDEDdATA FIELDS!!
+
+
     /* EMBEDDED DATA */
     /* Must loop through the keys of both objects or it won't catch keys which need to be deleted (cleared) */
 
@@ -325,6 +328,11 @@ function checkEmbeddedData(contact1, contact2) {
         emKeys2 = Object.keys(contact2.embeddedData);
 
     return emKeys1.every(key => {
+        /* If the key is empty, add it to the other object (so deleting embeddedData fields will work) */
+        if (!emKeys2.includes(key) && contact1.embeddedData[key] != '') {
+            contact2.embeddedData[key] = '';
+        }
+
         /* TRUE IF (key exists in both contacts & value is the same) OR (key exists only on current contact but value is '') */
         return ((emKeys2.includes(key) && contact1.embeddedData[key] === contact2.embeddedData[key]) ||
             (!emKeys2.includes(key) && contact1.embeddedData[key] === ''));
