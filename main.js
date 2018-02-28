@@ -44,8 +44,8 @@ function onComplete(err, syncedCsvFiles) {
     }
     console.log(`\n\nCSV files processed: ${syncedCsvFiles.length}`);
 
-    // hash.updateHash(syncedCsvFiles)
-    Promise.resolve(syncedCsvFiles) // USE WHEN UPDATING HASH IS DISABLED
+    // Promise.resolve(syncedCsvFiles) // USE WHEN UPDATING HASH IS DISABLED
+    hash.updateHash(syncedCsvFiles)
         .then((syncedCsvFiles) => {
             /* write the footer */
             return new Promise((resolve, reject) => {
@@ -79,7 +79,7 @@ function onComplete(err, syncedCsvFiles) {
 function readCsvFile(csvFile, waterfallCb) {
     fs.readFile(`${settings.filePath}${csvFile.config.csv}`, (readErr, fileContents) => {
         if (readErr) {
-            /* for some reason there is no stack wneh fs returns the Err */
+            /* for some reason there is no stack when fs returns the Err */
             Error.captureStackTrace(readErr);
             waterfallCb(readErr, csvFile);
             return;
@@ -106,9 +106,6 @@ function runCSV(csvFile, eachCallback) {
         readCsvFile, // read the csvFile
         hash.checkHash, // compare hashes
         ...syncFunctions, // sync contacts if hashes didn't match
-        log.writeFile, // write the results of a single file to the log -> MUST RUN EVEN IF WATERFALL FAILES (hence writeFile in waterfallCb)
-        asyncLib.constant(csvFile, startTime),
-        log.writeDetailedFile // write the specific changes made to a file
     ],
     (waterfallErr, updatedCsvFile) => {
         if (waterfallErr) {
@@ -116,15 +113,14 @@ function runCSV(csvFile, eachCallback) {
             /* save err to file csvFile obj for reporting  */
             updatedCsvFile.report.fileError = waterfallErr;
             console.error(chalk.red(waterfallErr));
+        }
 
-            /* call writeFile to record file level errs 
-                        (writeFile & writeDetailedFile don't pass errs to the cb so that this line isn't called if the waterfall ended on writing logs) */
-            log.writeFile(csvFile, () => {
+        /* write reports! Both functions handle their own errs */
+        log.writeFile(updatedCsvFile, () => {
+            log.writeDetailedFile(updatedCsvFile, startTime, () => {
                 eachCallback(null, updatedCsvFile);
             });
-            return;
-        }
-        eachCallback(null, updatedCsvFile);
+        });
     });
 }
 

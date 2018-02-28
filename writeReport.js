@@ -67,8 +67,6 @@ function file(csvFile, cb) {
  * DOES NOT handle errors that occur while syncing a csv
  ********************************************************/
 function error(err, cb) {
-    console.log('Write Error called');
-
     fs.appendFile(logPath, err, writeErr => {
         if(writeErr) 
             cb(writeErr);
@@ -174,6 +172,13 @@ function getFilesSynced(csvFiles) {
     return totalFiles;
 }
 
+/************************************
+ * 
+ ***********************************/
+function fsErr(err) {
+    console.log(chalk.red(err));
+}
+
 module.exports = {
     writeHeader: header,
     writeFile: file,
@@ -182,30 +187,3 @@ module.exports = {
     writeDetailedFile: detailedFile,
     writeFatalErr: fatalError,
 };
-
-
-
-/* Function.prototype.whatevs = function(){
-    const func = this;
-    return function(){
-    // If they passed one less argument than the function was expecting
-    // Then we assume it was a callback function that needs to be wrapped in a promise
-    if(func.length - arguments.length == 1){
-    return new Promise((resolve,reject) => {
-    var newArgs = [...arguments];
-    newArgs.push((err,data) => err?reject(err):resolve(data));
-    func(...newArgs);
-    });
-    } else {
-    var returned = func(...arguments);
-    var lastArg = arguments[arguments.length-1];
-    if(!(returned instanceof Promise) || typeof lastArg != 'function'){
-    // Not a promise Function or the last argument couldn't have been a callback
-    // So asssuming it wasn't an async function
-    return returned;
-    }
-    // Wrapping the promise in a callback which we assume is the last argument
-    returned.then(data => lastArg(null,data)).catch(err => lastArg(err));
-    }
-    };
-   }; */
