@@ -45,7 +45,7 @@ function file(csvFile, cb) {
         if (csvFile.report.failed.length > 0) {
             /* if specific contacts failed to sync */
             csvFile.report.failed.forEach(function (filedContact) {
-                text += `\tFailed to ${filedContact.action} contact: ${filedContact.externalDataReference} ${filedContact.errorMessage}\r\n`;
+                text += `\tFailed to ${filedContact.action} contact: ${filedContact.externalDataReference} ${filedContact.err}\r\n`;
             });
         }
     }

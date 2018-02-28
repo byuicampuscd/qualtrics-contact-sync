@@ -62,8 +62,7 @@ function makeApiCalls(csvFile, waterfallCb) {
             asyncLib.retry(2, makeCall, (err) => {
                 if (err) {
                     /* if contact failed, record it & move on */
-                    contact.err = err;
-                    contactFailed(csvFile, contact, action.name);
+                    contactFailed(csvFile, contact, action.name, err);
                 }
                 eachCb(null);
             });
@@ -96,22 +95,18 @@ function addPrep(csvFile, waterfallCb) {
     }
 
     csvFile.report.toAdd = csvFile.report.toAdd.filter(contact => {
+        /* Check for missing required fields */
+        var hasRequiredFields = !Object.values(contact).includes('');
+        
+        /* Don't add contacts missing required fields */
+        if (!hasRequiredFields) {
+            contactFailed(csvFile, contact, 'Add', new Error('Contact missing required field'));
+            return false;
+        }
+
         /* convert externalDataReference to externalDataRef */
         contact.externalDataRef = contact.externalDataReference;
         delete contact.externalDataReference;
-
-        /* Check for missing required fields */
-        var hasRequiredFields = Object.keys(contact).every(key => {
-            return contact[key] !== '';
-        });
-
-        /* Don't add contacts missing required fields */
-        if (!hasRequiredFields) {
-            contact.action = 'Add';
-            contact.err = new Error('Contact missing required field');
-            csvFile.report.failed.push(contact);
-            return false;
-        }
 
         /* Remove embeddedData propterties with empty string values (else api will throw err) */
         Object.keys(contact.embeddedData).forEach(key => {
@@ -328,7 +323,7 @@ function checkEmbeddedData(contact1, contact2) {
         emKeys2 = Object.keys(contact2.embeddedData);
 
     return emKeys1.every(key => {
-        /* If the key is empty, add it to the other object (so deleting embeddedData fields will work) */
+        /* If the value is empty, add it to both contacts (so deleting embeddedData fields will work) */
         if (!emKeys2.includes(key) && contact1.embeddedData[key] != '') {
             contact2.embeddedData[key] = '';
         }
@@ -352,10 +347,13 @@ function sortList(a, b) {
  * Remove contact from appropriate action list 
  * & add to failed contact list
  *********************************************/
-function contactFailed(csvFile, contact, action) {
+function contactFailed(csvFile, contact, action, err) {
+    console.log(chalk.yellow(`Failed to ${action}, Contact: ${contact.externalDataReference}`));
+
     /* save action so we know what they were suppsed to do */
     contact.action = action;
-
+    contact.err = err;
+    
     /* add them to the list of failed students */
     csvFile.report.failed.push(contact);
     /* remove them from the successful students */
