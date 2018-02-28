@@ -2,7 +2,6 @@
 
 const fs = require('fs');
 const fws = require('fixed-width-string');
-const moment = require('moment');
 const chalk = require('chalk');
 const settings = require('./settings.json');
 
@@ -17,10 +16,9 @@ function header(date, cb) {
 
     fs.appendFile(logPath, head, writeErr => {
         if (writeErr) {
-            cb(writeErr);
-            return;
+            fsErr(writeErr);
         }
-        cb(null);
+        cb();
     });
 }
 
@@ -55,10 +53,9 @@ function file(csvFile, cb) {
     /* Append to log */
     fs.appendFile(logPath, text, writeErr => {
         if (writeErr) {
-            /* Don't pass to cb */
-            console.error(chalk.red(writeErr));
+            fsErr(writeErr);
         }
-        cb(null, csvFile);
+        cb(csvFile);
     });
 }
 
@@ -68,10 +65,10 @@ function file(csvFile, cb) {
  ********************************************************/
 function error(err, cb) {
     fs.appendFile(logPath, err, writeErr => {
-        if(writeErr) 
-            cb(writeErr);
-        else
-            cb(null);
+        if (writeErr) {
+            fsErr(writeErr);
+        }
+        cb();
     });
 }
 
@@ -89,16 +86,25 @@ function footer(startTime, csvFiles, cb) {
         footer += fws(`Files Successfully Synced: ${getFilesSynced(csvFiles)}`, 36);
     }
     footer += lineBreak;
-    
+
     fs.appendFile(logPath, footer, writeErr => {
+        if (writeErr) {
+            fsErr(writeErr);
+        }
+        
         console.log(`Elapsed Time: ${elapsedTime}`);
-        if (writeErr && cb) {
+        
+        if (cb) {
+            cb();
+        }
+
+        /* if (writeErr && cb) {
             cb(writeErr);
         } else if (writeErr && !cb) {
             console.error(chalk.red(writeErr));
         } else if (cb) {
             cb(null);
-        }
+        } */
     });
 }
 
@@ -119,9 +125,9 @@ function detailedFile(csvFile, date, cb) {
     var fileName = `${settings.logPath}${csvFile.config.csv.replace('.csv', '.txt')}`;
     fs.appendFile(fileName, text, writeErr => {
         if (writeErr) {
-            console.error(chalk.red(writeErr));
+            fsErr(writeErr);
         }
-        cb(null, csvFile);
+        cb(csvFile);
     });
 }
 
@@ -133,7 +139,7 @@ function detailedFile(csvFile, date, cb) {
 function fatalError(err, startTime, csvFiles, finalCb) {
     error(err, (writeErr) => {
         if (writeErr) {
-            console.error(chalk.red('Error writing fatal error. No attempt to write footer was made.'));
+            fsErr(new Error ('Error writing fatal error. No attempt to write footer was made.'));
             finalCb(writeErr);
             return;
         }
@@ -145,17 +151,34 @@ function fatalError(err, startTime, csvFiles, finalCb) {
  * Calculates elapsed time. Takes a start time
  **********************************************/
 function getElapsedTime(startTime) {
-    // THIS FUNCTION NEEDS HELP...
-    startTime = moment(startTime);
+    var end = new Date();
+    //create elapsed time
+    var seconds = (end - startTime) / 1000,
+        minutes = 0,
+        hours = 0,
+        elapsedTime = '';
+    //calculate minutes
+    if (seconds >= 60) {
+        minutes = Math.floor(seconds / 60);
+        seconds = Math.floor(seconds % 60);
+    }
+    //format seconds
+    if (seconds < 10)
+        seconds = '0' + seconds;
+    //calculate hours
+    if (minutes >= 60) {
+        hours = Math.floor(minutes / 60);
+        minutes = Math.floor(minutes % 60);
+    }
+    //format minutes
+    if (minutes < 10)
+        minutes = '0' + minutes;
+    //format hours
+    if (hours < 10)
+        hours = '0' + hours;
 
-    var endTime = moment(),
-        hours = endTime.diff(startTime, 'hours'),
-        minutes = endTime.diff(startTime, 'minutes'),
-        seconds = endTime.diff(startTime, 'seconds');
-
-
-
-    return `${hours}:${minutes}:${seconds}`;
+    elapsedTime += hours + ':' + minutes + ':' + seconds;
+    return elapsedTime;
 }
 
 /*******************************
@@ -176,7 +199,7 @@ function getFilesSynced(csvFiles) {
  * 
  ***********************************/
 function fsErr(err) {
-    console.log(chalk.red(err));
+    console.error(chalk.red(err));
 }
 
 module.exports = {

@@ -13,7 +13,7 @@ const syncFunctions = require('./sync.js');
 const sendEmail = require('./email.js');
 
 
-var startTime = new Date();
+var startTime;
 var emailSent = false;
 
 
@@ -23,6 +23,7 @@ function checkForErrs(syncedCsvFiles) {
     });
 
     if (sendEmail && !emailSent) {
+        emailSent = true;
         sendEmail();
     }
 }
@@ -34,33 +35,25 @@ function checkForErrs(syncedCsvFiles) {
  *******************************************/
 function onComplete(err, syncedCsvFiles) {
     if (err) {
-        log.writeFatalErr(err, startTime, syncedCsvFiles, writeErr => {
-            if (writeErr) {
-                if (!emailSent) sendEmail();
-                console.error(chalk.red(writeErr));
-            }
+        log.writeFatalErr(err, startTime, syncedCsvFiles, () => {
+            if (!emailSent) sendEmail();
             return;
         });
     }
     console.log(`\n\nCSV files processed: ${syncedCsvFiles.length}`);
 
-    // Promise.resolve(syncedCsvFiles) // USE WHEN UPDATING HASH IS DISABLED
-    hash.updateHash(syncedCsvFiles)
+    Promise.resolve(syncedCsvFiles) // USE WHEN UPDATING HASH IS DISABLED
+    // hash.updateHash(syncedCsvFiles)
+        .catch((err, syncedCsvFiles) => {
+            console.error(chalk.red(err));
+            sendEmail();
+            Promise.resolve(syncedCsvFiles);
+        })
         .then((syncedCsvFiles) => {
             /* write the footer */
             return new Promise((resolve, reject) => {
-                log.writeFooter(startTime, syncedCsvFiles, writeErr => {
-                    if (writeErr) reject(writeErr, syncedCsvFiles);
-                    else resolve(syncedCsvFiles);
-                    // reject(new Error('fake err'), syncedCsvFiles);
-                });
+                log.writeFooter(startTime, syncedCsvFiles, resolve(syncedCsvFiles));
             });
-        })
-        .catch((err, syncedCsvFiles) => {
-            console.log(chalk.red(err));
-            emailSent = true;
-            sendEmail();
-            Promise.resolve(syncedCsvFiles);
         })
         .then((csvFiles) => {
             if (!emailSent) {
@@ -141,8 +134,7 @@ function readConfigFile() {
     fs.readFile(settings.configFile, (readErr, configData) => {
         if (readErr) {
             console.error(chalk.red(readErr));
-            log.writeFatalErr(readErr, startTime, null, writeErr => {
-                if (writeErr) console.error(chalk.red(writeErr));
+            log.writeFatalErr(readErr, startTime, null, () => {
                 sendEmail();
                 return;
             });
@@ -175,8 +167,8 @@ function readConfigFile() {
  * call readConfigFile
  *******************************/
 function start() {
-    log.writeHeader(startTime, writeErr => {
-        if (writeErr) console.error(chalk.red(writeErr));
+    startTime = new Date();
+    log.writeHeader(startTime, () => {
         readConfigFile();
     });
 }

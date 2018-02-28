@@ -25,8 +25,7 @@ function checkHash(csvFile, waterfallCb) {
     if (csvFile.config.hash == hash) {
         console.log(chalk.green('Hashes Matched'));
         csvFile.report.matchingHash = true;
-        log.writeFile(csvFile, writeErr => {
-            if (writeErr) console.error(chalk.red(writeErr));
+        log.writeFile(csvFile, () => {
             waterfallCb(null, csvFile);
         });
     } else {

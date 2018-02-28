@@ -140,9 +140,9 @@ function report(csvFile, waterfallCb) {
         deleteCount = csvFile.report.toDelete.length;
 
     console.log(`Changes to Make: ${addCount + updateCount + deleteCount}`);
-    console.log(`toAdd: ${addCount}`);
+    /* console.log(`toAdd: ${addCount}`);
     console.log(`toUpdate: ${updateCount}`);
-    console.log(`toDelete: ${deleteCount}`);
+    console.log(`toDelete: ${deleteCount}`); */
 
     waterfallCb(null, csvFile);
 }
