@@ -80,6 +80,8 @@ function readCsvFile(csvFile, waterfallCb) {
         /* remove zero width no break space from csv (especially the beginning) */
         var invisibleSpace = new RegExp(String.fromCharCode(65279), 'g');
         fileContents = fileContents.toString().replace(invisibleSpace, '');
+        /* Excel turns True to TRUE, which will make the contact update */
+        fileContents.replace(/TRUE/g, 'True').replace(/FALSE/g, 'False');
 
         /* save parsed file to csvFile object */
         csvFile.csvContacts = csvFile.csvContacts.concat(d3.csvParse(fileContents));
