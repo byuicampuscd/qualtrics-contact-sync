@@ -48,27 +48,30 @@ function makeApiCalls(csvFile, waterfallCb) {
     /* loop through all contacts in an action */
     function runAction(action, seriesCb) {
         var changesMade = 0;
-        // changesToMake = action.location.length;
 
         asyncLib.eachLimit(action.location, 5, wrapRetry, (err) => {
             if (err) {
                 seriesCb(err);
                 return;
             }
+            /* newline after printing num changes being made */
             if (action.location.length > 0)
                 process.stdout.write('\n');
-                
-            // console.log(`${action.name} - Completed: ${action.location.length}`);
+
             seriesCb(null);
         });
 
         /* wrap the call in an asyncRetry. In case of a 500 server err (happens often) */
         function wrapRetry(contact, eachCb) {
-            asyncLib.retry(2, makeCall, (err) => {
+            asyncLib.retry({
+                times: 2,
+                interval: 2500
+            }, makeCall, (err) => {
                 if (err) {
                     /* if contact failed, record it & move on */
                     contactFailed(csvFile, contact, action.name, err);
                 }
+                /* write num actions completed on 1 line */
                 process.stdout.clearLine();
                 process.stdout.cursorTo(0);
                 process.stdout.write(`${action.name} - Completed: ${changesMade}`);
@@ -81,6 +84,7 @@ function makeApiCalls(csvFile, waterfallCb) {
                     if (err) {
                         /* pass err to retry so it can try again */
                         retryCb(err);
+                        return;
                     }
                     changesMade++;
                     retryCb(null);
@@ -113,11 +117,11 @@ function addPrep(csvFile, waterfallCb) {
             return false;
         }
 
-        /* convert externalDataReference to externalDataRef */
+        /* convert externalDataReference to externalDataRef (required by API to add contact) */
         contact.externalDataRef = contact.externalDataReference;
         delete contact.externalDataReference;
 
-        /* Remove embeddedData propterties with empty string values (else api will throw err) */
+        /* Remove embeddedData propterties with empty string values (required by API) */
         Object.keys(contact.embeddedData).forEach(key => {
             if (contact.embeddedData[key] === '') {
                 delete contact.embeddedData[key] === '';
@@ -131,7 +135,8 @@ function addPrep(csvFile, waterfallCb) {
 
 
 /*****************************************************
- * a pretty little report at the half-way point
+ * a pretty little report at the half-way point. Mostly
+ * for debugging purposes.
  ****************************************************/
 function report(csvFile, waterfallCb) {
     if (csvFile.report.matchingHash === true) {
@@ -167,15 +172,15 @@ function compareContacts(csvFile, waterfallCb) {
 
     /* Loop through csvStudents */
     csvFile.csvContacts.forEach(contact => {
-        /* binary search -> find contacts with matching externalDataReferences*/
+        /* binary search -> find contacts with matching externalDataReferences (uniqueId) */
         var qIndex = binarySearch(csvFile.qualtricsContacts, contact, sortList);
 
         if (qIndex == -1) {
-            /* if there is no match */
+            /* if there is no match, add the contact */
             csvFile.report.toAdd.push(contact);
         } else {
             equalityComparison(csvFile, contact, csvFile.qualtricsContacts[qIndex]);
-            /* remove qContact from master list to determine which contacts need to be deleted */
+            /* remove qContact from master list. leftover contacts need to be deleted */
             csvFile.qualtricsContacts.splice(qIndex, 1);
         }
     });
@@ -195,7 +200,7 @@ function sortContacts(csvFile, waterfallCb) {
         return;
     }
 
-    /* Sort both lists by externalDataRef for binary search */
+    /* Sort both lists by externalDataRef. Required for binary search */
     csvFile.csvContacts.sort(sortList);
     csvFile.qualtricsContacts.sort(sortList);
 
@@ -238,6 +243,7 @@ function formatCsvContacts(csvFile, waterfallCb) {
         return;
     }
 
+    /* Capitalization of requiredKeys is important */
     var requiredKeys = ['Email', 'FirstName', 'LastName'],
         tempContact = {};
 
@@ -248,13 +254,13 @@ function formatCsvContacts(csvFile, waterfallCb) {
                 embeddedData: {}
             };
 
-            /* save property to correct location. Replace UniqueID with externalDataReference */
+            /* Save property to correct location. Replace UniqueID with externalDataReference */
             Object.keys(contact).forEach(key => {
                 if (key === 'UniqueID') {
                     tempContact.externalDataReference = contact[key];
                 } else if (requiredKeys.includes(key)) {
                     /* make the first character lower case. For equality comparison 
-                        & compliance to qualtrics format */
+                        & API compatibility */
                     tempContact[key.charAt(0).toLowerCase() + key.slice(1)] = contact[key];
                 } else {
                     /* remove commas from embeddedData so Qualtrics won't truncate the value */
@@ -348,13 +354,13 @@ function sortList(a, b) {
     return 0;
 }
 
-/*********************************************
+/*************************************************
  * Remove contact from appropriate action list 
- * & add to failed contact list
- *********************************************/
+ * & add to failed contact list. Used for contact
+ * level errors
+ *************************************************/
 function contactFailed(csvFile, contact, action, err) {
     console.log(chalk.yellow(`Failed to ${action} Contact: ${contact.externalDataReference} Err: ${err}`));
-
 
     /* save action so we know what they were suppsed to do */
     contact.action = action;
@@ -371,11 +377,11 @@ function contactFailed(csvFile, contact, action, err) {
  **********************************************************/
 
 module.exports = [
-    formatCsvContacts, /* make them look like qualtrics contacts */
-    asyncLib.retryable(2, pullContacts), /* make 2 attempts at pullContacts() */
+    formatCsvContacts, /* contact objects to match qualtrics format */
+    asyncLib.retryable(2, pullContacts), /* make X attempts at pullContacts() */
     sortContacts, /* sort by externalReferenceId */
-    compareContacts,
-    report,
+    compareContacts, /* equality comparison */
+    report, /* mostly for debugging */
     addPrep, /* filters & prepares the contacts who need to be added */
-    makeApiCalls,
+    makeApiCalls, /* adds, updates, & deletes contacts */
 ];

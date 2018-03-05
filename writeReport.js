@@ -144,28 +144,28 @@ function fatalError(err, startTime, csvFiles, finalCb) {
  **********************************************/
 function getElapsedTime(startTime) {
     var end = new Date();
-    //create elapsed time
+    /* create elapsed time */
     var seconds = (end - startTime) / 1000,
         minutes = 0,
         hours = 0,
         elapsedTime = '';
-    //calculate minutes
+    /* calculate minutes */
     if (seconds >= 60) {
         minutes = Math.floor(seconds / 60);
         seconds = Math.floor(seconds % 60);
     }
-    //format seconds
+    /* format seconds */
     if (seconds < 10)
         seconds = '0' + seconds;
-    //calculate hours
+    /* calculate hours */
     if (minutes >= 60) {
         hours = Math.floor(minutes / 60);
         minutes = Math.floor(minutes % 60);
     }
-    //format minutes
+    /* format minutes */
     if (minutes < 10)
         minutes = '0' + minutes;
-    //format hours
+    /* format hours */
     if (hours < 10)
         hours = '0' + hours;
 
@@ -191,7 +191,7 @@ function getFilesSynced(csvFiles) {
  * Handles any errs that may occur in this module
  *************************************************/
 function fsErr(err) {
-    console.error(chalk.red(err));
+    console.error(chalk.red(err.stack));
 }
 
 module.exports = {

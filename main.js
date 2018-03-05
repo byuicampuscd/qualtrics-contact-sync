@@ -16,7 +16,10 @@ var startTime;
 // var emailSent = false;
 var emailSent = true; // set to true to disable emails
 
-
+/***************************************************
+ * Looks for file level and contact level errs
+ * in each csvFile. Sends an email if ANY are found
+ ***************************************************/
 function checkForErrs(syncedCsvFiles) {
     var sendEmail = syncedCsvFiles.some(csvFile => {
         return csvFile.report.failed.length > 0 || csvFile.report.fileError;
@@ -45,7 +48,7 @@ function onComplete(err, syncedCsvFiles) {
     Promise.resolve(syncedCsvFiles) // USE WHEN UPDATING HASH IS DISABLED
     // hash.updateHash(syncedCsvFiles)
         .catch((err, syncedCsvFiles) => {
-            console.error(chalk.red(err));
+            console.error(chalk.red(err.stack));
             sendEmail();
             Promise.resolve(syncedCsvFiles);
         })
@@ -59,7 +62,6 @@ function onComplete(err, syncedCsvFiles) {
             if (!emailSent) {
                 checkForErrs(csvFiles);
             }
-
             console.log(chalk.blue('Done'));
         });
 }
@@ -107,7 +109,7 @@ function runCSV(csvFile, eachCallback) {
             /* Kills all csvFiles if passed to cb */
             /* save err to file csvFile obj for reporting  */
             updatedCsvFile.report.fileError = waterfallErr;
-            console.error(chalk.red(waterfallErr));
+            console.error(chalk.red(waterfallErr.stack));
         }
 
         /* write reports! Both functions handle their own errs */
@@ -135,7 +137,7 @@ function loopFiles(csvFiles) {
 function readConfigFile() {
     fs.readFile(settings.configFile, (readErr, configData) => {
         if (readErr) {
-            console.error(chalk.red(readErr));
+            console.error(chalk.red(readErr.stack));
             log.writeFatalErr(readErr, startTime, null, () => {
                 sendEmail();
                 return;
@@ -177,5 +179,5 @@ function start() {
 /****************
  * START HERE
  ****************/
-// timer(start);
-start();
+timer(start);
+// start();

@@ -66,6 +66,10 @@ function getAll(csvFile, cb, contacts = []) {
     makeRequest(requestObj, paginate);
 }
 
+/*******************************
+ * Add a single contact to the
+ * given mailing list
+ ******************************/
 function addContact(csvFile, contact, cb) {
     var requestObj = {
         method: 'POST',
@@ -80,8 +84,12 @@ function addContact(csvFile, contact, cb) {
     makeRequest(requestObj, cb);
 }
 
+/*******************************************
+ * Update a single contact from the 
+ * given mailing list
+ ******************************************/
 function updateContact(csvFile, contact, cb) {
-    // pull ID off of the contact!
+    /* pull ID off of the contact! */
     var contactId = contact.id;
     delete contact.id;
     var requestObj = {
@@ -93,13 +101,16 @@ function updateContact(csvFile, contact, cb) {
             'x-api-token': auth.token
         }
     };
-
+    
     makeRequest(requestObj, cb);
 }
 
-
+/********************************************
+ * Delete a single contact from the 
+ * given mailing list
+ ********************************************/
 function deleteContact(csvFile, contact, cb) {
-    // pull ID off of the contact!
+    /* pull ID off of the contact! */
     var requestObj = {
         method: 'DELETE',
         url: `https://byui.az1.qualtrics.com/API/v3/mailinglists/${csvFile.config.MailingListID}/contacts/${contact.id}`,
@@ -107,7 +118,7 @@ function deleteContact(csvFile, contact, cb) {
             'x-api-token': auth.token
         }
     };
-
+    
     makeRequest(requestObj, cb);
 }
 
