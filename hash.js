@@ -43,7 +43,7 @@ function checkHash(csvFile, waterfallCb) {
 function updateHash(syncedCsvFiles) {
     return new Promise((resolve, reject) => {
         var config = syncedCsvFiles.map(csvFile => {
-        /* If the hases matched & no errs occured (fatal or non-fatal) */
+        /* If the hases didn't match & no errs occured (file or contact level) */
             if (!csvFile.report.matchingHash && (csvFile.report.failed.length == 0 && csvFile.report.fileError == null)) {
             /* replace old hash with the new hash */
                 csvFile.config.hash = csvFile.report.newHash;

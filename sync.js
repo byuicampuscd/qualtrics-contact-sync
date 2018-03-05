@@ -65,7 +65,7 @@ function makeApiCalls(csvFile, waterfallCb) {
         function wrapRetry(contact, eachCb) {
             asyncLib.retry({
                 times: 2,
-                interval: 2500
+                interval: 3000
             }, makeCall, (err) => {
                 if (err) {
                     /* if contact failed, record it & move on */
@@ -360,7 +360,11 @@ function sortList(a, b) {
  * level errors
  *************************************************/
 function contactFailed(csvFile, contact, action, err) {
-    console.log(chalk.yellow(`Failed to ${action} Contact: ${contact.externalDataReference} Err: ${err}`));
+    /* when adding contacts externalDataRef must beused instead of externalDataReference. Thank you Qualtrics */
+    if (contact.externalDataRef != undefined)
+        console.log(chalk.yellow(`Failed to ${action} Contact: ${contact.externalDataRef} ${err}`));
+    else
+        console.log(chalk.yellow(`Failed to ${action} Contact: ${contact.externalDataReference} ${err}`));
 
     /* save action so we know what they were suppsed to do */
     contact.action = action;

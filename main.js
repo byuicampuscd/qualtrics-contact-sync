@@ -13,8 +13,8 @@ const sendEmail = require('./email.js');
 
 
 var startTime;
-// var emailSent = false;
-var emailSent = true; // set to true to disable emails
+var emailSent = false;
+// var emailSent = true; // set to true to disable emails
 
 /***************************************************
  * Looks for file level and contact level errs
@@ -45,8 +45,8 @@ function onComplete(err, syncedCsvFiles) {
     }
     console.log(`\n\nCSV files processed: ${syncedCsvFiles.length}`);
 
-    Promise.resolve(syncedCsvFiles) // USE WHEN UPDATING HASH IS DISABLED
-    // hash.updateHash(syncedCsvFiles)
+    // Promise.resolve(syncedCsvFiles) // USE WHEN UPDATING HASH IS DISABLED
+    hash.updateHash(syncedCsvFiles)
         .catch((err, syncedCsvFiles) => {
             console.error(chalk.red(err.stack));
             sendEmail();
