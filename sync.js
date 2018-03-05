@@ -9,7 +9,6 @@ const qualtrics = require('./qualtrics.js');
 const keysToIgnore = ['language', 'unsubscribed', 'responseHistory', 'emailHistory', 'id'];
 
 
-
 /**************************************************
  * Abstraction of add, update, & delete api calls
  * Good Luck!
@@ -48,12 +47,18 @@ function makeApiCalls(csvFile, waterfallCb) {
 
     /* loop through all contacts in an action */
     function runAction(action, seriesCb) {
+        var changesMade = 0;
+        // changesToMake = action.location.length;
+
         asyncLib.eachLimit(action.location, 5, wrapRetry, (err) => {
             if (err) {
                 seriesCb(err);
                 return;
             }
-            console.log(`${action.name} - Completed: ${action.location.length}`);
+            if (action.location.length > 0)
+                process.stdout.write('\n');
+                
+            // console.log(`${action.name} - Completed: ${action.location.length}`);
             seriesCb(null);
         });
 
@@ -64,6 +69,9 @@ function makeApiCalls(csvFile, waterfallCb) {
                     /* if contact failed, record it & move on */
                     contactFailed(csvFile, contact, action.name, err);
                 }
+                process.stdout.clearLine();
+                process.stdout.cursorTo(0);
+                process.stdout.write(`${action.name} - Completed: ${changesMade}`);
                 eachCb(null);
             });
 
@@ -74,6 +82,7 @@ function makeApiCalls(csvFile, waterfallCb) {
                         /* pass err to retry so it can try again */
                         retryCb(err);
                     }
+                    changesMade++;
                     retryCb(null);
                 });
             }
@@ -97,7 +106,7 @@ function addPrep(csvFile, waterfallCb) {
     csvFile.report.toAdd = csvFile.report.toAdd.filter(contact => {
         /* Check for missing required fields */
         var hasRequiredFields = !Object.values(contact).includes('');
-        
+
         /* Don't add contacts missing required fields */
         if (!hasRequiredFields) {
             contactFailed(csvFile, contact, 'Add', new Error('Contact missing required field'));
@@ -290,10 +299,6 @@ function equalityComparison(csvFile, contact, qContact) {
         return qKeys.includes(cKey) && contact[cKey] === qContact[cKey];
     });
 
-
-    // DOESN'T DELETE EMBEDDEDdATA FIELDS!!
-
-
     /* EMBEDDED DATA */
     /* Must loop through the keys of both objects or it won't catch keys which need to be deleted (cleared) */
 
@@ -348,12 +353,13 @@ function sortList(a, b) {
  * & add to failed contact list
  *********************************************/
 function contactFailed(csvFile, contact, action, err) {
-    console.log(chalk.yellow(`Failed to ${action}, Contact: ${contact.externalDataReference}`));
+    console.log(chalk.yellow(`Failed to ${action} Contact: ${contact.externalDataReference} Err: ${err}`));
+
 
     /* save action so we know what they were suppsed to do */
     contact.action = action;
     contact.err = err;
-    
+
     /* add them to the list of failed students */
     csvFile.report.failed.push(contact);
     /* remove them from the successful students */
