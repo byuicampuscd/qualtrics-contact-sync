@@ -97,14 +97,6 @@ function footer(startTime, csvFiles, cb) {
         if (cb) {
             cb();
         }
-
-        /* if (writeErr && cb) {
-            cb(writeErr);
-        } else if (writeErr && !cb) {
-            console.error(chalk.red(writeErr));
-        } else if (cb) {
-            cb(null);
-        } */
     });
 }
 

@@ -112,14 +112,8 @@ This will be a TXT file containing JSON data. The exact object is subject to cha
 ## Development
 
 ### Execution Process
-- Include the main steps that your code goes through to accomplish its goal
-- These do not need to be overly technical, but enough for a developer to read and follow along in the code (i.e. "Use a ForEach to loop through each file" is too technical)
-- Use a heading for each step
-
-Example:
-
-#### Read in file
-Read in the CSV and parse it.
+#### Read in Config file
+Read in the config CSV, sanitize it, parse it into the csvFiles object.
 
 #### Manipulate the data
 Filter data down to what's needed and format it.
@@ -128,7 +122,7 @@ Filter data down to what's needed and format it.
 Generate CSV with formatted data and write it to the hard drive.
 
 
-### Setup
+## Setup
 - Include anything important for a developer to know if they are setting up the tool to develop it more.
 - This could include instructions to install certain developer dependencies.
 
@@ -144,12 +138,12 @@ Here are instructions on how to set up the development server:
 
 .....
 
-### Unit Tests
+## Unit Tests
 - Explain each of your unit tests and their inputs.
 - Provide all inputs used in testing so developers can use the same tests (or add on to them). For example, attach a CSV for each test case.****
 
 
-### Qualtrics API notes ###
+# Qualtrics API notes #
 This would've been a lot easier if it weren't for the undocumented quirks of the Qualtrics API. I will record as many as I notice here. They are subject to change at any time without warning.
 * EmbeddedData values can not be deleted via API once created. They can only be set to an empty string. Setting them to null or undefined throws a server err
 * Adding someone to a mailing list when they are missing a 'required field' (anything outside of embeddedData) is allowed. HOWEVER you will not be able to update them until all required fields are filled.
