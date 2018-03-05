@@ -21,11 +21,11 @@ var emailSent = false;
  * in each csvFile. Sends an email if ANY are found
  ***************************************************/
 function checkForErrs(syncedCsvFiles) {
-    var sendEmail = syncedCsvFiles.some(csvFile => {
+    var errFound = syncedCsvFiles.some(csvFile => {
         return csvFile.report.failed.length > 0 || csvFile.report.fileError;
     });
 
-    if (sendEmail && !emailSent) {
+    if (errFound && !emailSent) {
         emailSent = true;
         sendEmail();
     }
