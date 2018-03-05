@@ -33,9 +33,9 @@ function getChangesMade(files) {
 
     files.forEach(function (file) {
         if (file.passed == true) {
-            totalChanges += file.aCount;
-            totalChanges += file.uCount;
-            totalChanges += file.dCount;
+            totalChanges += file.studentsAdded.length;
+            totalChanges += file.studentsUpdated.length;
+            totalChanges += file.studentsDeleted.length;
         }
     });
     return totalChanges;
@@ -93,9 +93,9 @@ proto.generateFile = function (wrapper) {
             text += '\r\n\t' + file.fileError + '\r\n';
         } else {
             text += fws('Changes to be Made: ' + file.toAlterAmount, 30);
-            text += fws('Added: ' + file.aCount, 15);
-            text += fws('Updated: ' + file.uCount, 17);
-            text += fws('Deleted: ' + file.dCount, 17);
+            text += fws('Added: ' + file.studentsAdded.length, 15);
+            text += fws('Updated: ' + file.studentsUpdated.length, 17);
+            text += fws('Deleted: ' + file.studentsDeleted.length, 17);
             text += '\r\n';
             if (file.studentErrors.length > 0) {
                 file.studentErrors.forEach(function (error) {
@@ -125,5 +125,27 @@ proto.generateHeader = function (configError) {
     }
     proto.writeSync(head);
 };
+
+/*******************************************
+ * write specific reports for each csv file
+ *******************************************/
+proto.writeCsvReports = function (result, cb) {
+    var date = new Date(),
+        filePath = `${settings.logLocation}${result.link.csv.replace('.csv', '.json')}`,
+        guts = '\n---------------------------------------------------------------\n';
+    guts += `${fws(date.toDateString(), 20) + date.toTimeString()}`;
+    guts += '\n---------------------------------------------------------------\n';
+    guts += `${JSON.stringify(result.file, null, 2)}\n`;
+
+    fs.appendFile(filePath, guts, err => {
+        if (err) {
+            console.error(err);
+        } else {
+            console.log(chalk.green(`Wrote to ${filePath}`));
+        }
+        cb(null);
+    });
+};
+
 
 module.exports = lw;
