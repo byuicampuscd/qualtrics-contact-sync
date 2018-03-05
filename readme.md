@@ -24,7 +24,7 @@ To start the tool, type this in the console:
 
 ## Inputs
 
-The tool will run through the promps included in the repeat-timer library. It asks when you would like the tool to run. and how often you would like the tool to repeat. If all defaults are selected the tool will run once immediately.
+The tool will run through the prompts included in the repeat-timer library. It asks when you would like the tool to run. and how often you would like the tool to repeat. If all defaults are selected the tool will run once immediately.
 
 The Tool requires the following files:
 * settings.json 
@@ -43,7 +43,7 @@ The settings file allows the user to set the location & title of the config file
 ```
 
 ### Auth.json
-This repo includes an auth.json.example for the user to fill out. It includes the qualtrics api token as well as login and configuration information for the users email account.
+This repository includes an auth.json.example for the user to fill out. It includes the Qualtrics api token as well as login and configuration information for the users email account.
 
 
 ### Config.csv
@@ -61,7 +61,7 @@ The hash value is updated automatically by the tool. The Library ID isn't by the
 The tool has the following outputs:
 * Generic log detailing the runtime of the tool and amount of changes per csv file (.TXT)
 * One Detailed log per csv file containing each altered contact (.JSON)
-* A generic email if an error occured informing the recipient to check the log files
+* A generic email if an error occurred informing the recipient to check the log files
 
 
 ### Generic Log
@@ -112,42 +112,52 @@ This will be a TXT file containing JSON data. The exact object is subject to cha
 ## Development
 
 ### Execution Process
-#### Read in Config file
-Read in the config CSV, sanitize it, parse it into the csvFiles object.
+#### Read Config file
+Read in the config CSV, sanitize it, parse it into the csvFiles object. Then loop through each csv file listed in the config file.
 
-#### Manipulate the data
-Filter data down to what's needed and format it.
+#### Read CSV
+Read, parse, and sanitize the csv file. 
 
-#### Provide report
-Generate CSV with formatted data and write it to the hard drive.
+### Compare hashes
+Hash the JSON stringified csv file, and compare this hash to the one on the config file. If they are the same no changes have been made and the tool can skip this csv
+
+### Format CSV contacts
+Format contacts to match the object stored in Qualtrics. This is as much for the comparison equality as it is for satisfying the Qualtrics API.
+
+### Pull contacts from Qualtrics
+Many GET requests involved. Yay!
+
+### Sort contacts
+This is required for the binary search used later to find matches between the csv contacts & Qualtrics contacts.
+
+### Compare contacts
+Determine which contacts need to be added, updated, & deleted. Calls equality comparison which has been problematic in the past. If you get a funny number of contacts being added, updated, or deleted look here.
+
+### Make API calls
+Make the necessary GET, POST, and DELETE requests. An additional addPrep step is included for contacts who are to be added. It includes additional formatting and sanitizing to the contact object.
+
+### Update Hashes on the config file
+Only updates the hash is no errors occurred during the sync. That includes file level and contact level errors.
+
+### Send an email (if an err occurred)
+If ANY file, contact, or overall level error occurred, send a generic email alerting the developer.
 
 
 ## Setup
-- Include anything important for a developer to know if they are setting up the tool to develop it more.
-- This could include instructions to install certain developer dependencies.
-
-Example:
-
-Make sure to include `canvas-wrapper` as a developer dependency when you need it:
-
-```
-npm i --save-dev byuitechops/canvas-wrapper
-```
-
-Here are instructions on how to set up the development server:
-
-.....
+- The CSV's are currently located in the I-Drive. The I-Drive must be mapped to a drive on your machine in order for this tool to be able to access those files. Z: is the default, but it can be changed in settings.json
+- Remember to have an auth.json file with your Qualtrics API token.
+- There is a sandbox mailing list that was created for debugging/testing. Its mailingList id is not listed here for security purposes.
 
 ## Unit Tests
-- Explain each of your unit tests and their inputs.
-- Provide all inputs used in testing so developers can use the same tests (or add on to them). For example, attach a CSV for each test case.****
+- Testing is done by creating a CSV file for each scenario you would like to test and appending it to a testing config.csv file. Remember to update setting.json to read your testing files and NOT the I-Drive.
 
 
 # Qualtrics API notes #
-This would've been a lot easier if it weren't for the undocumented quirks of the Qualtrics API. I will record as many as I notice here. They are subject to change at any time without warning.
+This would've been a lot easier if it weren't for the undocumented quirks of the Qualtrics API. I will record as many as I notice here. They are subject to change at any time without warning. Good Luck!
+
 * EmbeddedData values can not be deleted via API once created. They can only be set to an empty string. Setting them to null or undefined throws a server err
-* Adding someone to a mailing list when they are missing a 'required field' (anything outside of embeddedData) is allowed. HOWEVER you will not be able to update them until all required fields are filled.
-* Adding embeddedData values with commas in them cause the API to truncate the value after the comma. I don't recall if the comma is included or truncated as well
-* This tool causes a lot of 503 errors. I've written the tool to accomodate for that and run basically any failed API call twice. For the most part this works really well
-* When adding a new contact, `externalDataReference` must be renamed `externalDataRef`. In addition, embeddedData properites with empty string values must be removed.
-* Boolean values are stored as strings, so TRUE and true will not be evaluated as equal. This can happen if someone opens & saves the csv in excel.
+* Adding someone to a mailing list when they are missing a 'required field' (anything outside of embeddedData) is allowed. HOWEVER you will not be able to update them until all required fields are filled (The tool will not allow you to add these contacts, but the API will).
+* Adding embeddedData values with commas in them cause the API to truncate the value, deleting everything after the comma. I don't recall if the comma is included or not.
+* Qualtrics servers like to throw 500 errors at random. Running the same API call moments later usually fixes the issue, so I'm not sure why it happens so often. This is why calls to the API wrapped in the async library's `retry` & `retryable` methods.
+* When adding a new contact, `externalDataReference` must be renamed `externalDataRef`. In addition, embeddedData properties with empty string values must be removed.
+* Boolean values are stored as strings, so `TRUE` and `true` ARE NOT the same. This can happen if someone opens & saves the csv in excel.

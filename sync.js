@@ -121,7 +121,7 @@ function addPrep(csvFile, waterfallCb) {
         contact.externalDataRef = contact.externalDataReference;
         delete contact.externalDataReference;
 
-        /* Remove embeddedData propterties with empty string values (required by API) */
+        /* Remove embeddedData properties with empty string values (required by API) */
         Object.keys(contact.embeddedData).forEach(key => {
             if (contact.embeddedData[key] === '') {
                 delete contact.embeddedData[key] === '';
@@ -360,13 +360,13 @@ function sortList(a, b) {
  * level errors
  *************************************************/
 function contactFailed(csvFile, contact, action, err) {
-    /* when adding contacts externalDataRef must beused instead of externalDataReference. Thank you Qualtrics */
+    /* when adding contacts externalDataRef must be used instead of externalDataReference. Thank you Qualtrics */
     if (contact.externalDataRef != undefined)
         console.log(chalk.yellow(`Failed to ${action} Contact: ${contact.externalDataRef} ${err}`));
     else
         console.log(chalk.yellow(`Failed to ${action} Contact: ${contact.externalDataReference} ${err}`));
 
-    /* save action so we know what they were suppsed to do */
+    /* save action so we know what they were supposed to do */
     contact.action = action;
     contact.err = err;
 
