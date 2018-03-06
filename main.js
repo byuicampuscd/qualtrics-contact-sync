@@ -13,8 +13,8 @@ const sendEmail = require('./email.js');
 
 
 var startTime;
-var emailSent = false;
-// var emailSent = true; // set to true to disable emails
+// var emailSent = false;
+var emailSent = true; // set to true to disable emails
 
 /***************************************************
  * Looks for file level and contact level errs

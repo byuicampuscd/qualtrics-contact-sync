@@ -121,6 +121,8 @@ function detailedFile(csvFile, date, cb) {
         }
         cb(csvFile);
     });
+
+    console.log(text);
 }
 
 /* HELPERS */

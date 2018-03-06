@@ -1,11 +1,15 @@
 /* eslint no-console:1 */
 
 const request = require('request');
-const auth = require('./auth.json');
+var auth = require('./auth.json');
 const chalk = require('chalk');
 
 // USE PROCESS.ENV INSTEAD OF AUTH.JSON
-
+function setAuth (newToken) {
+    auth = {
+        token: newToken
+    };
+}
 
 /***************************************************
  * Sends all API requests. Takes a requestObj &
@@ -65,6 +69,19 @@ function getAll(csvFile, cb, contacts = []) {
     /* make initial request */
     makeRequest(requestObj, paginate);
 }
+
+function getOne (csvFile, contact, cb) {
+    var requestObj = {
+        method: 'GET',
+        url: `https://byui.az1.qualtrics.com/API/v3/mailinglists/${csvFile.config.MailingListID}/contacts/${contact.id}`,
+        headers: {
+            'x-api-token': auth.token
+        }
+    };
+
+    makeRequest(requestObj, cb);
+}
+
 
 /*******************************
  * Add a single contact to the
@@ -126,5 +143,7 @@ module.exports = {
     getContacts: getAll,
     addContact: addContact,
     updateContact: updateContact,
-    deleteContact: deleteContact
+    deleteContact: deleteContact,
+    getContact: getOne,
+    changeUser: setAuth,
 };

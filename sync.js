@@ -62,20 +62,22 @@ function makeApiCalls(csvFile, waterfallCb) {
         });
 
         /* wrap the call in an asyncRetry. In case of a 500 server err (happens often) */
-        function wrapRetry(contact, eachCb) {
+        function wrapRetry(contact, limitCb) {
             asyncLib.retry({
-                times: 2,
+                times: 3,
                 interval: 3000
             }, makeCall, (err) => {
                 if (err) {
                     /* if contact failed, record it & move on */
+                    process.stdout.clearLine(); // hopefully these keep the logging methods from breaking
+                    process.stdout.cursorTo(0);
                     contactFailed(csvFile, contact, action.name, err);
                 }
                 /* write num actions completed on 1 line */
                 process.stdout.clearLine();
                 process.stdout.cursorTo(0);
                 process.stdout.write(`${action.name} - Completed: ${changesMade}`);
-                eachCb(null);
+                limitCb(null);
             });
 
             /* Allows csvFile & contact to be passed to qualtrics.js while still using asyncRetry */
