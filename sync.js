@@ -94,13 +94,17 @@ function makeApiCalls(csvFile, waterfallCb) {
     }
 }
 
+/****************************************
+ * Preform any needed formatting needed
+ * Prior to a Qualtrics PUT request
+ ****************************************/
 function updatePrep(csvFile, waterfallCb) {
+    /* remove any empty embeddedData objects */
     csvFile.report.toUpdate.forEach(contact => {
         if (Object.keys(contact.embeddedData).length === 0) {
             delete contact.embeddedData;
         }
     });
-
     waterfallCb(null, csvFile);
 }
 
@@ -126,10 +130,10 @@ function addPrep(csvFile, waterfallCb) {
         contact.externalDataRef = contact.externalDataReference;
         delete contact.externalDataReference;
 
+
+        // TODO can I add a contact with an empty embeddedData values??
         /* Remove embeddedData properties with empty string values (required by API) 
          * Unless embeddedData is empty. Then just kill it */
-        // TODO can I add a contact with an empty embeddedData values??
-
         if (Object.keys(contact.embeddedData).length === 0) {
             delete contact.embeddedData;
         } else {
@@ -207,6 +211,10 @@ function sortContacts(csvFile, waterfallCb) {
     waterfallCb(null, csvFile);
 }
 
+/******************************************
+ * Perform any required sanitization or
+ * formatting on qualtrics contact objects 
+ ******************************************/
 function cleanQualtricsContacts(csvFile, waterfallCb) {
     /* replace null embeddedData objects with empty objects... maybe?? */
     csvFile.qualtricsContacts.forEach(qContact => {
@@ -268,9 +276,6 @@ function formatCsvContacts(csvFile, waterfallCb) {
                 tempContact.embeddedData[key].replace(/^FALSE$/, 'False');
             }
         });
-
-        /* Set embeddedData to null if empty to match qualtrics format */
-        // TODO is there a better way to do this??
 
         /* All contacts formatted, Add invalid contacts to failed list instead of csvContacts */
 
@@ -343,7 +348,6 @@ function equalityComparison(csvFile, contact, qContact) {
 function checkEmbeddedData(contact1, contact2) {
     var emKeys1 = Object.keys(contact1.embeddedData),
         emKeys2 = Object.keys(contact2.embeddedData);
-
 
     /* Ensure each object has the other's empty values so that they can be cleared/ deleted */
     emKeys1.forEach(key => {
