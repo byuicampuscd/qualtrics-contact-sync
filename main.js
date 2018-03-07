@@ -13,8 +13,9 @@ const sendEmail = require('./email.js');
 
 
 var startTime;
-// var emailSent = false;
-var emailSent = true; // set to true to disable emails
+var emailSent = false;
+// var emailSent = true; // TESTING set to true to disable emails
+// TODO email sent needs to be reset when the run starts
 
 /***************************************************
  * Looks for file level and contact level errs
@@ -45,7 +46,8 @@ function onComplete(err, syncedCsvFiles) {
     }
     console.log(`\n\nCSV files processed: ${syncedCsvFiles.length}`);
 
-    // Promise.resolve(syncedCsvFiles) // USE WHEN UPDATING HASH IS DISABLED
+    // TESTING Promise.resolve(syncedCsvFiles) // USE WHEN UPDATING HASH IS DISABLED
+    // TODO do we still need promises?
     hash.updateHash(syncedCsvFiles)
         .catch((err, syncedCsvFiles) => {
             console.error(chalk.red(err.stack));
@@ -75,7 +77,7 @@ function readCsvFile(csvFile, waterfallCb) {
     fs.readFile(`${settings.filePath}${csvFile.config.csv}`, (readErr, fileContents) => {
         if (readErr) {
             /* for some reason there is no stack when fs returns the Err */
-            Error.captureStackTrace(readErr);
+            Error.captureStackTrace(readErr); // TODO was this not working because of chalk
             waterfallCb(readErr, csvFile);
             return;
         }
@@ -83,7 +85,7 @@ function readCsvFile(csvFile, waterfallCb) {
         var invisibleSpace = new RegExp(String.fromCharCode(65279), 'g');
         fileContents = fileContents.toString().replace(invisibleSpace, '');
         /* Excel turns True to TRUE, which will make the contact update */
-        fileContents.replace(/TRUE/g, 'True').replace(/FALSE/g, 'False');
+        fileContents.replace(/TRUE/g, 'True').replace(/FALSE/g, 'False'); // TODO move this to formatCSV
 
         /* save parsed file to csvFile object */
         csvFile.csvContacts = csvFile.csvContacts.concat(d3.csvParse(fileContents));
@@ -111,7 +113,7 @@ function runCSV(csvFile, eachCallback) {
             updatedCsvFile.report.fileError = waterfallErr;
             console.error(chalk.red(waterfallErr.stack));
         }
-
+        // TODO check for the matching hash here. If they matched move on & if not call sync
         /* write reports! Both functions handle their own errs */
         log.writeFile(updatedCsvFile, () => {
             log.writeDetailedFile(updatedCsvFile, startTime, () => {
@@ -145,21 +147,20 @@ function readConfigFile() {
             return;
         }
         /* format results into the appropriate format */
-        var csvFiles = d3.csvParse(configData.toString())
-            .map(file => {
-                return {
-                    config: file,
-                    csvContacts: [],
-                    qualtricsContacts: [],
-                    report: {
-                        toAdd: [],
-                        toUpdate: [],
-                        toDelete: [],
-                        failed: [],
-                        fileError: null
-                    }
-                };
-            });
+        var csvFiles = d3.csvParse(configData.toString(), (file) => {
+            return {
+                config: file,
+                csvContacts: [],
+                qualtricsContacts: [],
+                report: {
+                    toAdd: [],
+                    toUpdate: [],
+                    toDelete: [],
+                    failed: [],
+                    fileError: null
+                }
+            };
+        });
 
         loopFiles(csvFiles);
     });
@@ -180,4 +181,4 @@ function start() {
  * START HERE
  ****************/
 timer(start);
-// start();
+// TESTING start();

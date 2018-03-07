@@ -20,6 +20,7 @@ const settings = require('./settings.json');
  * Adds csvFile.report.matchingHash & csvFile.report.newHash to csvFile
  ***********************************************************************/
 function checkHash(csvFile, waterfallCb) {
+    // TODO wrap stringify in try/ catch (for circular references)
     var hash = stringHash(JSON.stringify(csvFile.csvContacts));
 
     if (csvFile.config.hash == hash) {

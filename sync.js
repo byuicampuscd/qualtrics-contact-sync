@@ -7,7 +7,8 @@ const qualtrics = require('./qualtrics.js');
 
 /* qualtrics generated keys that the csv will not have */
 const keysToIgnore = ['language', 'unsubscribed', 'responseHistory', 'emailHistory', 'id'];
-
+// TODO add pull tries as global
+// TODO magic numbers as consts
 
 /**************************************************
  * Abstraction of add, update, & delete api calls
@@ -124,9 +125,10 @@ function addPrep(csvFile, waterfallCb) {
         delete contact.externalDataReference;
 
         /* Remove embeddedData properties with empty string values (required by API) */
+        // TODO can I add a contact with an empty embeddedData value?
         Object.keys(contact.embeddedData).forEach(key => {
             if (contact.embeddedData[key] === '') {
-                delete contact.embeddedData[key] === '';
+                delete contact.embeddedData[key];
             }
         });
         /* keep the file when complete */
@@ -255,7 +257,8 @@ function formatCsvContacts(csvFile, waterfallCb) {
             tempContact = {
                 embeddedData: {}
             };
-
+            
+            // TODO create format keys function???
             /* Save property to correct location. Replace UniqueID with externalDataReference */
             Object.keys(contact).forEach(key => {
                 if (key === 'UniqueID') {
@@ -271,6 +274,8 @@ function formatCsvContacts(csvFile, waterfallCb) {
             });
 
             /* delete embedded data if it's empty */
+            // TODO test this. Does qualtrics return an embeddedData OBJ when it's empty?
+            //  (if yes this needs to go)
             if (tempContact.embeddedData.length == 0) {
                 delete tempContact.embeddedData;
             }
@@ -382,6 +387,8 @@ function contactFailed(csvFile, contact, action, err) {
  *                END HELPER FUNCTIONS 
  **********************************************************/
 
+// TODO export function with the below functions in their own waterfall
+
 module.exports = [
     formatCsvContacts, /* contact objects to match qualtrics format */
     asyncLib.retryable(2, pullContacts), /* make X attempts at pullContacts() */
@@ -389,5 +396,5 @@ module.exports = [
     compareContacts, /* equality comparison */
     report, /* mostly for debugging */
     addPrep, /* filters & prepares the contacts who need to be added */
-    makeApiCalls, /* adds, updates, & deletes contacts */
+    // makeApiCalls, /* adds, updates, & deletes contacts */
 ];
