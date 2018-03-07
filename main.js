@@ -13,8 +13,8 @@ const sendEmail = require('./email.js');
 
 
 var startTime;
-var emailSent = false;
-// var emailSent = true; // TESTING set to true to disable emails
+// var emailSent = false;
+var emailSent = true; // TESTING set to true to disable emails
 // TODO email sent needs to be reset when the run starts
 
 /***************************************************
@@ -46,12 +46,13 @@ function onComplete(err, syncedCsvFiles) {
     }
     console.log(`\n\nCSV files processed: ${syncedCsvFiles.length}`);
 
-    // TESTING Promise.resolve(syncedCsvFiles) // USE WHEN UPDATING HASH IS DISABLED
     // TODO do we still need promises?
-    hash.updateHash(syncedCsvFiles)
+    
+    // hash.updateHash(syncedCsvFiles)
+    Promise.resolve(syncedCsvFiles) // TESTING USE WHEN UPDATING HASH IS DISABLED
         .catch((err, syncedCsvFiles) => {
             console.error(chalk.red(err.stack));
-            sendEmail();
+            if (!sendEmail) sendEmail();
             Promise.resolve(syncedCsvFiles);
         })
         .then((syncedCsvFiles) => {
@@ -141,7 +142,7 @@ function readConfigFile() {
         if (readErr) {
             console.error(chalk.red(readErr.stack));
             log.writeFatalErr(readErr, startTime, null, () => {
-                sendEmail();
+                if (!emailSent) sendEmail();
                 return;
             });
             return;
@@ -180,5 +181,5 @@ function start() {
 /****************
  * START HERE
  ****************/
-timer(start);
-// TESTING start();
+// timer(start);
+start(); // TESTING
