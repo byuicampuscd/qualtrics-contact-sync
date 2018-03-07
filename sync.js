@@ -220,9 +220,12 @@ function pullContacts(csvFile, waterfallCb) {
 function formatCsvContacts(csvFile, waterfallCb) {
     /* Capitalization of requiredKeys is important */
     var requiredKeys = ['Email', 'FirstName', 'LastName'],
-        tempContact = {};
+        tempContact = {},
+        ids = csvFile.csvContacts.map(contact => contact.UniqueID); // create a list of id's to compare against
 
-    csvFile.csvContacts = csvFile.csvContacts.reduce((contactList, contact, i, csvContacts) => {
+
+
+    csvFile.csvContacts = csvFile.csvContacts.reduce((contactList, contact) => {
         tempContact = {
             embeddedData: {}
         };
@@ -253,9 +256,9 @@ function formatCsvContacts(csvFile, waterfallCb) {
         }
 
         /* All contacts formatted, Add invalid contacts to failed list instead of csvContacts */
-
+        
         /* Only keep the contact if they have a UniqueID AND the UniqueID is not a duplicate */
-        if ((!contact.UniqueID || contact.UniqueID === '') || (csvContacts.indexOf(contact) !== csvContacts.lastIndexOf(contact))) {
+        if ((!contact.UniqueID || contact.UniqueID === '') || (ids.indexOf(contact.UniqueID) !== ids.lastIndexOf(contact.UniqueID))) {
             /* set externalDataReference to firstName, lastName if the contact didn't have a UniqueID */
             if (!tempContact.externalDataReference) tempContact.externalDataReference = `${tempContact.firstName}, ${tempContact.lastName}`;
 
