@@ -75,8 +75,9 @@ function onComplete(err, syncedCsvFiles) {
 function readCsvFile(csvFile, waterfallCb) {
     fs.readFile(`${settings.filePath}${csvFile.config.csv}`, (readErr, fileContents) => {
         if (readErr) {
-            /* for some reason there is no stack when fs returns the Err */
-            Error.captureStackTrace(readErr); // TODO was this not working because of chalk?
+            /* for some reason there is no stack when fs returns the Err. 
+            * It is not related to how I display the error */
+            Error.captureStackTrace(readErr);
             waterfallCb(readErr, csvFile);
             return;
         }
@@ -89,17 +90,6 @@ function readCsvFile(csvFile, waterfallCb) {
 
         /* save parsed file to csvFile object */
         csvFile.csvContacts = csvFile.csvContacts.concat(d3.csvParse(fileContents));
-
-        // TODO check for duplicate Id's. MOVE TO FORMAT CSV CONTACTS
-        // csvFile.csvContacts = csvFile.csvContacts.filter(contact => {
-        //     /* if there are duplicates add to failed contacts & remove them from csvContacts */
-        //     if (csvFile.csvContacts.indexOf(contact) != csvFile.csvContacts.lastIndexOf(contact)) {
-        //         csvFile.report.failed.push(contact);
-        //         return false;
-        //     }
-        //     return true;
-        // });
-
 
         waterfallCb(null, csvFile);
     });

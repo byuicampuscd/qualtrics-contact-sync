@@ -6,9 +6,11 @@ const chalk = require('chalk');
 const qualtrics = require('./qualtrics.js');
 
 /* qualtrics generated keys that the csv will not have */
-const keysToIgnore = ['language', 'unsubscribed', 'responseHistory', 'emailHistory', 'id'];
-// TODO add pull tries as global
-// TODO magic numbers as consts
+const keysToIgnore = ['language', 'unsubscribed', 'responseHistory', 'emailHistory', 'id'],
+    retryContactCount = 3,
+    retryContactInverval = 3000,
+    pullContactsCount = 2,
+    syncApiLimit = 5;
 
 /**************************************************
  * Abstraction of add, update, & delete api calls
@@ -45,7 +47,7 @@ function makeApiCalls(csvFile, waterfallCb) {
     function runAction(action, seriesCb) {
         var changesMade = 0;
 
-        asyncLib.eachLimit(action.location, 5, wrapRetry, (err) => {
+        asyncLib.eachLimit(action.location, syncApiLimit, wrapRetry, (err) => {
             if (err) {
                 seriesCb(err);
                 return;
@@ -60,8 +62,8 @@ function makeApiCalls(csvFile, waterfallCb) {
         /* wrap the call in an asyncRetry. In case of a 500 server err (happens often) */
         function wrapRetry(contact, limitCb) {
             asyncLib.retry({
-                times: 3,
-                interval: 3000
+                times: retryContactCount,
+                interval: retryContactInverval
             }, makeCall, (err) => {
                 if (err) {
                     /* if contact failed, record it & move on */
@@ -92,6 +94,16 @@ function makeApiCalls(csvFile, waterfallCb) {
     }
 }
 
+function updatePrep(csvFile, waterfallCb) {
+    csvFile.report.toUpdate.forEach(contact => {
+        if (Object.keys(contact.embeddedData).length === 0) {
+            delete contact.embeddedData;
+        }
+    });
+
+    waterfallCb(null, csvFile);
+}
+
 /****************************************************
  * Performs necessary tweaking of the contact objects
  * before adding them to qualtrics.
@@ -114,19 +126,24 @@ function addPrep(csvFile, waterfallCb) {
         contact.externalDataRef = contact.externalDataReference;
         delete contact.externalDataReference;
 
-        /* Remove embeddedData properties with empty string values (required by API) */
-        // TODO can I add a contact with an empty embeddedData value?
-        Object.keys(contact.embeddedData).forEach(key => {
-            if (contact.embeddedData[key] === '') {
-                delete contact.embeddedData[key];
-            }
-        });
+        /* Remove embeddedData properties with empty string values (required by API) 
+         * Unless embeddedData is empty. Then just kill it */
+        // TODO can I add a contact with an empty embeddedData values??
+
+        if (Object.keys(contact.embeddedData).length === 0) {
+            delete contact.embeddedData;
+        } else {
+            Object.keys(contact.embeddedData).forEach(key => {
+                if (contact.embeddedData[key] === '') {
+                    delete contact.embeddedData[key];
+                }
+            });
+        }
         /* keep the file when complete */
         return true;
     });
     waterfallCb(null, csvFile);
 }
-
 
 /*****************************************************
  * a pretty little report at the half-way point. Mostly
@@ -144,7 +161,6 @@ function report(csvFile, waterfallCb) {
 
     waterfallCb(null, csvFile);
 }
-
 
 /**********************************************************
  * Determines which contacts need to be added, 
@@ -180,7 +196,6 @@ function compareContacts(csvFile, waterfallCb) {
     waterfallCb(null, csvFile);
 }
 
-
 /*********************************************
  * Call sortList() helper for both CSV lists
  ********************************************/
@@ -192,6 +207,16 @@ function sortContacts(csvFile, waterfallCb) {
     waterfallCb(null, csvFile);
 }
 
+function cleanQualtricsContacts(csvFile, waterfallCb) {
+    /* replace null embeddedData objects with empty objects... maybe?? */
+    csvFile.qualtricsContacts.forEach(qContact => {
+        if (qContact.embeddedData === null) {
+            qContact.embeddedData = {};
+        }
+    });
+
+    waterfallCb(null, csvFile);
+}
 
 /*****************************************************
  * get students from qualtrics API. Calls Qualtrics.js
@@ -244,15 +269,11 @@ function formatCsvContacts(csvFile, waterfallCb) {
             }
         });
 
-        /* delete embedded data if it's empty */
-        // TODO test this. Does qualtrics return an embeddedData OBJ when it's empty?
-        //  (if yes this needs to go)
-        if (tempContact.embeddedData.length == 0) {
-            delete tempContact.embeddedData;
-        }
+        /* Set embeddedData to null if empty to match qualtrics format */
+        // TODO is there a better way to do this??
 
         /* All contacts formatted, Add invalid contacts to failed list instead of csvContacts */
-        
+
         /* Only keep the contact if they have a UniqueID AND the UniqueID is not a duplicate */
         if ((!contact.UniqueID || contact.UniqueID === '') || (ids.indexOf(contact.UniqueID) !== ids.lastIndexOf(contact.UniqueID))) {
             if (!tempContact.externalDataReference) console.log(chalk.yellow(`Failed to Validate contact: ${contact.firstName}, ${contact.lastName}. No UniqueID found`));
@@ -323,12 +344,16 @@ function checkEmbeddedData(contact1, contact2) {
     var emKeys1 = Object.keys(contact1.embeddedData),
         emKeys2 = Object.keys(contact2.embeddedData);
 
-    return emKeys1.every(key => {
-        /* If the value is empty, add it to both contacts (so deleting embeddedData fields will work) */
-        if (!emKeys2.includes(key) && contact1.embeddedData[key] != '') {
-            contact2.embeddedData[key] = '';
-        }
 
+    /* Ensure each object has the other's empty values so that they can be cleared/ deleted */
+    emKeys1.forEach(key => {
+        if (!emKeys2.includes(key) && (contact1.embeddedData[key] != '' || emKeys2.length === 0)) {
+            contact2.embeddedData[key] = '';
+            emKeys2.push(key);
+        }
+    });
+
+    return emKeys1.every(key => {
         /* TRUE IF (key exists in both contacts & value is the same) OR (key exists only on current contact but value is '') */
         return ((emKeys2.includes(key) && contact1.embeddedData[key] === contact2.embeddedData[key]) ||
             (!emKeys2.includes(key) && contact1.embeddedData[key] === ''));
@@ -374,11 +399,13 @@ function startSync(csvFile, cb) {
     var waterfallFunctions = [
         asyncLib.constant(csvFile),
         formatCsvContacts, /* contact objects to match qualtrics format */
-        asyncLib.retryable(2, pullContacts), /* make X attempts at pullContacts() */
+        asyncLib.retryable(pullContactsCount, pullContacts), /* make X attempts at pullContacts() */
+        cleanQualtricsContacts,
         sortContacts, /* sort by externalReferenceId */
         compareContacts, /* equality comparison */
         report, /* mostly for debugging */
         addPrep, /* filters & prepares the contacts who need to be added */
+        updatePrep,
         makeApiCalls, /* adds, updates, & deletes contacts */
     ];
 
