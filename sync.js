@@ -170,13 +170,12 @@ function compareContacts(csvFile, waterfallCb) {
         }
     });
     /* whatever didn't have a match in the binary search gets deleted */
-    // TODO compare remaining qualtrics contacts against failed contacts so we don't delete contacts with duplicate ID's. BEWARE OF NOT BEING ABLE TO DELETE CONTACTS
-    csvFile.report.toDelete = [...csvFile.qualtricsContacts];
-    // csvFile.report.toDelete = [...csvFile.qualtricsContacts].filter(qContact => {
-    //     return csvFile.report.failed.some(failedContact => {
-    //         return failedContact.UniqueID;
-    //     });
-    // });
+    /* Also has to filter out contacts with duplicate ID's so they don't get deleted */
+    csvFile.report.toDelete = [...csvFile.qualtricsContacts].filter(qContact => {
+        return csvFile.report.failed.every(failedContact => {
+            return qContact.externalDataReference != failedContact.externalDataReference;
+        });
+    });
 
     waterfallCb(null, csvFile);
 }
@@ -223,13 +222,10 @@ function formatCsvContacts(csvFile, waterfallCb) {
         tempContact = {},
         ids = csvFile.csvContacts.map(contact => contact.UniqueID); // create a list of id's to compare against
 
-
-
     csvFile.csvContacts = csvFile.csvContacts.reduce((contactList, contact) => {
         tempContact = {
             embeddedData: {}
         };
-        // TODO check for duplicate id's... no it was something else...... poop.
 
         /* Save property to correct location. Replace UniqueID with externalDataReference */
         Object.keys(contact).forEach(key => {
@@ -259,12 +255,12 @@ function formatCsvContacts(csvFile, waterfallCb) {
         
         /* Only keep the contact if they have a UniqueID AND the UniqueID is not a duplicate */
         if ((!contact.UniqueID || contact.UniqueID === '') || (ids.indexOf(contact.UniqueID) !== ids.lastIndexOf(contact.UniqueID))) {
-            /* set externalDataReference to firstName, lastName if the contact didn't have a UniqueID */
-            if (!tempContact.externalDataReference) tempContact.externalDataReference = `${tempContact.firstName}, ${tempContact.lastName}`;
-
-            console.log(chalk.yellow(`Failed to Validate contact: ${tempContact.externalDataReference}. Please verify contact's UniqueID`));
+            if (!tempContact.externalDataReference) console.log(chalk.yellow(`Failed to Validate contact: ${contact.firstName}, ${contact.lastName}. No UniqueID found`));
+            else console.log(chalk.yellow(`Failed to Validate contact: ${tempContact.externalDataReference}. Please verify contact's UniqueID`));
+            /* push contact to failed contacts */
             csvFile.report.failed.push(tempContact);
         } else {
+            /* push to formatted contacts */
             contactList.push(tempContact);
         }
 
