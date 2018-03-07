@@ -8,14 +8,12 @@ const timer = require('repeat-timer');
 const settings = require('./settings.json');
 const log = require('./writeReport.js');
 const hash = require('./hash.js');
-const syncFunctions = require('./sync.js');
+const syncCsv = require('./sync.js');
 const sendEmail = require('./email.js');
 
 
 var startTime;
-// var emailSent = false;
-var emailSent = true; // TESTING set to true to disable emails
-// TODO email sent needs to be reset when the run starts
+var emailSent;
 
 /***************************************************
  * Looks for file level and contact level errs
@@ -47,7 +45,7 @@ function onComplete(err, syncedCsvFiles) {
     console.log(`\n\nCSV files processed: ${syncedCsvFiles.length}`);
 
     // TODO do we still need promises?
-    
+
     // hash.updateHash(syncedCsvFiles)
     Promise.resolve(syncedCsvFiles) // TESTING USE WHEN UPDATING HASH IS DISABLED
         .catch((err, syncedCsvFiles) => {
@@ -78,22 +76,44 @@ function readCsvFile(csvFile, waterfallCb) {
     fs.readFile(`${settings.filePath}${csvFile.config.csv}`, (readErr, fileContents) => {
         if (readErr) {
             /* for some reason there is no stack when fs returns the Err */
-            Error.captureStackTrace(readErr); // TODO was this not working because of chalk
+            Error.captureStackTrace(readErr); // TODO was this not working because of chalk?
             waterfallCb(readErr, csvFile);
             return;
         }
+
+        /**** CLEAN CSV STRING ****/
+
         /* remove zero width no break space from csv (especially the beginning) */
         var invisibleSpace = new RegExp(String.fromCharCode(65279), 'g');
         fileContents = fileContents.toString().replace(invisibleSpace, '');
-        /* Excel turns True to TRUE, which will make the contact update */
-        fileContents.replace(/TRUE/g, 'True').replace(/FALSE/g, 'False'); // TODO move this to formatCSV
 
         /* save parsed file to csvFile object */
         csvFile.csvContacts = csvFile.csvContacts.concat(d3.csvParse(fileContents));
 
+        // TODO check for duplicate Id's. MOVE TO FORMAT CSV CONTACTS
+        // csvFile.csvContacts = csvFile.csvContacts.filter(contact => {
+        //     /* if there are duplicates add to failed contacts & remove them from csvContacts */
+        //     if (csvFile.csvContacts.indexOf(contact) != csvFile.csvContacts.lastIndexOf(contact)) {
+        //         csvFile.report.failed.push(contact);
+        //         return false;
+        //     }
+        //     return true;
+        // });
+
+
         waterfallCb(null, csvFile);
     });
 }
+
+function logCsvFile(updatedCsvFile, eachCallback) {
+/* write reports! Both functions handle their own errs */
+    log.writeFile(updatedCsvFile, () => {
+        log.writeDetailedFile(updatedCsvFile, startTime, () => {
+            eachCallback(null, updatedCsvFile);
+        });
+    });
+}
+
 
 /*********************************************
  * Runs all actions on a single mailing list.
@@ -105,7 +125,7 @@ function runCSV(csvFile, eachCallback) {
         asyncLib.constant(csvFile), // pass csvFile into the first function
         readCsvFile, // read the csvFile
         hash.checkHash, // compare hashes
-        ...syncFunctions, // sync contacts if hashes didn't match
+        // ...syncFunctions, // sync contacts if hashes didn't match
     ],
     (waterfallErr, updatedCsvFile) => {
         if (waterfallErr) {
@@ -114,13 +134,19 @@ function runCSV(csvFile, eachCallback) {
             updatedCsvFile.report.fileError = waterfallErr;
             console.error(chalk.red(waterfallErr.stack));
         }
-        // TODO check for the matching hash here. If they matched move on & if not call sync
-        /* write reports! Both functions handle their own errs */
-        log.writeFile(updatedCsvFile, () => {
-            log.writeDetailedFile(updatedCsvFile, startTime, () => {
-                eachCallback(null, updatedCsvFile);
+        
+        /* Sync the file if the hash matched, log the file if it didn't */
+        if (!updatedCsvFile.report.matchingHash) {
+            syncCsv(updatedCsvFile, (err, updatedCsvFile) => {
+                if (err) {
+                    updatedCsvFile.report.fileError = err;
+                    console.error(chalk.red(err.stack));
+                }
+                logCsvFile(updatedCsvFile, eachCallback);
             });
-        });
+        } else {
+            logCsvFile(updatedCsvFile, eachCallback);
+        }
     });
 }
 
@@ -172,7 +198,9 @@ function readConfigFile() {
  * call readConfigFile
  *******************************/
 function start() {
+    emailSent = true; // TESTING set to true to disable emails
     startTime = new Date();
+    console.log(`Started on: ${startTime.toDateString()}`);
     log.writeHeader(startTime, () => {
         readConfigFile();
     });

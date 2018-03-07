@@ -15,11 +15,6 @@ const keysToIgnore = ['language', 'unsubscribed', 'responseHistory', 'emailHisto
  * Good Luck!
  *************************************************/
 function makeApiCalls(csvFile, waterfallCb) {
-    if (csvFile.report.matchingHash === true) {
-        waterfallCb(null, csvFile);
-        return;
-    }
-
     const apiActions = [{
         name: 'Add',
         apiCall: qualtrics.addContact,
@@ -105,11 +100,6 @@ function makeApiCalls(csvFile, waterfallCb) {
  * Removes contacts who are missing required fields
  ****************************************************/
 function addPrep(csvFile, waterfallCb) {
-    if (csvFile.report.matchingHash === true) {
-        waterfallCb(null, csvFile);
-        return;
-    }
-
     csvFile.report.toAdd = csvFile.report.toAdd.filter(contact => {
         /* Check for missing required fields */
         var hasRequiredFields = !Object.values(contact).includes('');
@@ -143,11 +133,6 @@ function addPrep(csvFile, waterfallCb) {
  * for debugging purposes.
  ****************************************************/
 function report(csvFile, waterfallCb) {
-    if (csvFile.report.matchingHash === true) {
-        waterfallCb(null, csvFile);
-        return;
-    }
-
     var addCount = csvFile.report.toAdd.length,
         updateCount = csvFile.report.toUpdate.length,
         deleteCount = csvFile.report.toDelete.length;
@@ -168,10 +153,6 @@ function report(csvFile, waterfallCb) {
  * contacts have changed
  *********************************************************/
 function compareContacts(csvFile, waterfallCb) {
-    if (csvFile.report.matchingHash === true) {
-        waterfallCb(null, csvFile);
-        return;
-    }
     console.log(chalk.magenta('Comparing Contacts'));
 
     /* Loop through csvStudents */
@@ -189,7 +170,13 @@ function compareContacts(csvFile, waterfallCb) {
         }
     });
     /* whatever didn't have a match in the binary search gets deleted */
+    // TODO compare remaining qualtrics contacts against failed contacts so we don't delete contacts with duplicate ID's. BEWARE OF NOT BEING ABLE TO DELETE CONTACTS
     csvFile.report.toDelete = [...csvFile.qualtricsContacts];
+    // csvFile.report.toDelete = [...csvFile.qualtricsContacts].filter(qContact => {
+    //     return csvFile.report.failed.some(failedContact => {
+    //         return failedContact.UniqueID;
+    //     });
+    // });
 
     waterfallCb(null, csvFile);
 }
@@ -199,11 +186,6 @@ function compareContacts(csvFile, waterfallCb) {
  * Call sortList() helper for both CSV lists
  ********************************************/
 function sortContacts(csvFile, waterfallCb) {
-    if (csvFile.report.matchingHash === true) {
-        waterfallCb(null, csvFile);
-        return;
-    }
-
     /* Sort both lists by externalDataRef. Required for binary search */
     csvFile.csvContacts.sort(sortList);
     csvFile.qualtricsContacts.sort(sortList);
@@ -218,11 +200,6 @@ function sortContacts(csvFile, waterfallCb) {
  * in the waterfall to make a second attempt if needed
  *****************************************************/
 function pullContacts(csvFile, waterfallCb) {
-    if (csvFile.report.matchingHash === true) {
-        waterfallCb(null, csvFile);
-        return;
-    }
-
     console.log(chalk.magenta('Pulling contacts from Qualtrics'));
     qualtrics.getContacts(csvFile, (getErr, contacts) => {
         if (getErr) {
@@ -236,51 +213,58 @@ function pullContacts(csvFile, waterfallCb) {
     });
 }
 
-/********************************************************
- * Removes contacts that don't have a uniqueId property
- * Formats the remaining contacts to fit Qualtrics API
- * removes commas & replaces UniqueID with externalDataRef
- ********************************************************/
+/***************************************************
+ * Formats the CSV contact objects to look like a 
+ * Qualtrics Contact object.
+ ***************************************************/
 function formatCsvContacts(csvFile, waterfallCb) {
-    if (csvFile.report.matchingHash === true) {
-        waterfallCb(null, csvFile);
-        return;
-    }
-
     /* Capitalization of requiredKeys is important */
     var requiredKeys = ['Email', 'FirstName', 'LastName'],
         tempContact = {};
 
-    csvFile.csvContacts = csvFile.csvContacts.reduce((contactList, contact) => {
-        /* Dont save the contact if they don't have a uniqueID */
-        if (contact.UniqueID && contact.UniqueID != '') {
-            tempContact = {
-                embeddedData: {}
-            };
-            
-            // TODO create format keys function???
-            /* Save property to correct location. Replace UniqueID with externalDataReference */
-            Object.keys(contact).forEach(key => {
-                if (key === 'UniqueID') {
-                    tempContact.externalDataReference = contact[key];
-                } else if (requiredKeys.includes(key)) {
-                    /* make the first character lower case. For equality comparison 
-                        & API compatibility */
-                    tempContact[key.charAt(0).toLowerCase() + key.slice(1)] = contact[key];
-                } else {
-                    /* remove commas from embeddedData so Qualtrics won't truncate the value */
-                    tempContact.embeddedData[key] = contact[key].replace(/,/g, '');
-                }
-            });
+    csvFile.csvContacts = csvFile.csvContacts.reduce((contactList, contact, i, csvContacts) => {
+        tempContact = {
+            embeddedData: {}
+        };
+        // TODO check for duplicate id's... no it was something else...... poop.
 
-            /* delete embedded data if it's empty */
-            // TODO test this. Does qualtrics return an embeddedData OBJ when it's empty?
-            //  (if yes this needs to go)
-            if (tempContact.embeddedData.length == 0) {
-                delete tempContact.embeddedData;
+        /* Save property to correct location. Replace UniqueID with externalDataReference */
+        Object.keys(contact).forEach(key => {
+            if (key === 'UniqueID') {
+                tempContact.externalDataReference = contact[key];
+            } else if (requiredKeys.includes(key)) {
+                /* make the first character lower case. For equality comparison 
+                        & API compatibility */
+                tempContact[key.charAt(0).toLowerCase() + key.slice(1)] = contact[key];
+            } else {
+                /* remove commas from embeddedData so Qualtrics won't truncate the value */
+                tempContact.embeddedData[key] = contact[key].replace(/,/g, '');
+                /* Excel turns True to TRUE, which will make the contact update */
+                tempContact.embeddedData[key].replace(/^TRUE$/, 'True');
+                tempContact.embeddedData[key].replace(/^FALSE$/, 'False');
             }
+        });
+
+        /* delete embedded data if it's empty */
+        // TODO test this. Does qualtrics return an embeddedData OBJ when it's empty?
+        //  (if yes this needs to go)
+        if (tempContact.embeddedData.length == 0) {
+            delete tempContact.embeddedData;
+        }
+
+        /* All contacts formatted, Add invalid contacts to failed list instead of csvContacts */
+
+        /* Only keep the contact if they have a UniqueID AND the UniqueID is not a duplicate */
+        if ((!contact.UniqueID || contact.UniqueID === '') || (csvContacts.indexOf(contact) !== csvContacts.lastIndexOf(contact))) {
+            /* set externalDataReference to firstName, lastName if the contact didn't have a UniqueID */
+            if (!tempContact.externalDataReference) tempContact.externalDataReference = `${tempContact.firstName}, ${tempContact.lastName}`;
+
+            console.log(chalk.yellow(`Failed to Validate contact: ${tempContact.externalDataReference}. Please verify contact's UniqueID`));
+            csvFile.report.failed.push(tempContact);
+        } else {
             contactList.push(tempContact);
         }
+
         return contactList;
     }, []);
 
@@ -387,14 +371,25 @@ function contactFailed(csvFile, contact, action, err) {
  *                END HELPER FUNCTIONS 
  **********************************************************/
 
-// TODO export function with the below functions in their own waterfall
+function startSync(csvFile, cb) {
+    var waterfallFunctions = [
+        asyncLib.constant(csvFile),
+        formatCsvContacts, /* contact objects to match qualtrics format */
+        asyncLib.retryable(2, pullContacts), /* make X attempts at pullContacts() */
+        sortContacts, /* sort by externalReferenceId */
+        compareContacts, /* equality comparison */
+        report, /* mostly for debugging */
+        addPrep, /* filters & prepares the contacts who need to be added */
+        makeApiCalls, /* adds, updates, & deletes contacts */
+    ];
 
-module.exports = [
-    formatCsvContacts, /* contact objects to match qualtrics format */
-    asyncLib.retryable(2, pullContacts), /* make X attempts at pullContacts() */
-    sortContacts, /* sort by externalReferenceId */
-    compareContacts, /* equality comparison */
-    report, /* mostly for debugging */
-    addPrep, /* filters & prepares the contacts who need to be added */
-    // makeApiCalls, /* adds, updates, & deletes contacts */
-];
+    asyncLib.waterfall(waterfallFunctions, (err, syncedCsvFile) => {
+        if (err) {
+            cb(err, syncedCsvFile);
+            return;
+        }
+        cb(null, syncedCsvFile);
+    });
+}
+
+module.exports = startSync;
