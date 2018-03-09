@@ -46,8 +46,8 @@ function onComplete(err, syncedCsvFiles) {
 
     // TODO do we still need promises?
 
-    // hash.updateHash(syncedCsvFiles)
-    Promise.resolve(syncedCsvFiles) // TESTING USE WHEN UPDATING HASH IS DISABLED
+    // Promise.resolve(syncedCsvFiles) // TESTING USE WHEN UPDATING HASH IS DISABLED
+    hash.updateHash(syncedCsvFiles)
         .catch((err, syncedCsvFiles) => {
             console.error(chalk.red(err.stack));
             if (!sendEmail) sendEmail();
@@ -188,7 +188,7 @@ function readConfigFile() {
  * call readConfigFile
  *******************************/
 function start() {
-    emailSent = true; // TESTING set to true to disable emails
+    emailSent = false; // TESTING set to true to disable emails
     startTime = new Date();
     console.log(`Started on: ${startTime.toDateString()}`);
     log.writeHeader(startTime, () => {
@@ -199,5 +199,5 @@ function start() {
 /****************
  * START HERE
  ****************/
-// timer(start);
-start(); // TESTING
+timer(start);
+// start(); // TESTING
