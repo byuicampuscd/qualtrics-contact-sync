@@ -4,6 +4,7 @@
 *.jpg
 *.bat
 auth.json
+joshAuth.json
 node_modules/
 Qualtrics.bfg-report/
 lists/
