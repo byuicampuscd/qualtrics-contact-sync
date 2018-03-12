@@ -89,19 +89,20 @@ function readCsvFile(csvFile, waterfallCb) {
         fileContents = fileContents.toString().replace(invisibleSpace, '');
 
         /* save parsed file to csvFile object */
-        csvFile.csvContacts = csvFile.csvContacts.concat(d3.csvParse(fileContents), contact => {
+        csvFile.csvContacts = csvFile.csvContacts.concat(d3.csvParse(fileContents, contact => {
             /* filter out completely empty rows */
             if (!Object.values(contact).every(value => {
                 return value === undefined || value === '';
             })) return contact;
-        });
+            // if (!isEmpty) return contact;
+        }));
 
         waterfallCb(null, csvFile);
     });
 }
 
 function logCsvFile(updatedCsvFile, eachCallback) {
-/* write reports! Both functions handle their own errs */
+    /* write reports! Both functions handle their own errs */
     log.writeFile(updatedCsvFile, () => {
         log.writeDetailedFile(updatedCsvFile, startTime, () => {
             eachCallback(null, updatedCsvFile);
@@ -116,6 +117,13 @@ function logCsvFile(updatedCsvFile, eachCallback) {
 function runCSV(csvFile, eachCallback) {
     console.log(chalk.blue(`\n${csvFile.config.csv}`));
 
+    /* in case the config file was missing required fields */
+    if (csvFile.report.fileError) {
+        console.error(chalk.red(csvFile.report.fileError.stack));
+        logCsvFile(csvFile, eachCallback);
+        return;
+    }
+
     asyncLib.waterfall([
         asyncLib.constant(csvFile), // pass csvFile into the first function
         readCsvFile, // read the csvFile
@@ -128,7 +136,7 @@ function runCSV(csvFile, eachCallback) {
             updatedCsvFile.report.fileError = waterfallErr;
             console.error(chalk.red(waterfallErr.stack));
         }
-        
+
         /* Sync the file if the hash matched, log the file if it didn't */
         if (updatedCsvFile.report.matchingHash === false) {
             syncCsv(updatedCsvFile, (err, updatedCsvFile) => {
@@ -151,6 +159,30 @@ function loopFiles(csvFiles) {
     /* outermost loop. Returns to onComplete when all
      mailing lists have been processed */
     asyncLib.mapSeries(csvFiles, runCSV, onComplete);
+}
+
+/*************************************************
+ * Ensures the config file has all required fields
+ * (everything except for hash & LibraryID)
+ *************************************************/
+function validateConfigFile(csvFiles) {
+    const optionalConfigKeys = ['hash', 'LibraryID'];
+
+    csvFiles.forEach(csvFile => {
+        var keys = Object.keys(csvFile.config).filter(key => {
+            return !optionalConfigKeys.includes(key);
+        });
+        
+        var isValid = keys.every(configKey => {
+            return csvFile.config[configKey] != '' && csvFile.config[configKey] != undefined;
+        });
+
+        if(!isValid) {
+            csvFile.report.fileError = new Error('Config file missing required field');
+        }
+    });
+    
+    loopFiles(csvFiles);
 }
 
 /*****************************************************
@@ -183,7 +215,7 @@ function readConfigFile() {
             };
         });
 
-        loopFiles(csvFiles);
+        validateConfigFile(csvFiles);
     });
 }
 

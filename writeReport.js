@@ -85,7 +85,7 @@ function footer(startTime, csvFiles, cb) {
     if (csvFiles) {
         footer += fws(`Files Successfully Synced: ${getFilesSynced(csvFiles)}`, 36);
     }
-    footer += lineBreak;
+    footer += `${lineBreak}\n\r\n\r`;
 
     fs.appendFile(logPath, footer, writeErr => {
         if (writeErr) {
