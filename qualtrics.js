@@ -1,7 +1,7 @@
 /* eslint no-console:1 */
 
 const request = require('request');
-var auth = require('./auth.json');
+var auth = require('./joshAuth.json');
 const chalk = require('chalk');
 
 // USE PROCESS.ENV INSTEAD OF AUTH.JSON
@@ -146,4 +146,5 @@ module.exports = {
     deleteContact: deleteContact,
     getContact: getOne,
     changeUser: setAuth,
+    request: makeRequest,
 };

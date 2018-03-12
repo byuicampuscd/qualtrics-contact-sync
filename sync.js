@@ -268,7 +268,7 @@ function formatCsvContacts(csvFile, waterfallCb) {
                 /* make the first character lower case. For equality comparison 
                         & API compatibility */
                 tempContact[key.charAt(0).toLowerCase() + key.slice(1)] = contact[key];
-            } else {
+            } else if (contact[key] != undefined) {
                 /* remove commas from embeddedData so Qualtrics won't truncate the value */
                 tempContact.embeddedData[key] = contact[key].replace(/,/g, '');
                 /* Excel turns True to TRUE, which will make the contact update */
@@ -278,7 +278,7 @@ function formatCsvContacts(csvFile, waterfallCb) {
         });
 
         /* All contacts formatted, Add invalid contacts to failed list instead of csvContacts */
-
+        // ERROR -> if contact is completely empty they break BEFORE it gets to this point
         /* Only keep the contact if they have a UniqueID AND the UniqueID is not a duplicate */
         if ((!contact.UniqueID || contact.UniqueID === '') || (ids.indexOf(contact.UniqueID) !== ids.lastIndexOf(contact.UniqueID))) {
             if (!tempContact.externalDataReference) console.log(chalk.yellow(`Failed to Validate contact: ${contact.firstName}, ${contact.lastName}. No UniqueID found`));

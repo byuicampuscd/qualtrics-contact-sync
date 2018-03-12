@@ -89,7 +89,12 @@ function readCsvFile(csvFile, waterfallCb) {
         fileContents = fileContents.toString().replace(invisibleSpace, '');
 
         /* save parsed file to csvFile object */
-        csvFile.csvContacts = csvFile.csvContacts.concat(d3.csvParse(fileContents));
+        csvFile.csvContacts = csvFile.csvContacts.concat(d3.csvParse(fileContents), contact => {
+            /* filter out completely empty rows */
+            if (!Object.values(contact).every(value => {
+                return value === undefined || value === '';
+            })) return contact;
+        });
 
         waterfallCb(null, csvFile);
     });
@@ -115,7 +120,6 @@ function runCSV(csvFile, eachCallback) {
         asyncLib.constant(csvFile), // pass csvFile into the first function
         readCsvFile, // read the csvFile
         hash.checkHash, // compare hashes
-        // ...syncFunctions, // sync contacts if hashes didn't match
     ],
     (waterfallErr, updatedCsvFile) => {
         if (waterfallErr) {
@@ -126,7 +130,7 @@ function runCSV(csvFile, eachCallback) {
         }
         
         /* Sync the file if the hash matched, log the file if it didn't */
-        if (!updatedCsvFile.report.matchingHash) {
+        if (updatedCsvFile.report.matchingHash === false) {
             syncCsv(updatedCsvFile, (err, updatedCsvFile) => {
                 if (err) {
                     updatedCsvFile.report.fileError = err;
