@@ -179,16 +179,14 @@ function loopFiles(csvFiles) {
  *************************************************/
 function validateConfigFile(csvFiles) {
     const optionalConfigKeys = ['hash', 'LibraryID'];
-    // var mailingListIDs = csvFiles.map(csvFile => csvFile.config.MailingListID);
-    // var uniqueMLIDs = csvFiles.some(csvFile => mailingListIDs.indexOf(csvFile.config.MailingListID) == mailingListIDs.lastIndexOf(csvFile.config.MailingListID));
+    var mailingListIDs = csvFiles.map(csvFile => csvFile.config.MailingListID);
+    var uniqueMLIDs = csvFiles.every(csvFile => mailingListIDs.indexOf(csvFile.config.MailingListID) === mailingListIDs.lastIndexOf(csvFile.config.MailingListID));
 
-    // // TODO does this work?
-    // if (!uniqueMLIDs) {
-    //     console.log('Duplicate MLID\'s found');
-    //     log.writeFatalErr(new Error('Duplicate Mailing List ID\'s found'));
-    //     sendEmail();
-    //     return;
-    // }
+    if (!uniqueMLIDs) {
+        console.log('Duplicate MLID\'s found');
+        log.writeFatalErr(new Error('Duplicate Mailing List ID\'s found'), startTime, csvFiles, sendEmail);
+        return;
+    }
 
 
     csvFiles.forEach(csvFile => {
