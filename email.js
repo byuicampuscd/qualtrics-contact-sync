@@ -9,9 +9,10 @@ module.exports = () => {
      * Send a single email
      ***********************/
     function sendMail(mailOption) {
-        transporter.sendMail(mailOption, (error, result) => {
-            if (error) {
-                console.error(error, mailOption.to);
+        transporter.sendMail(mailOption, (err, result) => {
+            if (err) {
+                console.error(err);
+                return;
             }
             console.log('message %s sent: %s', mailOption.to, result.response);
         });

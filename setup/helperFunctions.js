@@ -1,10 +1,11 @@
 /* eslint no-console:0 */
 const request = require('request');
-const token = require('../joshAuth.json').token;
+const token = require('../myAuth.json').token;
 const qualtrics = require('../qualtrics.js');
 const asyncLib = require('async');
+const fs = require('fs');
 
-const domain = '';
+const domain = 'byui.az1.qualtrics.com';
 const listTitles = [
     'AdmittedOnlineStudents',
     'CertificatesAwardedPriorSem',
@@ -27,7 +28,7 @@ const listTitles = [
 function getMailingListsByName(name) {
     var requestObj = {
         method: 'GET',
-        url: 'https://byui.az1.qualtrics.com/API/v3/mailinglists',
+        url: `https://${domain}/API/v3/mailinglists`,
         headers: {
             'x-api-token': token
         }
@@ -77,7 +78,7 @@ function createMailingLists(libraryID) {
         };
         var settings = {
             method: 'POST',
-            url: `https://${domain}.com/API/v3/mailinglists`,
+            url: `https://${domain}/API/v3/mailinglists`,
             body: JSON.stringify(body),
             headers: {
                 'x-api-token': token,
@@ -103,7 +104,7 @@ function createMailingLists(libraryID) {
     });
 }
 
-function getContactByUniqueID(mailingListID, contactUniqueID) {
+function getContactsInML(mailingListID, contactUniqueID) {
     qualtrics.changeUser(token);
     
     qualtrics.getContacts({
@@ -115,15 +116,16 @@ function getContactByUniqueID(mailingListID, contactUniqueID) {
             console.error(err);
             return;
         }
-        var contact = contacts.filter(contact => contact.externalDataReference === contactUniqueID);
-        console.log(JSON.stringify(contact, null, 3));
+        // var contact = contacts.filter(contact => contact.externalDataReference === contactUniqueID);
+        // console.log(JSON.stringify(contact, null, 3));
+        // console.log(JSON.stringify(contacs, null, 3));\
+        fs.writeFileSync('./contacts.json', JSON.stringify(contacts, null, 3));
     });
 }
 
 
-
-
-getMailingListsByName(''); // mailing list name
+// getMailingListsByName(''); // mailing list name
 // deleteMailingListByID(); // mailingListID 
-// createMailingLists(); // libraryID
+createMailingLists('UR_42uqfMT52qGeZ7f'); // libraryID
+// getContactsInML('ML_erm3lDvbUMMeopD', null);
 // getContactByUniqueID(); // mailingListID, UniqueID of contact

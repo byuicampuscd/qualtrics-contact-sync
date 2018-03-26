@@ -9,11 +9,22 @@ const settings = require('./settings.json');
 const log = require('./writeReport.js');
 const hash = require('./hash.js');
 const syncCsv = require('./sync.js');
-const sendEmail = require('./email.js');
+const email = require('./email.js');
 
 
 var startTime;
 var emailSent;
+
+
+function sendEmail() {
+    if (emailSent) {
+        return;
+    } else {
+        emailSent = true;
+        email();
+    }
+}
+
 
 /***************************************************
  * Looks for file level and contact level errs
@@ -24,10 +35,7 @@ function checkForErrs(syncedCsvFiles) {
         return csvFile.report.failed.length > 0 || csvFile.report.fileError;
     });
 
-    if (errFound && !emailSent) {
-        emailSent = true;
-        sendEmail();
-    }
+    if (errFound) sendEmail();
 }
 
 /********************************************
@@ -44,13 +52,13 @@ function onComplete(err, syncedCsvFiles) {
     }
     console.log(`\n\nCSV files processed: ${syncedCsvFiles.length}`);
 
-    // TODO do we still need promises?
+    // TODO remove promises
 
     // Promise.resolve(syncedCsvFiles) // TESTING USE WHEN UPDATING HASH IS DISABLED
     hash.updateHash(syncedCsvFiles)
         .catch((err, syncedCsvFiles) => {
             console.error(chalk.red(err.stack));
-            if (!sendEmail) sendEmail();
+            sendEmail();
             Promise.resolve(syncedCsvFiles);
         })
         .then((syncedCsvFiles) => {
@@ -76,7 +84,7 @@ function readCsvFile(csvFile, waterfallCb) {
     fs.readFile(`${settings.filePath}${csvFile.config.csv}`, (readErr, fileContents) => {
         if (readErr) {
             /* for some reason there is no stack when fs returns the Err. 
-            * It is not related to how I display the error */
+             * It is not related to how I display the error */
             Error.captureStackTrace(readErr);
             waterfallCb(readErr, csvFile);
             return;
@@ -101,6 +109,10 @@ function readCsvFile(csvFile, waterfallCb) {
     });
 }
 
+/************************************************
+ * writes file data to log and adds to detailed
+ * csv specific log file
+ ***********************************************/
 function logCsvFile(updatedCsvFile, eachCallback) {
     /* write reports! Both functions handle their own errs */
     log.writeFile(updatedCsvFile, () => {
@@ -157,7 +169,7 @@ function runCSV(csvFile, eachCallback) {
  **********************************************/
 function loopFiles(csvFiles) {
     /* outermost loop. Returns to onComplete when all
-     mailing lists have been processed */
+    mailing lists have been processed */
     asyncLib.mapSeries(csvFiles, runCSV, onComplete);
 }
 
@@ -167,21 +179,33 @@ function loopFiles(csvFiles) {
  *************************************************/
 function validateConfigFile(csvFiles) {
     const optionalConfigKeys = ['hash', 'LibraryID'];
+    // var mailingListIDs = csvFiles.map(csvFile => csvFile.config.MailingListID);
+    // var uniqueMLIDs = csvFiles.some(csvFile => mailingListIDs.indexOf(csvFile.config.MailingListID) == mailingListIDs.lastIndexOf(csvFile.config.MailingListID));
+
+    // // TODO does this work?
+    // if (!uniqueMLIDs) {
+    //     console.log('Duplicate MLID\'s found');
+    //     log.writeFatalErr(new Error('Duplicate Mailing List ID\'s found'));
+    //     sendEmail();
+    //     return;
+    // }
+
 
     csvFiles.forEach(csvFile => {
         var keys = Object.keys(csvFile.config).filter(key => {
             return !optionalConfigKeys.includes(key);
         });
-        
+
+        /* are all required fields present? */
         var isValid = keys.every(configKey => {
             return csvFile.config[configKey] != '' && csvFile.config[configKey] != undefined;
         });
 
-        if(!isValid) {
+        if (!isValid) {
             csvFile.report.fileError = new Error('Config file missing required field');
         }
     });
-    
+
     loopFiles(csvFiles);
 }
 
@@ -194,7 +218,7 @@ function readConfigFile() {
         if (readErr) {
             console.error(chalk.red(readErr.stack));
             log.writeFatalErr(readErr, startTime, null, () => {
-                if (!emailSent) sendEmail();
+                sendEmail();
                 return;
             });
             return;

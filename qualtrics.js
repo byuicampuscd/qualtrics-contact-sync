@@ -1,7 +1,7 @@
 /* eslint no-console:1 */
 
 const request = require('request');
-var auth = require('./joshAuth.json');
+var auth = require('./myAuth.json');
 const chalk = require('chalk');
 
 // USE PROCESS.ENV INSTEAD OF AUTH.JSON

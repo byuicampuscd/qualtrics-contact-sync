@@ -278,11 +278,15 @@ function formatCsvContacts(csvFile, waterfallCb) {
         });
 
         /* All contacts formatted, Add invalid contacts to failed list instead of csvContacts */
-        // ERROR -> if contact is completely empty they break BEFORE it gets to this point
+
+        // WARNING -> if contact is completely empty they break BEFORE it gets to this point (was this fixed when empty rows were removed from the csv string?)
         /* Only keep the contact if they have a UniqueID AND the UniqueID is not a duplicate */
         if ((!contact.UniqueID || contact.UniqueID === '') || (ids.indexOf(contact.UniqueID) !== ids.lastIndexOf(contact.UniqueID))) {
-            if (!tempContact.externalDataReference) console.log(chalk.yellow(`Failed to Validate contact: ${contact.firstName}, ${contact.lastName}. No UniqueID found`));
-            else console.log(chalk.yellow(`Failed to Validate contact: ${tempContact.externalDataReference}. Please verify contact's UniqueID`));
+            if (!tempContact.externalDataReference) {
+                console.log(chalk.yellow(`Failed to Validate contact: ${contact.firstName}, ${contact.lastName}. No UniqueID found`));
+            } else {
+                console.log(chalk.yellow(`Failed to Validate contact: ${tempContact.externalDataReference}. Please verify contact's UniqueID`));
+            }
             /* push contact to failed contacts */
             csvFile.report.failed.push(tempContact);
         } else {
