@@ -350,8 +350,19 @@ function equalityComparison(csvFile, contact, qContact) {
     /* if any of the checks found inequalities -> update contact */
     if (!equal) {
         /* save id to contact so it can be updated */
-        contact.id = qContact.id;
-        csvFile.report.toUpdate.push(contact);
+        if (qContact.id != undefined) {
+            contact.id = qContact.id;
+            csvFile.report.toUpdate.push(contact);
+        } else {
+            /* Handle a missing Qualtrics ID. Not sure why this happens */
+            var idErr = new Error('Failed to find contact\'s qualtrics ID');
+            console.error(chalk.yellow(idErr.message));
+            console.log(`Qualtrics Contact: ${JSON.stringify(qContact, null, 2)}`);
+
+            contact.err = idErr;
+            contact.action = 'Update';
+            csvFile.report.failed.push(contact);
+        }
     }
 }
 

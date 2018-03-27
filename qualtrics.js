@@ -1,7 +1,7 @@
 /* eslint no-console:1 */
 
 const request = require('request');
-var auth = require('./myAuth.json');
+var auth = require('./auth.json');
 const chalk = require('chalk');
 
 // USE PROCESS.ENV INSTEAD OF AUTH.JSON
@@ -20,7 +20,7 @@ function makeRequest(reqObj, cb) {
         if (err) {
             cb(err);
         } else if (response.statusCode !== 200) {
-            cb(new Error(`Status Code ${response.statusCode}`));
+            cb(new Error(`Status Code: ${response.statusCode} | request: ${reqObj}`));
         } else if (response.headers['content-type'] != 'application/json') {
             cb(new Error(`Content Type: ${response.headers['content-type']}`));
         } else {
@@ -106,6 +106,9 @@ function addContact(csvFile, contact, cb) {
  * given mailing list
  ******************************************/
 function updateContact(csvFile, contact, cb) {
+    if (contact.id === undefined) {
+        cb(new Error('Contact ID undefined'), null);
+    }
     /* pull ID off of the contact! */
     var contactId = contact.id;
     delete contact.id;
