@@ -107,12 +107,31 @@ function footer(startTime, csvFiles, cb) {
  **************************************************************/
 function detailedFile(csvFile, date, cb) {
     var text = `${lineBreak}${fws(date.toDateString(), 20) + date.toTimeString()}${lineBreak}`;
-    text += `To Add:\r\n${JSON.stringify(csvFile.report.toAdd, null, 3)}\r\n`;
-    text += `To Update:\r\n${JSON.stringify(csvFile.report.toUpdate, null, 3)}\r\n`;
-    text += `To Delete:\r\n${JSON.stringify(csvFile.report.toDelete, null, 3)}\r\n`;
-    text += `Failed:\r\n${JSON.stringify(csvFile.report.failed, null, 3)}`;
-    text += lineBreak;
 
+    /* Add uniqueID of contact to be added */
+    text += `To Add(${csvFile.report.toAdd.length}):\r\n`;
+    csvFile.report.toAdd.forEach(contact => {
+        // text += `\tContactID: ${contact.externalDataReference}\r\n`;
+        text += `\tContactID: ${contact.externalDataRef}\r\n`;
+    });
+    text += '\r\n';
+
+    /* Add specific key that was different */
+    text += `To Update(${csvFile.report.toUpdate.length}):\r\n`;
+    csvFile.report.contactDiffs.forEach(diff => {
+        text += `\tContactID: ${diff.externalDataReference}\r\n\t\t${diff.contact1}\r\n\t\t${diff.contact2}\r\n\r\n`;
+    });
+    text += '\r\n';
+    
+    /* Add contact with uniqueID & qualtricsID */
+    text += `To Delete(${csvFile.report.toDelete.length}):\r\n`;
+    csvFile.report.toDelete.forEach(contact => {
+        text += `\tContactID: ${contact.externalDataReference}\tQualtricsID: ${contact.id}\r\n`;
+    });
+    text += '\r\n';
+    
+    text += `Failed(${csvFile.report.failed.length}):\r\n${JSON.stringify(csvFile.report.failed, null, 3)}`;
+    text += lineBreak;
 
     var fileName = `${settings.logPath}${csvFile.config.csv.replace('.csv', '.txt')}`;
     fs.appendFile(fileName, text, writeErr => {

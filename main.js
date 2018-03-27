@@ -53,6 +53,18 @@ function onComplete(err, syncedCsvFiles) {
     console.log(`\n\nCSV files processed: ${syncedCsvFiles.length}`);
 
     // TODO remove promises
+    // hash.updateHash(syncedCsvFiles, (hashErr, syncedCsvFiles) => {
+    //     if (hashErr) {
+    //         console.error(chalk.red(hashErr.stack));
+    //         sendEmail();
+    //         return;
+    //     }
+    //     log.writeFooter(startTime, syncedCsvFiles, syncedCsvFiles => {
+    //         checkForErrs(syncedCsvFiles);
+    //         console.log(chalk.blue('Done'));
+    //     });
+    // });
+
 
     // Promise.resolve(syncedCsvFiles) // TESTING USE WHEN UPDATING HASH IS DISABLED
     hash.updateHash(syncedCsvFiles)
@@ -164,15 +176,6 @@ function runCSV(csvFile, eachCallback) {
     });
 }
 
-/***********************************************
- * loop through each csv on the config file
- **********************************************/
-function loopFiles(csvFiles) {
-    /* outermost loop. Returns to onComplete when all
-    mailing lists have been processed */
-    asyncLib.mapSeries(csvFiles, runCSV, onComplete);
-}
-
 /*************************************************
  * Ensures the config file has all required fields
  * (everything except for hash & LibraryID)
@@ -182,9 +185,11 @@ function validateConfigFile(csvFiles) {
     var mailingListIDs = csvFiles.map(csvFile => csvFile.config.MailingListID);
     var uniqueMLIDs = csvFiles.every(csvFile => mailingListIDs.indexOf(csvFile.config.MailingListID) === mailingListIDs.lastIndexOf(csvFile.config.MailingListID));
 
+    // TESTING
     if (!uniqueMLIDs) {
-        console.log('Duplicate MLID\'s found');
-        log.writeFatalErr(new Error('Duplicate Mailing List ID\'s found'), startTime, csvFiles, sendEmail);
+        var validationErr = new Error('Duplicate Mailing List ID\'s found');
+        console.error(chalk.red(validationErr.stack));
+        log.writeFatalErr(validationErr, startTime, csvFiles, sendEmail);
         return;
     }
 
@@ -204,7 +209,8 @@ function validateConfigFile(csvFiles) {
         }
     });
 
-    loopFiles(csvFiles);
+    /* loop through each csv on the config file */
+    asyncLib.mapSeries(csvFiles, runCSV, onComplete);
 }
 
 /*****************************************************
@@ -228,6 +234,7 @@ function readConfigFile() {
                 csvContacts: [],
                 qualtricsContacts: [],
                 report: {
+                    contactDiffs: [],
                     toAdd: [],
                     toUpdate: [],
                     toDelete: [],

@@ -131,7 +131,7 @@ function addPrep(csvFile, waterfallCb) {
         delete contact.externalDataReference;
 
 
-        // TODO can I add a contact with an empty embeddedData values??
+        // TODO can I add a contact with empty embeddedData values??
         /* Remove embeddedData properties with empty string values (required by API) 
          * Unless embeddedData is empty. Then just kill it */
         if (Object.keys(contact.embeddedData).length === 0) {
@@ -281,7 +281,7 @@ function formatCsvContacts(csvFile, waterfallCb) {
 
         // WARNING -> if contact is completely empty they break BEFORE it gets to this point (was this fixed when empty rows were removed from the csv string?)
         /* Only keep the contact if they have a UniqueID AND the UniqueID is not a duplicate */
-        if ((!contact.UniqueID || contact.UniqueID === '') || (ids.indexOf(contact.UniqueID) !== ids.lastIndexOf(contact.UniqueID))) {
+        if (!contact.UniqueID || contact.UniqueID === '' || ids.indexOf(contact.UniqueID) !== ids.lastIndexOf(contact.UniqueID)) {
             if (!tempContact.externalDataReference) {
                 console.log(chalk.yellow(`Failed to Validate contact: ${contact.firstName}, ${contact.lastName}. No UniqueID found`));
             } else {
@@ -322,7 +322,17 @@ function equalityComparison(csvFile, contact, qContact) {
 
     /* Compare outer object - only runs once because we know the keys are the same */
     equal = cKeys.every(cKey => {
-        return qKeys.includes(cKey) && contact[cKey] === qContact[cKey];
+        var same = qKeys.includes(cKey) && contact[cKey] === qContact[cKey];
+        /* add diff to csvFile for reporting later */
+        if (!same) {
+            csvFile.report.contactDiffs.push({
+                externalDataReference: contact.externalDataReference,
+                contact1: `${cKey} : ${contact[cKey]}`,
+                contact2: `${cKey} : ${qContact[cKey]}`
+            });
+        }
+
+        return same;
     });
 
     /* EMBEDDED DATA */
@@ -330,11 +340,11 @@ function equalityComparison(csvFile, contact, qContact) {
 
     /* Compare contact to qContact */
     if (equal) {
-        equal = checkEmbeddedData(contact, qContact);
+        equal = checkEmbeddedData(contact, qContact, csvFile);
     }
     /* Compare qContact to contact */
     if (equal) {
-        equal = checkEmbeddedData(qContact, contact);
+        equal = checkEmbeddedData(qContact, contact, csvFile);
     }
 
     /* if any of the checks found inequalities -> update contact */
@@ -349,7 +359,7 @@ function equalityComparison(csvFile, contact, qContact) {
  * Logic for comparing embeddedData. Returns true
  * if the contact's embeddedData object is the same
  **************************************************/
-function checkEmbeddedData(contact1, contact2) {
+function checkEmbeddedData(contact1, contact2, csvFile) {
     var emKeys1 = Object.keys(contact1.embeddedData),
         emKeys2 = Object.keys(contact2.embeddedData);
 
@@ -363,14 +373,25 @@ function checkEmbeddedData(contact1, contact2) {
 
     return emKeys1.every(key => {
         /* TRUE IF (key exists in both contacts & value is the same) OR (key exists only on current contact but value is '') */
-        return ((emKeys2.includes(key) && contact1.embeddedData[key] === contact2.embeddedData[key]) ||
-            (!emKeys2.includes(key) && contact1.embeddedData[key] === ''));
+        var same = emKeys2.includes(key) && contact1.embeddedData[key] === contact2.embeddedData[key] ||
+            !emKeys2.includes(key) && contact1.embeddedData[key] === '';
+
+        if (!same) {
+            // append to csvFile for reporting later
+            csvFile.report.contactDiffs.push({
+                externalDataReference: contact1.externalDataReference,
+                contact1: `${key} : ${contact1.embeddedData[key]}`,
+                contact2: `${key} : ${contact2.embeddedData[key]}`
+            });
+        }
+
+        return same;
     });
 }
 
-/********************************************
- * sort any list by externalDataRef property
- ********************************************/
+/**************************************************
+ * sort any list by externalDataReference property
+ **************************************************/
 function sortList(a, b) {
     if (a.externalDataReference < b.externalDataReference) return -1;
     if (a.externalDataReference > b.externalDataReference) return 1;
