@@ -157,6 +157,7 @@ This would've been a lot easier if it weren't for the undocumented quirks of the
 
 * EmbeddedData values can not be deleted via API once created. They can only be set to an empty string. Setting them to null or undefined throws a server err
 * Adding someone to a mailing list when they are missing a 'required field' (anything outside of embeddedData) is allowed. HOWEVER you will not be able to update them until all required fields are filled (The tool will not allow you to add these contacts, but the API will).
+* Required fields cannot be empty when they are sent to the API on an UPDATE. If a required field is empty in the CSV it must be deleted from the object before it's sent to Qualtrics.
 * Adding embeddedData values with commas in them cause the API to truncate the value, deleting everything after the comma. I don't recall if the comma is included or not.
 * Qualtrics servers like to throw 500 errors at random. Running the same API call moments later usually fixes the issue, so I'm not sure why it happens so often. This is why calls to the API wrapped in the async library's `retry` & `retryable` methods.
 * When adding a new contact, `externalDataReference` must be renamed `externalDataRef`. In addition, embeddedData properties with empty string values must be removed.
