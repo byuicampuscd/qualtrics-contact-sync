@@ -310,9 +310,10 @@ function formatCsvContacts(csvFile, waterfallCb) {
 function equalityComparison(csvFile, contact, qContact) {
 
     /* OUTER OBJECT */
-    /* Filter out keys with empty values */
+    /* Filter out keys with empty values & embeddedData */
     var cKeys = Object.keys(contact).filter(key => {
-            return contact[key] != '' && key != 'embeddedData';
+            // return contact[key] != '' && key != 'embeddedData';
+            return key != 'embeddedData';
         }),
         /* Filter out qualtrics specific keys */
         qKeys = Object.keys(qContact).filter(key => {
@@ -321,8 +322,17 @@ function equalityComparison(csvFile, contact, qContact) {
         equal = true;
 
     /* Compare outer object - only runs once because we know the keys are the same */
+
+    /* delete the key if it's empty in both places. sending a required field with an empty string value causes a 400 error */
     equal = cKeys.every(cKey => {
+        if (contact[cKey] === '' && qContact[cKey] === null) {
+            delete contact[cKey];
+            return true;
+        }
+
+        /* if key exists on both contacts & the value is the same */
         var same = qKeys.includes(cKey) && contact[cKey] === qContact[cKey];
+
         /* add diff to csvFile for reporting later */
         if (!same) {
             csvFile.report.contactDiffs.push({
@@ -331,7 +341,6 @@ function equalityComparison(csvFile, contact, qContact) {
                 contact2: `${cKey} : ${qContact[cKey]}`
             });
         }
-
         return same;
     });
 
@@ -350,19 +359,8 @@ function equalityComparison(csvFile, contact, qContact) {
     /* if any of the checks found inequalities -> update contact */
     if (!equal) {
         /* save id to contact so it can be updated */
-        if (qContact.id != undefined) {
-            contact.id = qContact.id;
-            csvFile.report.toUpdate.push(contact);
-        } else {
-            /* Handle a missing Qualtrics ID. Not sure why this happens */
-            var idErr = new Error('Failed to find contact\'s qualtrics ID');
-            console.error(chalk.yellow(idErr.message));
-            console.log(`Qualtrics Contact: ${JSON.stringify(qContact, null, 2)}`);
-
-            contact.err = idErr;
-            contact.action = 'Update';
-            csvFile.report.failed.push(contact);
-        }
+        contact.id = qContact.id;
+        csvFile.report.toUpdate.push(contact);
     }
 }
 

@@ -20,7 +20,7 @@ function makeRequest(reqObj, cb) {
         if (err) {
             cb(err);
         } else if (response.statusCode !== 200) {
-            cb(new Error(`Status Code: ${response.statusCode} | request: ${reqObj}`));
+            cb(new Error(`Status Code: ${response.statusCode}`));
         } else if (response.headers['content-type'] != 'application/json') {
             cb(new Error(`Content Type: ${response.headers['content-type']}`));
         } else {
@@ -107,15 +107,21 @@ function addContact(csvFile, contact, cb) {
  ******************************************/
 function updateContact(csvFile, contact, cb) {
     if (contact.id === undefined) {
-        cb(new Error('Contact ID undefined'), null);
+        cb(new Error('Qualtrics ID undefined'), null);
+        return;
     }
+
+    /* make a copy of the contact to send so we don't lose the id if the call fails */
+    var contactCopy = Object.assign({}, contact);
+
     /* pull ID off of the contact! */
-    var contactId = contact.id;
-    delete contact.id;
+    var contactId = contactCopy.id;
+    delete contactCopy.id;
+
     var requestObj = {
         method: 'PUT',
         url: `https://byui.az1.qualtrics.com/API/v3/mailinglists/${csvFile.config.MailingListID}/contacts/${contactId}`,
-        body: JSON.stringify(contact),
+        body: JSON.stringify(contactCopy),
         headers: {
             'content-type': 'application/json',
             'x-api-token': auth.token
