@@ -1,25 +1,20 @@
-/* eslint-env node, es6 */
 /* eslint no-console:0 */
-'use strict';
 
-const nodemailer = require('nodeMailer'),
-    auth = require('./auth.json');
+const nodemailer = require('nodeMailer');
+const auth = require('./auth.json');
 
-/*********************************************
- * Prepare error messages and call sendMail
- * when complete. Can send one or many emails
- *********************************************/
-function prepMail(message) {
-    message += '\n\n This is an automatic message. Please do not respond.';
+module.exports = () => {
+    var message = 'There was an error with the Qualtrics Sync Tool. Please refer to the log for more detail\n\n This is an automatic message. Please do not respond.';
     /***********************
      * Send a single email
      ***********************/
     function sendMail(mailOption) {
-        transporter.sendMail(mailOption, (error, result) => {
-            if (error) {
-                return console.log(error, mailOption.to);
+        transporter.sendMail(mailOption, (err, result) => {
+            if (err) {
+                console.error(err);
+                return;
             }
-            return console.log('message %s sent: %s', mailOption.to, result.response);
+            console.log('message %s sent: %s', mailOption.to, result.response);
         });
     }
 
@@ -52,6 +47,4 @@ function prepMail(message) {
             text: message
         });
     }
-}
-
-module.exports = prepMail;
+};

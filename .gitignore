@@ -4,9 +4,11 @@
 *.jpg
 *.bat
 auth.json
+myAuth.json
 node_modules/
 Qualtrics.bfg-report/
 lists/
 practiceStudents.json
 log.txt
-test/reports
+qualtricsJosh.txt
+test/reports/*
