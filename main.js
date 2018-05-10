@@ -255,7 +255,7 @@ function readConfigFile() {
 function start() {
     emailSent = false; // TESTING set to true to disable emails
     startTime = new Date();
-    console.log(`Started on: ${startTime.toDateString()}`);
+    console.log(`\nStarted on: ${startTime.toDateString()}`);
     log.writeHeader(startTime, () => {
         readConfigFile();
     });

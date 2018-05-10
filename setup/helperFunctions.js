@@ -1,6 +1,6 @@
 /* eslint no-console:0 */
 const request = require('request');
-const token = require('../myAuth.json').token;
+const token = require('../auth.json').token;
 const qualtrics = require('../qualtrics.js');
 const asyncLib = require('async');
 const fs = require('fs');
@@ -40,13 +40,22 @@ function getMailingListsByName(name) {
             return;
         }
         body = JSON.parse(body);
+
+        var names = body.result.elements.map(list => {
+            return {
+                name: list.name,
+                id: list.id
+            };
+        });
+
+        console.log(names);
         // console.log(JSON.stringify(body, null, 3));
         // console.log(body.result.elements);
         var derp = body.result.elements.filter(list => {
             return list.name === name;
         });
 
-        console.log(derp);
+        // console.log(derp);
     });
 }
 
@@ -106,7 +115,7 @@ function createMailingLists(libraryID) {
 
 function getContactsInML(mailingListID, contactUniqueID) {
     qualtrics.changeUser(token);
-    
+
     qualtrics.getContacts({
         config: {
             MailingListID: mailingListID
@@ -124,8 +133,8 @@ function getContactsInML(mailingListID, contactUniqueID) {
 }
 
 
-// getMailingListsByName(''); // mailing list name
+getMailingListsByName(''); // mailing list name
 // deleteMailingListByID(); // mailingListID 
-createMailingLists('UR_42uqfMT52qGeZ7f'); // libraryID
+// createMailingLists('UR_42uqfMT52qGeZ7f'); // libraryID
 // getContactsInML('ML_erm3lDvbUMMeopD', null);
 // getContactByUniqueID(); // mailingListID, UniqueID of contact

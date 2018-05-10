@@ -112,21 +112,21 @@ function detailedFile(csvFile, date, cb) {
     text += `To Add(${csvFile.report.toAdd.length}):\r\n`;
     csvFile.report.toAdd.forEach(contact => {
         // text += `\tContactID: ${contact.externalDataReference}\r\n`;
-        text += `\tContactID: ${contact.externalDataRef}\r\n`;
+        text += `\tUniqueID: ${contact.externalDataRef}\r\n`;
     });
     text += '\r\n';
 
     /* Add specific key that was different */
     text += `To Update(${csvFile.report.toUpdate.length}):\r\n`;
     csvFile.report.contactDiffs.forEach(diff => {
-        text += `\tContactID: ${diff.externalDataReference}\r\n\t\t${diff.contact1}\r\n\t\t${diff.contact2}\r\n\r\n`;
+        text += `\tUniqueID: ${diff.externalDataReference}\r\n\t\t${diff.contact1}\r\n\t\t${diff.contact2}\r\n\r\n`;
     });
     text += '\r\n';
     
     /* Add contact with uniqueID & qualtricsID */
     text += `To Delete(${csvFile.report.toDelete.length}):\r\n`;
     csvFile.report.toDelete.forEach(contact => {
-        text += `\tContactID: ${contact.externalDataReference}\tQualtricsID: ${contact.id}\r\n`;
+        text += `\tUniqueID: ${contact.externalDataReference}\tExternalDataReference: ${contact.id}\r\n`;
     });
     text += '\r\n';
     
