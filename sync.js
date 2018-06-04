@@ -17,6 +17,12 @@ const keysToIgnore = ['language', 'unsubscribed', 'responseHistory', 'emailHisto
  * Good Luck!
  *************************************************/
 function makeApiCalls(csvFile, waterfallCb) {
+    // TESTING -> this option disables all ADD, UPDATE, & DELETE requests
+    if (process.argv.includes('-t')) {
+        waterfallCb(null, csvFile);
+        return;
+    }
+    
     const apiActions = [{
         name: 'Add',
         apiCall: qualtrics.addContact,

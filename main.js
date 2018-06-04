@@ -15,7 +15,10 @@ const email = require('./email.js');
 var startTime;
 var emailSent;
 
-
+/**************************************
+ * Checks to see if we've already sent
+ * an email before sending one
+ **************************************/
 function sendEmail() {
     if (emailSent) {
         return;
@@ -66,7 +69,7 @@ function onComplete(err, syncedCsvFiles) {
     // });
 
 
-    // Promise.resolve(syncedCsvFiles) // TESTING USE WHEN UPDATING HASH IS DISABLED
+    // Promise.resolve(syncedCsvFiles) // TESTING -> enable when updating hases is disabled
     hash.updateHash(syncedCsvFiles)
         .catch((err, syncedCsvFiles) => {
             console.error(chalk.red(err.stack));
@@ -185,7 +188,6 @@ function validateConfigFile(csvFiles) {
     var mailingListIDs = csvFiles.map(csvFile => csvFile.config.MailingListID);
     var uniqueMLIDs = csvFiles.every(csvFile => mailingListIDs.indexOf(csvFile.config.MailingListID) === mailingListIDs.lastIndexOf(csvFile.config.MailingListID));
 
-    // TESTING
     if (!uniqueMLIDs) {
         var validationErr = new Error('Duplicate Mailing List ID\'s found');
         console.error(chalk.red(validationErr.stack));
@@ -265,4 +267,4 @@ function start() {
  * START HERE
  ****************/
 timer(start);
-// start(); // TESTING
+// start(); // TESTING -> enable to skip timer
