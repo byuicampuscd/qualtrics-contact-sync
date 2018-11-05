@@ -164,5 +164,5 @@ This would've been a lot easier if it weren't for the undocumented quirks of the
 * Qualtrics servers like to throw 500 errors at random. Running the same API call moments later usually fixes the issue, so I'm not sure why it happens so often. This is why calls to the API wrapped in the async library's `retry` & `retryable` methods.
 * When adding a new contact, `externalDataReference` must be renamed `externalDataRef`. In addition, embeddedData properties with empty string values must be removed.
 * Boolean values are stored as strings, so `TRUE` and `true` ARE NOT the same. This can happen if someone opens & saves the csv in excel.
-* Adding a contact with an empty `embeddedData` object to Qualtrics will result in the embeddedData field being set to `null`. This can make it difficult to compare contacts b/c Object.Keys() breaks on null.
+* Adding a contact with an empty `embeddedData` object to Qualtrics will result in the embeddedData field being set to `null`. This can make it difficult to compare contacts b/c `Object.Keys()` breaks on null.
 * The embeddedData property MUST contain a JSON object. Sending `null` or `''` will make the request fail.
