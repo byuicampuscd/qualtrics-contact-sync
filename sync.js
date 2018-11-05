@@ -222,7 +222,7 @@ function sortContacts(csvFile, waterfallCb) {
  * formatting on qualtrics contact objects 
  ******************************************/
 function cleanQualtricsContacts(csvFile, waterfallCb) {
-    /* replace null embeddedData objects with empty objects... maybe?? */
+    /* replace null embeddedData objects with empty objects to match csv format */
     csvFile.qualtricsContacts.forEach(qContact => {
         if (qContact.embeddedData === null) {
             qContact.embeddedData = {};

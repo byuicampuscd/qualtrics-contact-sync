@@ -11,7 +11,7 @@ This module is not meant to be used as a dependency. Installing globally has not
 To install globally, open the console and type:
 
 ```
-npm install -g qualtrics-contact-sync
+npm install -g https://github.com/byuitechops/qualtrics-contact-sync.git
 ```
 
 
@@ -30,6 +30,9 @@ The Tool requires the following files:
 * settings.json 
 * auth.json
 * config.csv
+
+The CLI takes the following parameters:
+- `-t` (Test) Disables all calls to Qualtrics, allowing the developer to determine the number of contacts to Add, Update, and Delete without making potentially undesired calls to the API.
 
 
 ### Settings.json
@@ -108,7 +111,6 @@ This will be a TXT file containing JSON data. The exact object is subject to cha
 - Must keep accurate logs to allow quick and accurate debugging
 
 
-# TODO (everything below)
 ## Development
 
 ### Execution Process
