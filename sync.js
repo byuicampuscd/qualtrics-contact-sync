@@ -17,8 +17,7 @@ const keysToIgnore = ['language', 'unsubscribed', 'responseHistory', 'emailHisto
  * Good Luck!
  *************************************************/
 function makeApiCalls(csvFile, waterfallCb) {
-    // TESTING -> this option disables all ADD, UPDATE, & DELETE requests
-    // it does not disable logs
+    // TESTING -> this option disables all ADD, UPDATE, & DELETE requests. It does not disable logs
     if (process.argv.includes('-t')) {
         waterfallCb(null, csvFile);
         return;
@@ -137,8 +136,6 @@ function addPrep(csvFile, waterfallCb) {
         contact.externalDataRef = contact.externalDataReference;
         delete contact.externalDataReference;
 
-
-        // TODO can I add a contact with empty embeddedData values??
         /* Remove embeddedData properties with empty string values (required by API) 
          * Unless embeddedData is empty. Then just kill it */
         if (Object.keys(contact.embeddedData).length === 0) {
@@ -166,9 +163,10 @@ function report(csvFile, waterfallCb) {
         deleteCount = csvFile.report.toDelete.length;
 
     console.log(`Changes to Make: ${addCount + updateCount + deleteCount}`);
-    /* console.log(`toAdd: ${addCount}`);
-    console.log(`toUpdate: ${updateCount}`);
-    console.log(`toDelete: ${deleteCount}`); */
+    // TESTING - disable for prod
+    // console.log(`toAdd: ${addCount}`);
+    // console.log(`toUpdate: ${updateCount}`);
+    // console.log(`toDelete: ${deleteCount}`);
 
     waterfallCb(null, csvFile);
 }
@@ -286,7 +284,6 @@ function formatCsvContacts(csvFile, waterfallCb) {
 
         /* All contacts formatted, Add invalid contacts to failed list instead of csvContacts */
 
-        // WARNING -> if contact is completely empty they break BEFORE it gets to this point (was this fixed when empty rows were removed from the csv string?)
         /* Only keep the contact if they have a UniqueID AND the UniqueID is not a duplicate */
         if (!contact.UniqueID || contact.UniqueID === '' || ids.indexOf(contact.UniqueID) !== ids.lastIndexOf(contact.UniqueID)) {
             if (!tempContact.externalDataReference) {

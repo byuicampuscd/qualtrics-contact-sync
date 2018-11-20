@@ -55,20 +55,6 @@ function onComplete(err, syncedCsvFiles) {
     }
     console.log(`\n\nCSV files processed: ${syncedCsvFiles.length}`);
 
-    // TODO remove promises
-    // hash.updateHash(syncedCsvFiles, (hashErr, syncedCsvFiles) => {
-    //     if (hashErr) {
-    //         console.error(chalk.red(hashErr.stack));
-    //         sendEmail();
-    //         return;
-    //     }
-    //     log.writeFooter(startTime, syncedCsvFiles, syncedCsvFiles => {
-    //         checkForErrs(syncedCsvFiles);
-    //         console.log(chalk.blue('Done'));
-    //     });
-    // });
-
-
     // Promise.resolve(syncedCsvFiles) // TESTING -> enable when updating hashes is disabled
     hash.updateHash(syncedCsvFiles)
         .catch((err, syncedCsvFiles) => {

@@ -4,16 +4,10 @@ const request = require('request');
 const chalk = require('chalk');
 const auth = process.env.QUALTRICS_API_TOKEN; // = require('./auth.json');
 
+/* break at startup if missing token */
 if (!auth) {
     throw new Error('Qualtrics auth token missing');
 }
-
-
-// function setAuth (newToken) {
-//     auth = {
-//         token: newToken
-//     };
-// }
 
 /***************************************************
  * Sends all API requests. Takes a requestObj &
@@ -158,6 +152,5 @@ module.exports = {
     updateContact: updateContact,
     deleteContact: deleteContact,
     getContact: getOne,
-    // changeUser: setAuth,
     request: makeRequest,
 };

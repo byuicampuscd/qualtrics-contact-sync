@@ -20,7 +20,6 @@ const settings = require('./settings.json');
  * Adds csvFile.report.matchingHash & csvFile.report.newHash to csvFile
  ***********************************************************************/
 function checkHash(csvFile, waterfallCb) {
-    // TODO wrap stringify in try/ catch (for circular references)
     var hash = stringHash(JSON.stringify(csvFile.csvContacts));
 
     if (csvFile.config.hash == hash) {
@@ -52,7 +51,7 @@ function updateHash(syncedCsvFiles) {
             /* Else keep the old hash */
             return csvFile.config;
         });
-        config = d3.csvFormat((config));
+        config = d3.csvFormat(config);
 
         fs.writeFile(settings.configFile, config, writeErr => {
             if (writeErr) {
