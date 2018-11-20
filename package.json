@@ -29,5 +29,9 @@
   },
   "homepage": "https://github.com/byuicampuscd/qualtrics-contact-sync#readme",
   "author": "Daniel Green",
-  "license": "MIT"
+  "license": "MIT",
+  "repeat": {
+    "time": "9:45 a",
+    "days": 1
+  }
 }

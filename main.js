@@ -69,7 +69,7 @@ function onComplete(err, syncedCsvFiles) {
     // });
 
 
-    // Promise.resolve(syncedCsvFiles) // TESTING -> enable when updating hases is disabled
+    // Promise.resolve(syncedCsvFiles) // TESTING -> enable when updating hashes is disabled
     hash.updateHash(syncedCsvFiles)
         .catch((err, syncedCsvFiles) => {
             console.error(chalk.red(err.stack));

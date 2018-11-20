@@ -1,10 +1,10 @@
 /* eslint no-console:0 */
 
 const nodemailer = require('nodeMailer');
-const auth = require('./auth.json');
+const settings = require('./settings.json');
+const chalk = require('chalk');
 
 module.exports = () => {
-    var message = 'There was an error with the Qualtrics Sync Tool. Please refer to the log for more detail\n\n This is an automatic message. Please do not respond.';
     /***********************
      * Send a single email
      ***********************/
@@ -17,21 +17,35 @@ module.exports = () => {
             console.log('message %s sent: %s', mailOption.to, result.response);
         });
     }
+    
+    /**************
+     * Start Here 
+     *************/
+    /* Make sure we have all the info we need to send an email */
+    if ( !settings.email || !settings.email.service || !settings.email.from || !settings.email.to) {
+        console.log(chalk.yellow('Incomplete settings file. Unable to send email'));
+        return;
+    } else if (!process.env.USR || !process.env.PASS) {
+        console.log(chalk.yellow('Missing email credentials. Unable to send email'));
+        return;
+    }
 
+
+    var message = 'There was an error with the Qualtrics Sync Tool. Please refer to the log for more detail\n\n This is an automatic message. Please do not respond.';
     var transporter = nodemailer.createTransport({
-        service: auth.service, //Outlook365 for BYUI email
+        service: settings.email.service, //Outlook365 for BYUI email
         auth: {
-            user: auth.username,
-            pass: auth.password
+            user: process.env.USR,
+            pass: process.env.PASS
         }
     });
 
     /* create an arry of options if multiple senders are specified.
      makes file backwards compatible */
-    if (auth.to instanceof Array) {
-        var mailingList = auth.to.map((receiver) => {
+    if (settings.email.to instanceof Array) {
+        var mailingList = settings.email.to.map((receiver) => {
             return {
-                from: auth.from,
+                from: settings.email.from,
                 to: receiver,
                 subject: 'Error with Qualtrics Contact Sync',
                 text: message
@@ -41,8 +55,8 @@ module.exports = () => {
     } /* else send one */
     else {
         sendMail({
-            from: auth.from,
-            to: auth.to,
+            from: settings.email.from,
+            to: settings.email.to,
             subject: 'Error with Qualtrics Contact Sync',
             text: message
         });

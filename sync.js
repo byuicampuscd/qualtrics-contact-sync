@@ -18,6 +18,7 @@ const keysToIgnore = ['language', 'unsubscribed', 'responseHistory', 'emailHisto
  *************************************************/
 function makeApiCalls(csvFile, waterfallCb) {
     // TESTING -> this option disables all ADD, UPDATE, & DELETE requests
+    // it does not disable logs
     if (process.argv.includes('-t')) {
         waterfallCb(null, csvFile);
         return;

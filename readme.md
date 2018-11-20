@@ -28,25 +28,33 @@ The tool will run through the prompts included in the repeat-timer library. It a
 
 The Tool requires the following files:
 * settings.json 
-* auth.json
 * config.csv
 
 The CLI takes the following parameters:
 - `-t` (Test) Disables all calls to Qualtrics, allowing the developer to determine the number of contacts to Add, Update, and Delete without making potentially undesired calls to the API.
 
 
+### Authentication
+The following environment variables need to be set for the tool to run correctly:
+- QUALTRICS_API_TOKEN
+- USR (for email)
+- PASS (for email)
+
+
 ### Settings.json
-The settings file allows the user to set the location & title of the config file. FilePath & logPath which directory contains the individual csv & log files.
+The settings file allows the user to set the location & title of the config file. FilePath & logPath which directory contains the individual csv & log files. It also contains the information used to send email alerts when the sync tool breaks.
 ```js
 {
     "configLocation": "./test/config.csv",
     "logPath": "./test/reports/",
-    "filePath": "./test/"
+    "filePath": "./test/",
+    "email": {
+        "service": "yahoo",
+        "from": "someone@yahoo.com",
+        "to": "someone@byui.edu"
+    }
 }
 ```
-
-### Auth.json
-This repository includes an auth.json.example for the user to fill out. It includes the Qualtrics api token as well as login and configuration information for the users email account.
 
 
 ### Config.csv
@@ -155,6 +163,9 @@ If ANY file, contact, or overall level error occurred, send a generic email aler
 
 
 # Qualtrics API notes #
+Qualtrics API docs:
+https://api.qualtrics.com/docs/
+
 This would've been a lot easier if it weren't for the undocumented quirks of the Qualtrics API. I will record as many as I notice here. They are subject to change at any time without warning. Good Luck!
 
 * EmbeddedData values can not be deleted via API once created. They can only be set to an empty string. Setting them to null or undefined throws a server err
@@ -166,3 +177,10 @@ This would've been a lot easier if it weren't for the undocumented quirks of the
 * Boolean values are stored as strings, so `TRUE` and `true` ARE NOT the same. This can happen if someone opens & saves the csv in excel.
 * Adding a contact with an empty `embeddedData` object to Qualtrics will result in the embeddedData field being set to `null`. This can make it difficult to compare contacts b/c `Object.Keys()` breaks on null.
 * The embeddedData property MUST contain a JSON object. Sending `null` or `''` will make the request fail.
+
+# Permissions #
+- The FTC will have to give permission to generate a qualtrics API token
+- Aaron Ball will have to give permission to access the I-Drive.
+- I'm not sure what permissions will be required to connect to outlook.
+
+

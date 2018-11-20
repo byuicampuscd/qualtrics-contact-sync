@@ -1,15 +1,19 @@
 /* eslint no-console:1 */
 
 const request = require('request');
-var auth = require('./auth.json');
 const chalk = require('chalk');
+const auth = process.env.QUALTRICS_API_TOKEN; // = require('./auth.json');
 
-// USE PROCESS.ENV INSTEAD OF AUTH.JSON
-function setAuth (newToken) {
-    auth = {
-        token: newToken
-    };
+if (!auth) {
+    throw new Error('Qualtrics auth token missing');
 }
+
+
+// function setAuth (newToken) {
+//     auth = {
+//         token: newToken
+//     };
+// }
 
 /***************************************************
  * Sends all API requests. Takes a requestObj &
@@ -154,6 +158,6 @@ module.exports = {
     updateContact: updateContact,
     deleteContact: deleteContact,
     getContact: getOne,
-    changeUser: setAuth,
+    // changeUser: setAuth,
     request: makeRequest,
 };
