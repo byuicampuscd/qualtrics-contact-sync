@@ -130,7 +130,7 @@ function logCsvFile(updatedCsvFile, eachCallback) {
 function runCSV(csvFile, eachCallback) {
     console.log(chalk.blue(`\n${csvFile.config.csv}`));
 
-    /* in case the config file was missing required fields */
+    // In case the config file was missing required fields
     if (csvFile.report.fileError) {
         console.error(chalk.red(csvFile.report.fileError.stack));
         logCsvFile(csvFile, eachCallback);
@@ -138,9 +138,9 @@ function runCSV(csvFile, eachCallback) {
     }
 
     asyncLib.waterfall([
-        asyncLib.constant(csvFile), // pass csvFile into the first function
-        readCsvFile, // read the csvFile
-        hash.checkHash, // compare hashes
+        asyncLib.constant(csvFile), // Pass the csvFile into the first function
+        readCsvFile, // Read the csvFile
+        hash.checkHash, // Compare hashes
     ],
     (waterfallErr, updatedCsvFile) => {
         if (waterfallErr) {
@@ -150,7 +150,7 @@ function runCSV(csvFile, eachCallback) {
             console.error(chalk.red(waterfallErr.stack));
         }
 
-        /* Sync the file if the hash matched, log the file if it didn't */
+        /* Sync and log the file if the hash didn't match, just log the file if it did */
         if (updatedCsvFile.report.matchingHash === false) {
             syncCsv(updatedCsvFile, (err, updatedCsvFile) => {
                 if (err) {
@@ -172,8 +172,8 @@ function runCSV(csvFile, eachCallback) {
 function validateConfigFile(csvFiles) {
     const optionalConfigKeys = ['hash', 'LibraryID'];
     var mailingListIDs = csvFiles.map(csvFile => csvFile.config.MailingListID);
+    // Check for duplicate Mailing List IDs
     var uniqueMLIDs = csvFiles.every(csvFile => mailingListIDs.indexOf(csvFile.config.MailingListID) === mailingListIDs.lastIndexOf(csvFile.config.MailingListID));
-
     if (!uniqueMLIDs) {
         var validationErr = new Error('Duplicate Mailing List ID\'s found');
         console.error(chalk.red(validationErr.stack));
@@ -181,23 +181,22 @@ function validateConfigFile(csvFiles) {
         return;
     }
 
-
     csvFiles.forEach(csvFile => {
+        // Get all of the required keys from the current csvFile
         var keys = Object.keys(csvFile.config).filter(key => {
             return !optionalConfigKeys.includes(key);
         });
 
-        /* are all required fields present? */
+        // Are all required fields present?
         var isValid = keys.every(configKey => {
             return csvFile.config[configKey] != '' && csvFile.config[configKey] != undefined;
         });
-
         if (!isValid) {
             csvFile.report.fileError = new Error('Config file missing required field');
         }
     });
 
-    /* loop through each csv on the config file */
+    // Loop through each csv on the config file
     asyncLib.mapSeries(csvFiles, runCSV, onComplete);
 }
 
@@ -242,6 +241,7 @@ function readConfigFile() {
  *******************************/
 function start() {
     emailSent = false; // TESTING set to true to disable emails
+    // Get the current time and date 
     startTime = new Date();
     console.log(`\nStarted on: ${startTime.toDateString()}`);
     log.writeHeader(startTime, () => {
@@ -252,5 +252,6 @@ function start() {
 /****************
  * START HERE
  ****************/
+// Timer calls the start() function every specified amount of time
 timer(start);
 // start(); // TESTING -> enable to skip timer

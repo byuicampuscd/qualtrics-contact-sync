@@ -8,7 +8,7 @@ module.exports = () => {
     /***********************
      * Send a single email
      ***********************/
-    function sendMail(mailOption) {
+    function sendEmail(mailOption) {
         transporter.sendMail(mailOption, (err, result) => {
             if (err) {
                 console.error(err);
@@ -17,12 +17,12 @@ module.exports = () => {
             console.log('message %s sent: %s', mailOption.to, result.response);
         });
     }
-    
-    /**************
+
+    /*************
      * Start Here 
      *************/
     /* Make sure we have all the info we need to send an email */
-    if ( !settings.email || !settings.email.service || !settings.email.from || !settings.email.to) {
+    if (!settings.email || !settings.email.service || !settings.email.from || !settings.email.to) {
         console.log(chalk.yellow('Incomplete settings file. Unable to send email'));
         return;
     } else if (!process.env.USR || !process.env.PASS) {
@@ -51,10 +51,10 @@ module.exports = () => {
                 text: message
             };
         });
-        mailingList.forEach(sendMail);
+        mailingList.forEach(sendEmail);
     } /* else send one */
     else {
-        sendMail({
+        sendEmail({
             from: settings.email.from,
             to: settings.email.to,
             subject: 'Error with Qualtrics Contact Sync',
